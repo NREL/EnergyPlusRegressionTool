@@ -1,3 +1,6 @@
 .idea
 *.pyc
+tex_docs
+Pipfile
+*.lock
 

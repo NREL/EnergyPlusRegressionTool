@@ -2,30 +2,27 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-# always import sys first
-import sys
-
 # then os and shutil which provide file operations and others
 import os
 import shutil
-
-# add stuff to either make series calls, or multithreading
-from subprocess import call
-from multiprocessing import Process, Queue, current_process, freeze_support
-
-# import the files related to this script
-from Structures import *
-import epsim
-import TableDiff
-import MathDiff
-import ThreshDict
-
 # python's own diff library
 from difflib import *
+# add stuff to either make series calls, or multithreading
+from multiprocessing import Process, Queue, freeze_support
+
+from epregressions import MathDiff
+from epregressions import TableDiff
+from epregressions import ThreshDict
+from epregressions import epsim
+# import the files related to this script
+from epregressions.Structures import *
+
+# always import sys first
 
 # get the current file path for convenience
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
+
 
 # the actual main test suite run class
 class TestSuiteRunner():
@@ -67,7 +64,7 @@ class TestSuiteRunner():
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
         self.thresh_dict_file = os.path.join(script_dir, "MathDiff.config")
         self.math_diff_executable = os.path.join(script_dir, "MathDiff.py")
-        self.table_diff_executable =  os.path.join(script_dir, "TableDiff.py")
+        self.table_diff_executable = os.path.join(script_dir, "TableDiff.py")
         self.ep_run_executable = os.path.join(script_dir, "epsim.py")
         self.weather_data_dir = os.path.join(script_dir, "..", "WeatherData")
         self.datasets_dirname = "DataSets"
@@ -81,7 +78,8 @@ class TestSuiteRunner():
         elif self.force_run_type == ForceRunType.DD:
             self.test_output_dir = "Tests-DDOnly"
         elif self.force_run_type == ForceRunType.REVERSEDD:
-            self.my_print("ReverseDD not currently supported by runtests.py. A separate tool will be available soon. Aborting...")
+            self.my_print(
+                "ReverseDD not currently supported by runtests.py. A separate tool will be available soon. Aborting...")
             self.my_alldone(self.entries)
         elif self.force_run_type == ForceRunType.NONE:
             self.test_output_dir = "Tests"
@@ -191,12 +189,13 @@ class TestSuiteRunner():
                 idf_text = ''
                 with open(os.path.join(build, this_test_dir, entry.basename, self.eplus_in_filename)) as f:
                     idf_text = f.read()
-		    idf_text = unicode(idf_text, errors='ignore')
+                    idf_text = unicode(idf_text, errors='ignore')
 
                 # if the file requires the window 5 dataset file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:
                     os.mkdir(os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname))
-                    shutil.copy(os.path.join(self.datasets_dir, 'Window5DataFile.dat'), os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname))
+                    shutil.copy(os.path.join(self.datasets_dir, 'Window5DataFile.dat'),
+                                os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname))
 
                 # if the file requires the TDV dataset file, bring it into the test run directory, right now I think it's broken
                 if 'DataSets\TDV' in idf_text:
@@ -207,7 +206,9 @@ class TestSuiteRunner():
                     for file_name in src_files:
                         full_file_name = os.path.join(source_dir, file_name)
                         if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname, 'TDV'))
+                            shutil.copy(full_file_name,
+                                        os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname,
+                                                     'TDV'))
 
                 if 'Parametric:' in idf_text:
                     parametric_file = True
@@ -221,7 +222,9 @@ class TestSuiteRunner():
                     for file_name in src_files:
                         full_file_name = os.path.join(source_dir, file_name)
                         if (os.path.isfile(full_file_name)):
-                            shutil.copy(full_file_name, os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname, 'FMUs'))
+                            shutil.copy(full_file_name,
+                                        os.path.join(build, this_test_dir, entry.basename, self.datasets_dirname,
+                                                     'FMUs'))
 
                 # rewrite the idf with the (potentially) modified idf text
                 with open(os.path.join(build, this_test_dir, entry.basename, self.eplus_in_filename), 'w') as f:
@@ -256,14 +259,22 @@ class TestSuiteRunner():
                 shutil.copy(mvi, os.path.join(build, this_test_dir, entry.basename, 'in.mvi'))
 
             if entry.epw:
-                if (local_run_type != ForceRunType.DD) and (not os.path.exists(os.path.join(self.weather_data_dir, entry.epw+'.epw'))):
-                   self.my_print("Weather file doesn't exist: %s .. skipping this input file" % (os.path.join(self.weather_data_dir, entry.epw)))
-                   self.my_casecompleted(TestCaseCompleted(this_test_dir, entry.basename, False, True, ""))
-                   continue
+                if (local_run_type != ForceRunType.DD) and (
+                not os.path.exists(os.path.join(self.weather_data_dir, entry.epw + '.epw'))):
+                    self.my_print("Weather file doesn't exist: %s .. skipping this input file" % (
+                        os.path.join(self.weather_data_dir, entry.epw)))
+                    self.my_casecompleted(TestCaseCompleted(this_test_dir, entry.basename, False, True, ""))
+                    continue
                 else:
-                    EnergyPlusRuns.append((epsim.execute_energyplus, (build, entry.basename, os.path.join(build, this_test_dir, entry.basename), executable, local_run_type, self.min_reporting_freq, parametric_file, os.path.join(self.weather_data_dir, entry.epw+'.epw'), self.eplus_install_path)))
+                    EnergyPlusRuns.append((epsim.execute_energyplus, (
+                    build, entry.basename, os.path.join(build, this_test_dir, entry.basename), executable,
+                    local_run_type, self.min_reporting_freq, parametric_file,
+                    os.path.join(self.weather_data_dir, entry.epw + '.epw'), self.eplus_install_path)))
             else:
-                EnergyPlusRuns.append((epsim.execute_energyplus, (build, entry.basename, os.path.join(build, this_test_dir, entry.basename), executable, local_run_type, self.min_reporting_freq, parametric_file, os.path.join(self.weather_data_dir, self.default_weather_filename), self.eplus_install_path)))
+                EnergyPlusRuns.append((epsim.execute_energyplus, (
+                build, entry.basename, os.path.join(build, this_test_dir, entry.basename), executable, local_run_type,
+                self.min_reporting_freq, parametric_file,
+                os.path.join(self.weather_data_dir, self.default_weather_filename), self.eplus_install_path)))
 
         if self.number_of_threads == 1:
             for task in EnergyPlusRuns:
@@ -272,7 +283,7 @@ class TestSuiteRunner():
                 for val in task[1]:
                     tmparr.append(val)
                 if self.id_like_to_stop_now:
-                    return # self.my_cancelled() is called in parent function
+                    return  # self.my_cancelled() is called in parent function
                 ret = epsim.execute_energyplus(*tmparr)
                 self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
         else:
@@ -301,7 +312,7 @@ class TestSuiteRunner():
                 print("I'd like to stop now.")
                 return
             return_val = func(*args)
-            output.put(return_val) # something needs to be put into the output queue for everything to work
+            output.put(return_val)  # something needs to be put into the output queue for everything to work
 
     def both_files_exist(self, base_path_a, base_path_b, common_relative_path):
         if os.path.exists(os.path.join(base_path_a, common_relative_path)):
@@ -338,7 +349,7 @@ class TestSuiteRunner():
         outFile.writelines(list(cmp))
         return TextDifferences.DIFFS
 
-    def process_diffs_for_one_case(self, entry, case_result_dir_1, case_result_dir_2, out_dir = None):
+    def process_diffs_for_one_case(self, entry, case_result_dir_1, case_result_dir_2, out_dir=None):
         if out_dir is None:
             out_dir = case_result_dir_1
 
@@ -371,19 +382,23 @@ class TestSuiteRunner():
                 self.my_print("Processing (Diffs) : %s" % entry.basename)
             # Case 1b: Both completed, but both failed: report that it failed in both cases and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 0:
-                self.my_print("Skipping an entry because it appears to have a fatal error in both base and mod cases: %s" % entry.basename)
+                self.my_print(
+                    "Skipping an entry because it appears to have a fatal error in both base and mod cases: %s" % entry.basename)
                 return entry
             # Case 1c: Both completed, but one failed: report that it failed in one case and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 1:
-                self.my_print("Skipping an entry because it appears to have a fatal error in one case: %s" % entry.basename)
+                self.my_print(
+                    "Skipping an entry because it appears to have a fatal error in one case: %s" % entry.basename)
                 return entry
         # Case 2: Both end files DID NOT exist
         elif all(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]):
-            self.my_print("Skipping an entry because it appears to have failed (crashed) in both base and mod cases: %s" % entry.basename)
+            self.my_print(
+                "Skipping an entry because it appears to have failed (crashed) in both base and mod cases: %s" % entry.basename)
             return entry
         # Case 3: Both end files DID NOT exist
         elif sum(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]) == 1:
-            self.my_print("Skipping an entry because it appears to have failed (crashed) in one case: %s" % entry.basename)
+            self.my_print(
+                "Skipping an entry because it appears to have failed (crashed) in one case: %s" % entry.basename)
             return entry
         # Case 4: Unhandled combination
         else:
@@ -396,110 +411,110 @@ class TestSuiteRunner():
         # Do Math (CSV) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_1, 'eplusout.csv'):
             entry.add_math_differences(MathDifferences(MathDiff.math_diff(
-                  thresh_dict,
-                  fpath(case_result_dir_1, 'eplusout.csv'),
-                  fpath(case_result_dir_2, 'eplusout.csv'),
-                  fpath(out_dir, 'eplusout.csv.absdiff.csv'),
-                  fpath(out_dir, 'eplusout.csv.percdiff.csv'),
-                  fpath(out_dir, 'eplusout.csv.diffsummary.csv'),
-                  path_to_mathdiff_log)), MathDifferences.ESO)
+                thresh_dict,
+                fpath(case_result_dir_1, 'eplusout.csv'),
+                fpath(case_result_dir_2, 'eplusout.csv'),
+                fpath(out_dir, 'eplusout.csv.absdiff.csv'),
+                fpath(out_dir, 'eplusout.csv.percdiff.csv'),
+                fpath(out_dir, 'eplusout.csv.diffsummary.csv'),
+                path_to_mathdiff_log)), MathDifferences.ESO)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmtr.csv'):
             entry.add_math_differences(MathDifferences(MathDiff.math_diff(
-                  thresh_dict,
-                  fpath(case_result_dir_1, 'eplusmtr.csv'),
-                  fpath(case_result_dir_2, 'eplusmtr.csv'),
-                  fpath(out_dir, 'eplusmtr.csv.absdiff.csv'),
-                  fpath(out_dir, 'eplusmtr.csv.percdiff.csv'),
-                  fpath(out_dir, 'eplusmtr.csv.diffsummary.csv'),
-                  path_to_mathdiff_log)), MathDifferences.MTR)
+                thresh_dict,
+                fpath(case_result_dir_1, 'eplusmtr.csv'),
+                fpath(case_result_dir_2, 'eplusmtr.csv'),
+                fpath(out_dir, 'eplusmtr.csv.absdiff.csv'),
+                fpath(out_dir, 'eplusmtr.csv.percdiff.csv'),
+                fpath(out_dir, 'eplusmtr.csv.diffsummary.csv'),
+                path_to_mathdiff_log)), MathDifferences.MTR)
 
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'epluszsz.csv'):
             entry.add_math_differences(MathDifferences(MathDiff.math_diff(
-                  thresh_dict,
-                  fpath(case_result_dir_1, 'epluszsz.csv'),
-                  fpath(case_result_dir_2, 'epluszsz.csv'),
-                  fpath(out_dir, 'epluszsz.csv.absdiff.csv'),
-                  fpath(out_dir, 'epluszsz.csv.percdiff.csv'),
-                  fpath(out_dir, 'epluszsz.csv.diffsummary.csv'),
-                  path_to_mathdiff_log)), MathDifferences.ZSZ)
+                thresh_dict,
+                fpath(case_result_dir_1, 'epluszsz.csv'),
+                fpath(case_result_dir_2, 'epluszsz.csv'),
+                fpath(out_dir, 'epluszsz.csv.absdiff.csv'),
+                fpath(out_dir, 'epluszsz.csv.percdiff.csv'),
+                fpath(out_dir, 'epluszsz.csv.diffsummary.csv'),
+                path_to_mathdiff_log)), MathDifferences.ZSZ)
 
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
             entry.add_math_differences(MathDifferences(MathDiff.math_diff(
-                  thresh_dict,
-                  fpath(case_result_dir_1, 'eplusssz.csv'),
-                  fpath(case_result_dir_2, 'eplusssz.csv'),
-                  fpath(out_dir, 'eplusssz.csv.absdiff.csv'),
-                  fpath(out_dir, 'eplusssz.csv.percdiff.csv'),
-                  fpath(out_dir, 'eplusssz.csv.diffsummary.csv'),
-                  path_to_mathdiff_log)), MathDifferences.SSZ)
+                thresh_dict,
+                fpath(case_result_dir_1, 'eplusssz.csv'),
+                fpath(case_result_dir_2, 'eplusssz.csv'),
+                fpath(out_dir, 'eplusssz.csv.absdiff.csv'),
+                fpath(out_dir, 'eplusssz.csv.percdiff.csv'),
+                fpath(out_dir, 'eplusssz.csv.diffsummary.csv'),
+                path_to_mathdiff_log)), MathDifferences.SSZ)
 
         # Do Tabular (HTML) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):
             entry.add_table_differences(TableDifferences(TableDiff.table_diff(
-                  thresh_dict,
-                  fpath(case_result_dir_1, 'eplustbl.htm'),
-                  fpath(case_result_dir_2, 'eplustbl.htm'),
-                  fpath(out_dir, 'eplustbl.htm.absdiff.htm'),
-                  fpath(out_dir, 'eplustbl.htm.percdiff.htm'),
-                  fpath(out_dir, 'eplustbl.htm.summarydiff.htm'),
-                  path_to_tablediff_log)))
+                thresh_dict,
+                fpath(case_result_dir_1, 'eplustbl.htm'),
+                fpath(case_result_dir_2, 'eplustbl.htm'),
+                fpath(out_dir, 'eplustbl.htm.absdiff.htm'),
+                fpath(out_dir, 'eplustbl.htm.percdiff.htm'),
+                fpath(out_dir, 'eplustbl.htm.summarydiff.htm'),
+                path_to_tablediff_log)))
 
         # Do Textual Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.audit'),
-                  fpath(case_result_dir_2, 'eplusout.audit'),
-                  fpath(out_dir, 'eplusout.audit.diff'))), TextDifferences.AUD)
+                fpath(case_result_dir_1, 'eplusout.audit'),
+                fpath(case_result_dir_2, 'eplusout.audit'),
+                fpath(out_dir, 'eplusout.audit.diff'))), TextDifferences.AUD)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.bnd'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.bnd'),
-                  fpath(case_result_dir_2, 'eplusout.bnd'),
-                  fpath(out_dir, 'eplusout.bnd.diff'))), TextDifferences.BND)
+                fpath(case_result_dir_1, 'eplusout.bnd'),
+                fpath(case_result_dir_2, 'eplusout.bnd'),
+                fpath(out_dir, 'eplusout.bnd.diff'))), TextDifferences.BND)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dxf'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.dxf'),
-                  fpath(case_result_dir_2, 'eplusout.dxf'),
-                  fpath(out_dir, 'eplusout.dxf.diff'))), TextDifferences.DXF)
+                fpath(case_result_dir_1, 'eplusout.dxf'),
+                fpath(case_result_dir_2, 'eplusout.dxf'),
+                fpath(out_dir, 'eplusout.dxf.diff'))), TextDifferences.DXF)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.eio'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.eio'),
-                  fpath(case_result_dir_2, 'eplusout.eio'),
-                  fpath(out_dir, 'eplusout.eio.diff'))), TextDifferences.EIO)
+                fpath(case_result_dir_1, 'eplusout.eio'),
+                fpath(case_result_dir_2, 'eplusout.eio'),
+                fpath(out_dir, 'eplusout.eio.diff'))), TextDifferences.EIO)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mdd'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.mdd'),
-                  fpath(case_result_dir_2, 'eplusout.mdd'),
-                  fpath(out_dir, 'eplusout.mdd.diff'))), TextDifferences.MDD)
+                fpath(case_result_dir_1, 'eplusout.mdd'),
+                fpath(case_result_dir_2, 'eplusout.mdd'),
+                fpath(out_dir, 'eplusout.mdd.diff'))), TextDifferences.MDD)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mtd'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.mtd'),
-                  fpath(case_result_dir_2, 'eplusout.mtd'),
-                  fpath(out_dir, 'eplusout.mtd.diff'))), TextDifferences.MTD)
+                fpath(case_result_dir_1, 'eplusout.mtd'),
+                fpath(case_result_dir_2, 'eplusout.mtd'),
+                fpath(out_dir, 'eplusout.mtd.diff'))), TextDifferences.MTD)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.rdd'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.rdd'),
-                  fpath(case_result_dir_2, 'eplusout.rdd'),
-                  fpath(out_dir, 'eplusout.rdd.diff'))), TextDifferences.RDD)
+                fpath(case_result_dir_1, 'eplusout.rdd'),
+                fpath(case_result_dir_2, 'eplusout.rdd'),
+                fpath(out_dir, 'eplusout.rdd.diff'))), TextDifferences.RDD)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.shd'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.shd'),
-                  fpath(case_result_dir_2, 'eplusout.shd'),
-                  fpath(out_dir, 'eplusout.shd.diff'))), TextDifferences.SHD)
+                fpath(case_result_dir_1, 'eplusout.shd'),
+                fpath(case_result_dir_2, 'eplusout.shd'),
+                fpath(out_dir, 'eplusout.shd.diff'))), TextDifferences.SHD)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.err'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.err'),
-                  fpath(case_result_dir_2, 'eplusout.err'),
-                  fpath(out_dir, 'eplusout.err.diff'))), TextDifferences.ERR)
+                fpath(case_result_dir_1, 'eplusout.err'),
+                fpath(case_result_dir_2, 'eplusout.err'),
+                fpath(out_dir, 'eplusout.err.diff'))), TextDifferences.ERR)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightin'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.delightin'),
-                  fpath(case_result_dir_2, 'eplusout.delightin'),
-                  fpath(out_dir, 'eplusout.delightin.diff'))), TextDifferences.DLIN)
+                fpath(case_result_dir_1, 'eplusout.delightin'),
+                fpath(case_result_dir_2, 'eplusout.delightin'),
+                fpath(out_dir, 'eplusout.delightin.diff'))), TextDifferences.DLIN)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightout'):
             entry.add_text_differences(TextDifferences(self.diff_text_files(
-                  fpath(case_result_dir_1, 'eplusout.delightout'),
-                  fpath(case_result_dir_2, 'eplusout.delightout'),
-                  fpath(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DLOUT)
+                fpath(case_result_dir_1, 'eplusout.delightout'),
+                fpath(case_result_dir_2, 'eplusout.delightout'),
+                fpath(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DLOUT)
 
         # return the updated entry
         return entry
@@ -514,7 +529,7 @@ class TestSuiteRunner():
         #      d Time=00hr 00min  0.59sec
         # A NEWLINE?? Gotta sanitize it.
         with open(end_path) as f:
-            end_contents = f.read().replace("\n","")
+            end_contents = f.read().replace("\n", "")
 
         status = EndErrSummary.STATUS_UNKNOWN
         if "Successfully" in end_contents:
@@ -530,12 +545,12 @@ class TestSuiteRunner():
         time_string = end_contents.split('=')[1]
         time_string_tokens = time_string.split(' ')
         # remove any blank entries due to duplicated tokens
-        time_string_tokens = [ x for x in time_string_tokens if x ]
+        time_string_tokens = [x for x in time_string_tokens if x]
         hours = float(time_string_tokens[0][0:2])
         minutes = float(time_string_tokens[1][0:2])
         seconds_term = time_string_tokens[2]
         seconds_index = seconds_term.index('s')
-        seconds = float(seconds_term[0:(seconds_index-1)])
+        seconds = float(seconds_term[0:(seconds_index - 1)])
         total_runtime_seconds = hours * 3600.0 + minutes * 60.0 + seconds
 
         # return results from this end file
@@ -550,74 +565,76 @@ class TestSuiteRunner():
                 case_result_dir_2 = os.path.join(self.buildB, self.test_output_dir, entry.basename)
                 entry = self.process_diffs_for_one_case(entry, case_result_dir_1, case_result_dir_2)
             except Exception as e:
-                self.my_print("Unexpected error occurred in processing diffs for %s, could indicate an E+ crash caused corrupted files" % entry.basename)
+                self.my_print(
+                    "Unexpected error occurred in processing diffs for %s, could indicate an E+ crash caused corrupted files" % entry.basename)
                 self.my_print("Message: %s" % e)
             finally:
                 self.my_diffcompleted(entry.basename)
 
     def print_summary_of_entries(self):
-        #for entry in self.entries:
-            #self.my_print("Providing summary for: %s" % entry.basename)
+        # for entry in self.entries:
+        # self.my_print("Providing summary for: %s" % entry.basename)
 
-            #if entry.has_summary_result:
-                #self.my_print(" File HAS a summary result:")
-                #self.my_print("  Simulation Completed as: %s" % EndErrSummary.s_status(entry.summary_result.simulation_status))
-                #self.my_print("  Simulation took %s seconds" % entry.summary_result.run_time_seconds)
-            #else:
-                #self.my_print(" File DOES NOT HAVE a summary result.")
+        # if entry.has_summary_result:
+        # self.my_print(" File HAS a summary result:")
+        # self.my_print("  Simulation Completed as: %s" % EndErrSummary.s_status(entry.summary_result.simulation_status))
+        # self.my_print("  Simulation took %s seconds" % entry.summary_result.run_time_seconds)
+        # else:
+        # self.my_print(" File DOES NOT HAVE a summary result.")
 
-            #if entry.has_eso_diffs:
-                #self.my_print(" File HAS eso diff summary:")
-                #self.my_print("  Diff type: %s" % (entry.eso_diffs.diff_type))
-                #self.my_print("  Big diffs? %s" % (entry.eso_diffs.count_of_big_diff > 0))
-                #self.my_print("  Small diffs? %s" % (entry.eso_diffs.count_of_small_diff > 0))
-                #self.my_print("  # Records: %s" % (entry.eso_diffs.num_records))
-            #else:
-                #self.my_print(" File DOES NOT HAVE eso diff summary.")
+        # if entry.has_eso_diffs:
+        # self.my_print(" File HAS eso diff summary:")
+        # self.my_print("  Diff type: %s" % (entry.eso_diffs.diff_type))
+        # self.my_print("  Big diffs? %s" % (entry.eso_diffs.count_of_big_diff > 0))
+        # self.my_print("  Small diffs? %s" % (entry.eso_diffs.count_of_small_diff > 0))
+        # self.my_print("  # Records: %s" % (entry.eso_diffs.num_records))
+        # else:
+        # self.my_print(" File DOES NOT HAVE eso diff summary.")
 
-            #if entry.has_mtr_diffs:
-                #self.my_print(" File HAS mtr diff summary:")
-                #self.my_print("  Diff type: %s" % (entry.mtr_diffs.diff_type))
-                #self.my_print("  Big diffs? %s" % (entry.mtr_diffs.count_of_big_diff > 0))
-                #self.my_print("  Small diffs? %s" % (entry.mtr_diffs.count_of_small_diff > 0))
-                #self.my_print("  # Records: %s" % (entry.mtr_diffs.num_records))
-            #else:
-                #self.my_print(" File DOES NOT HAVE mtr diff summary.")
+        # if entry.has_mtr_diffs:
+        # self.my_print(" File HAS mtr diff summary:")
+        # self.my_print("  Diff type: %s" % (entry.mtr_diffs.diff_type))
+        # self.my_print("  Big diffs? %s" % (entry.mtr_diffs.count_of_big_diff > 0))
+        # self.my_print("  Small diffs? %s" % (entry.mtr_diffs.count_of_small_diff > 0))
+        # self.my_print("  # Records: %s" % (entry.mtr_diffs.num_records))
+        # else:
+        # self.my_print(" File DOES NOT HAVE mtr diff summary.")
 
-            #if entry.has_zsz_diffs:
-                #self.my_print(" File HAS zsz diff summary:")
-                #self.my_print("  Diff type: %s" % (entry.zsz_diffs.diff_type))
-                #self.my_print("  Big diffs? %s" % (entry.zsz_diffs.count_of_big_diff > 0))
-                #self.my_print("  Small diffs? %s" % (entry.zsz_diffs.count_of_small_diff > 0))
-                #self.my_print("  # Records: %s" % (entry.zsz_diffs.num_records))
-            #else:
-                #self.my_print(" File DOES NOT HAVE zsz diff summary.")
+        # if entry.has_zsz_diffs:
+        # self.my_print(" File HAS zsz diff summary:")
+        # self.my_print("  Diff type: %s" % (entry.zsz_diffs.diff_type))
+        # self.my_print("  Big diffs? %s" % (entry.zsz_diffs.count_of_big_diff > 0))
+        # self.my_print("  Small diffs? %s" % (entry.zsz_diffs.count_of_small_diff > 0))
+        # self.my_print("  # Records: %s" % (entry.zsz_diffs.num_records))
+        # else:
+        # self.my_print(" File DOES NOT HAVE zsz diff summary.")
 
-            #if entry.has_ssz_diffs:
-                #self.my_print(" File HAS ssz diff summary:")
-                #self.my_print("  Diff type: %s" % (entry.ssz_diffs.diff_type))
-                #self.my_print("  Big diffs? %s" % (entry.ssz_diffs.count_of_big_diff > 0))
-                #self.my_print("  Small diffs? %s" % (entry.ssz_diffs.count_of_small_diff > 0))
-                #self.my_print("  # Records: %s" % (entry.ssz_diffs.num_records))
-            #else:
-                #self.my_print(" File DOES NOT HAVE ssz diff summary.")
+        # if entry.has_ssz_diffs:
+        # self.my_print(" File HAS ssz diff summary:")
+        # self.my_print("  Diff type: %s" % (entry.ssz_diffs.diff_type))
+        # self.my_print("  Big diffs? %s" % (entry.ssz_diffs.count_of_big_diff > 0))
+        # self.my_print("  Small diffs? %s" % (entry.ssz_diffs.count_of_small_diff > 0))
+        # self.my_print("  # Records: %s" % (entry.ssz_diffs.num_records))
+        # else:
+        # self.my_print(" File DOES NOT HAVE ssz diff summary.")
 
-            #if entry.has_table_diffs:
-                #self.my_print(" File HAS table diff summary:")
-                #self.my_print("  Message: %s" % (entry.table_diffs.msg))
-                #self.my_print("  Table count: %s" % (entry.table_diffs.table_count))
-                #self.my_print("  Big diffs?: %s" % (entry.table_diffs.bigdiff_count > 0))
-                #self.my_print("  Small diffs: %s" % (entry.table_diffs.smalldiff_count > 0))
-                #self.my_print("  Equal count: %s" % (entry.table_diffs.equal_count))
-                #self.my_print("  String diff count: %s" % (entry.table_diffs.stringdiff_count))
-                #self.my_print("  Size error: %s" % (entry.table_diffs.sizeerr_count))
-                #self.my_print("  In 2 not 1: %s" % (entry.table_diffs.notin1_count))
-                #self.my_print("  In 1 not 2: %s" % (entry.table_diffs.notin2_count))
-            #else:
-                #self.my_print(" File DOES NOT HAVE table diff summary.")
+        # if entry.has_table_diffs:
+        # self.my_print(" File HAS table diff summary:")
+        # self.my_print("  Message: %s" % (entry.table_diffs.msg))
+        # self.my_print("  Table count: %s" % (entry.table_diffs.table_count))
+        # self.my_print("  Big diffs?: %s" % (entry.table_diffs.bigdiff_count > 0))
+        # self.my_print("  Small diffs: %s" % (entry.table_diffs.smalldiff_count > 0))
+        # self.my_print("  Equal count: %s" % (entry.table_diffs.equal_count))
+        # self.my_print("  String diff count: %s" % (entry.table_diffs.stringdiff_count))
+        # self.my_print("  Size error: %s" % (entry.table_diffs.sizeerr_count))
+        # self.my_print("  In 2 not 1: %s" % (entry.table_diffs.notin1_count))
+        # self.my_print("  In 1 not 2: %s" % (entry.table_diffs.notin2_count))
+        # else:
+        # self.my_print(" File DOES NOT HAVE table diff summary.")
         pass
 
-    def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback, enderrcompleted_callback, diffcompleted_callback, alldone_callback, cancel_callback):
+    def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
+                      enderrcompleted_callback, diffcompleted_callback, alldone_callback, cancel_callback):
         self.print_callback = print_callback
         self.starting_callback = simstarting_callback
         self.casecompleted_callback = casecompleted_callback
@@ -630,7 +647,7 @@ class TestSuiteRunner():
     def my_print(self, msg):
         if self.print_callback:
             self.print_callback(msg)
-            #print(msg) #can uncomment to debug
+            # print(msg) #can uncomment to debug
         else:
             print(msg)
 
@@ -638,13 +655,15 @@ class TestSuiteRunner():
         if self.starting_callback:
             self.starting_callback(number_of_builds, number_of_cases_per_build)
         else:
-            self.my_print("Starting runtests, # builds = %i, # cases per build = %i" % (number_of_builds, number_of_cases_per_build))
+            self.my_print("Starting runtests, # builds = %i, # cases per build = %i" % (
+            number_of_builds, number_of_cases_per_build))
 
     def my_casecompleted(self, test_case_completed_instance):
         if self.casecompleted_callback:
             self.casecompleted_callback(test_case_completed_instance)
         else:
-            self.my_print("Case complete: %s : %s" % (test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
+            self.my_print("Case complete: %s : %s" % (
+            test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
 
     def my_simulationscomplete(self):
         if self.simulationscomplete_callback:
@@ -679,17 +698,18 @@ class TestSuiteRunner():
     def interrupt_please(self):
         self.id_like_to_stop_now = True
 
+
 if __name__ == "__main__":
 
     # For ALL runs use BuildA
-    base   = SingleBuildDirectory(directory_path     = "/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
-                                  executable_name    = "8.1.0.009_ifort_release",
-                                  run_this_directory = True)
+    base = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
+                                executable_name="8.1.0.009_ifort_release",
+                                run_this_directory=True)
 
     # If using ReverseDD, builB can just be None
-    mod    = SingleBuildDirectory(directory_path     = "/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
-                                  executable_name    = "8.2.0.001_ifort_release",
-                                  run_this_directory = True)
+    mod = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
+                               executable_name="8.2.0.001_ifort_release",
+                               run_this_directory=True)
 
     # Do a single test run...
     DoASingleTestRun = False
@@ -714,15 +734,15 @@ if __name__ == "__main__":
                 break
 
     # Build the run configuration
-    RunConfig = TestRunConfiguration(run_mathdiff       = True,
-                                     do_composite_err   = True,
-                                     force_run_type     = ForceRunType.NONE, #ANNUAL, DD, NONE, REVERSEDD
-                                     single_test_run    = DoASingleTestRun,
-                                     eplus_install_path = '/home/elee/EnergyPlus/EnergyPlus-8-1-0',
-                                     num_threads        = 3,
-                                     report_freq        = ReportingFreq.HOURLY,
-                                     buildA = base,
-                                     buildB = mod)
+    RunConfig = TestRunConfiguration(run_mathdiff=True,
+                                     do_composite_err=True,
+                                     force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
+                                     single_test_run=DoASingleTestRun,
+                                     eplus_install_path='/home/elee/EnergyPlus/EnergyPlus-8-1-0',
+                                     num_threads=3,
+                                     report_freq=ReportingFreq.HOURLY,
+                                     buildA=base,
+                                     buildB=mod)
 
     # instantiate the test suite
     Runner = TestSuiteRunner(RunConfig, entries)
