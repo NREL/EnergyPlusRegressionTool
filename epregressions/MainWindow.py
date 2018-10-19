@@ -12,9 +12,8 @@ import datetime  # datetime allows us to generate timestamps for the log
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
 from datetime import datetime  # get datetime to do date/time calculations for timestamps, etc.
-# TODO: Remove XML - use JSON
-from xml.dom import minidom
-# we use xml for the save file
+
+from xml.dom import minidom  # TODO: Remove XML - use JSON
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, parse
 
@@ -40,7 +39,7 @@ script_dir = os.path.abspath(path)
 box_spacing = 2
 force_none = "Don't force anything"
 force_dd = "Force design day simulations only"
-force_annual = "Force annual runperiod simulations"
+force_annual = "Force annual run-period simulations"
 gi.require_version("Gtk", "3.0")
 
 
@@ -71,55 +70,55 @@ class PyApp(Gtk.Window):
         self.idf_list_store = None
         self.idf_selection_table = None
         self.file_list_num_files = None
-        self.suite_option_handler_basecheckbutton = None
-        self.suite_option_baseexe = None
-        self.suite_option_handler_modcheckbutton = None
-        self.suite_option_modexe = None
-        self.suite_option_numthreads = None
-        self.runtypecombobox = None
-        self.reportfreqcombobox = None
+        self.suite_option_handler_base_check_button = None
+        self.suite_option_base_exe = None
+        self.suite_option_handler_mod_check_button = None
+        self.suite_option_mod_exe = None
+        self.suite_option_num_threads = None
+        self.run_type_combo_box = None
+        self.report_frequency_combo_box = None
         self.suite_dir_struc_info = None
-        self.suite_option_eplusinstall_label = None
-        self.suite_option_handler_runtimereportcheck = None
+        self.suite_option_ep_install_label = None
+        self.suite_option_handler_runtime_report_check = None
         self.suite_option_runtime_file_label = None
         self.btn_run_suite = None
-        self.verifyliststore = None
-        self.verifytreeView = None
-        self.resultsliststore = None
-        self.resultsparent_numrun = None
-        self.resultsparent_success = None
-        self.resultsparent_unsuccess = None
-        self.resultsparent_success2 = None
-        self.resultsparent_unsuccess2 = None
-        self.resultsparent_filescompared = None
-        self.resultsparent_bigmath = None
-        self.resultsparent_smallmath = None
-        self.resultsparent_bigtable = None
-        self.resultsparent_smalltable = None
-        self.resultsparent_textual = None
-        self.resultschild_numrun = None
-        self.resultschild_success = None
-        self.resultschild_unsuccess = None
-        self.resultschild_success2 = None
-        self.resultschild_unsuccess2 = None
-        self.resultschild_filescompared = None
-        self.resultschild_bigmath = None
-        self.resultschild_smallmath = None
-        self.resultschild_bigtable = None
-        self.resultschild_smalltable = None
-        self.resultschild_textual = None
+        self.verify_list_store = None
+        self.verify_tree_view = None
+        self.results_list_store = None
+        self.results_parent_num_run = None
+        self.results_parent_success = None
+        self.results_parent_not_success = None
+        self.results_parent_success_2 = None
+        self.results_parent_not_success_2 = None
+        self.results_parent_files_compared = None
+        self.results_parent_big_math = None
+        self.results_parent_small_math = None
+        self.results_parent_big_table = None
+        self.results_parent_small_table = None
+        self.results_parent_textual = None
+        self.results_child_num_run = None
+        self.results_child_success = None
+        self.results_child_not_success = None
+        self.results_child_success_2 = None
+        self.results_child_not_success_2 = None
+        self.results_child_files_compared = None
+        self.results_child_big_math = None
+        self.results_child_small_math = None
+        self.results_child_big_table = None
+        self.results_child_small_table = None
+        self.results_child_textual = None
         self.tree_view = None
         self.tree_selection = None
         self.last_run_heading = None
-        self.log_scroller_notebook_page = None
-        self.logstore = None
+        self.log_scroll_notebook_page = None
+        self.log_store = None
         self.notebook = None
         self.progress = None
         self.status_bar = None
         self.status_bar_context_id = None
-        self.lastrun_context = None
-        self.lastrun_context_copy = None
-        self.lastrun_context_nocopy = None
+        self.last_run_context = None
+        self.last_run_context_copy = None
+        self.last_run_context_nocopy = None
         self.file_list_builder_configuration = None
         self.current_progress_value = None
         self.progress_maximum_value = None
@@ -128,7 +127,7 @@ class PyApp(Gtk.Window):
         self.suiteargs = None
         self.runner = None
         self.work_thread = None
-        self.resultslist_selected_entry_root_index = None
+        self.results_list_selected_entry_root_index = None
         self.results_lists_to_copy = None
 
         # set up default arguments for the idf list builder and the test suite engine
@@ -223,12 +222,12 @@ class PyApp(Gtk.Window):
         menu_item_file = Gtk.MenuItem("File")
 
         # create a menu to hold FILE items and put them in there
-        filemenu = Gtk.Menu()
-        filemenu.append(menu_item_file_load)
-        filemenu.append(menu_item_file_save)
-        filemenu.append(Gtk.SeparatorMenuItem())
-        filemenu.append(menu_item_file_exit)
-        menu_item_file.set_submenu(filemenu)
+        file_menu = Gtk.Menu()
+        file_menu.append(menu_item_file_load)
+        file_menu.append(menu_item_file_save)
+        file_menu.append(Gtk.SeparatorMenuItem())
+        file_menu.append(menu_item_file_exit)
+        menu_item_file.set_submenu(file_menu)
 
         # attach the FILE menu to the main menu bar
         mb.append(menu_item_file)
@@ -287,15 +286,15 @@ class PyApp(Gtk.Window):
         get = project_root.find
         gets = project_root.findall
 
-        masterfile = get("idfselection/masterfile")
-        if masterfile is not None:
-            if os.path.exists(str(masterfile)):
-                self.file_list_builder_configuration.master_data_file = masterfile.attrib["filepath"]
+        master_file = get("idfselection/masterfile")
+        if master_file is not None:
+            if os.path.exists(str(master_file)):
+                self.file_list_builder_configuration.master_data_file = master_file.attrib["filepath"]
         for idf_entry in self.idf_list_store:
             idf_entry[IDFListViewColumnIndex.RUN] = False
-        idfs_selected = gets("idfselection/selectedfiles/selectedfile")
-        if idfs_selected is not None:
-            for idfelement in idfs_selected:
+        idf_files_selected = gets("idfselection/selectedfiles/selectedfile")
+        if idf_files_selected is not None:
+            for idfelement in idf_files_selected:
                 filename = idfelement.attrib["filename"]
                 for idf_entry in self.idf_list_store:
                     if idf_entry[IDFListViewColumnIndex.IDF] == filename:  # if it matches
@@ -321,70 +320,71 @@ class PyApp(Gtk.Window):
             else:
                 self.suiteargs.buildB.run = False
             self.suiteargs.buildB.executable = case_b_stuff.attrib["executable"]
-        installdir = get("suiteoptions/epinstalldir")
-        if installdir is not None:
-            self.suiteargs.eplus_install = installdir.attrib["dirpath"]
-        runconfig_elem = get("suiteoptions/runconfig")
-        if runconfig_elem is not None:
-            runconfig_option = runconfig_elem.attrib["value"]
-            if runconfig_option == "NONE":
+        install_dir = get("suiteoptions/epinstalldir")
+        if install_dir is not None:
+            self.suiteargs.eplus_install = install_dir.attrib["dirpath"]
+        run_config_elem = get("suiteoptions/runconfig")
+        if run_config_elem is not None:
+            run_config_option = run_config_elem.attrib["value"]
+            if run_config_option == "NONE":
                 self.suiteargs.force_run_type = ForceRunType.NONE
-            elif runconfig_option == "DDONLY":
+            elif run_config_option == "DDONLY":
                 self.suiteargs.force_run_type = ForceRunType.DD
-            elif runconfig_option == "ANNUAL":
+            elif run_config_option == "ANNUAL":
                 self.suiteargs.force_run_type = ForceRunType.ANNUAL
         report_freq_elem = get("suiteoptions/reportfreq")
         if report_freq_elem is not None:
             report_freq_option = report_freq_elem.attrib["value"]
             self.suiteargs.report_freq = report_freq_option
-        numthreads_elem = get("suiteoptions/otheroptions/numthreads")
-        if numthreads_elem is not None:
-            self.suiteargs.num_threads = numthreads_elem.attrib["value"]
+        num_threads_elem = get("suiteoptions/otheroptions/numthreads")
+        if num_threads_elem is not None:
+            self.suiteargs.num_threads = num_threads_elem.attrib["value"]
         if from_menu:
             self.gui_fill_with_data()
 
     def gui_fill_with_data(self):
-        self.suite_option_handler_basecheckbutton.set_active(self.suiteargs.buildA.run)
+        self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
         if self.suiteargs.buildA.build:
-            self.suite_option_handler_basecheckbutton.set_label(self.suiteargs.buildA.build)
+            self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
         if self.suiteargs.buildA.executable:
-            self.suite_option_baseexe.set_text(self.suiteargs.buildA.executable)
-        self.suite_option_handler_modcheckbutton.set_active(self.suiteargs.buildB.run)
+            self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
+        self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
         if self.suiteargs.buildB.build:
-            self.suite_option_handler_modcheckbutton.set_label(self.suiteargs.buildB.build)
+            self.suite_option_handler_mod_check_button.set_label(self.suiteargs.buildB.build)
         if self.suiteargs.buildB.executable:
-            self.suite_option_modexe.set_text(self.suiteargs.buildB.executable)
+            self.suite_option_mod_exe.set_text(self.suiteargs.buildB.executable)
         # num threads here
         if self.suiteargs.force_run_type:
             if self.suiteargs.force_run_type == ForceRunType.NONE:
-                self.runtypecombobox.set_active(0)
+                self.run_type_combo_box.set_active(0)
             elif self.suiteargs.force_run_type == ForceRunType.DD:
-                self.runtypecombobox.set_active(1)
+                self.run_type_combo_box.set_active(1)
             elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
-                self.runtypecombobox.set_active(2)
+                self.run_type_combo_box.set_active(2)
             elif self.suiteargs.force_run_type == ForceRunType.REVERSEDD:
-                self.runtypecombobox.set_active(3)
+                self.run_type_combo_box.set_active(3)
         if self.suiteargs.report_freq:
             if self.suiteargs.report_freq == ReportingFreq.DETAILED:
-                self.reportfreqcombobox.set_active(0)
+                self.report_frequency_combo_box.set_active(0)
             elif self.suiteargs.report_freq == ReportingFreq.TIMESTEP:
-                self.reportfreqcombobox.set_active(1)
+                self.report_frequency_combo_box.set_active(1)
             elif self.suiteargs.report_freq == ReportingFreq.HOURLY:
-                self.reportfreqcombobox.set_active(2)
+                self.report_frequency_combo_box.set_active(2)
             elif self.suiteargs.report_freq == ReportingFreq.DAILY:
-                self.reportfreqcombobox.set_active(3)
+                self.report_frequency_combo_box.set_active(3)
             elif self.suiteargs.report_freq == ReportingFreq.MONTHLY:
-                self.reportfreqcombobox.set_active(4)
+                self.report_frequency_combo_box.set_active(4)
             elif self.suiteargs.report_freq == ReportingFreq.RUNPERIOD:
-                self.reportfreqcombobox.set_active(5)
+                self.report_frequency_combo_box.set_active(5)
             elif self.suiteargs.report_freq == ReportingFreq.ENVIRONMENT:
-                self.reportfreqcombobox.set_active(6)
+                self.report_frequency_combo_box.set_active(6)
             elif self.suiteargs.report_freq == ReportingFreq.ANNUAL:
-                self.reportfreqcombobox.set_active(7)
+                self.report_frequency_combo_box.set_active(7)
         if self.suiteargs.eplus_install:
-            self.suite_option_eplusinstall_label.set_label(self.suiteargs.eplus_install)
+            self.suite_option_ep_install_label.set_label(self.suiteargs.eplus_install)
 
-    def prettify(self, elem):
+    @staticmethod
+    def prettify(elem):
         """Return a pretty-printed XML string for the Element."""
         rough_string = ElementTree.tostring(elem, 'utf-8')
         re_parsed = minidom.parseString(rough_string)
@@ -472,23 +472,23 @@ class PyApp(Gtk.Window):
         # for normal (manual) saving, this will return to nothingness most likely
         return True
 
-    def add_idf_selection_row(self, button_text, callback, rownum):
+    def add_idf_selection_row(self, button_text, callback, row_num):
         label = Gtk.Label(button_text)
         label.set_justify(Gtk.Justification.RIGHT)
         alignment = Gtk.Alignment(xalign=1.0)
         alignment.add(label)
         self.idf_selection_table.attach(
-            alignment, 0, 1, rownum - 1, rownum, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
+            alignment, 0, 1, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
         )
         button = Gtk.Button("Select")
         button.connect("clicked", callback, "select")
         self.idf_selection_table.attach(
-            button, 1, 2, rownum - 1, rownum, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
+            button, 1, 2, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
         )
         button = Gtk.Button("Deselect")
         button.connect("clicked", callback, "deselect")
         self.idf_selection_table.attach(
-            button, 2, 3, rownum - 1, rownum, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
+            button, 2, 3, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
         )
 
     def gui_build_notebook_page_idf_selection(self):
@@ -593,23 +593,23 @@ class PyApp(Gtk.Window):
         self.idf_selection_table.attach(alignment, 0, 3, 0, 1)
 
         this_row_num = 2
-        self.add_idf_selection_row("ALL:", self.idf_selection_all, rownum=this_row_num)
+        self.add_idf_selection_row("ALL:", self.idf_selection_all, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("ExternalInterface:", self.idf_selection_extint, rownum=this_row_num)
+        self.add_idf_selection_row("ExternalInterface:", self.idf_selection_extint, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("GroundHT:", self.idf_selection_groundht, rownum=this_row_num)
+        self.add_idf_selection_row("GroundHT:", self.idf_selection_groundht, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("ExtDataSet:", self.idf_selection_dataset, rownum=this_row_num)
+        self.add_idf_selection_row("ExtDataSet:", self.idf_selection_dataset, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("DeLight:", self.idf_selection_delight, rownum=this_row_num)
+        self.add_idf_selection_row("DeLight:", self.idf_selection_delight, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("Macro:", self.idf_selection_macro, rownum=this_row_num)
+        self.add_idf_selection_row("Macro:", self.idf_selection_macro, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("Parametric:", self.idf_selection_parametric, rownum=this_row_num)
+        self.add_idf_selection_row("Parametric:", self.idf_selection_parametric, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("NoWeather:", self.idf_selection_noweather, rownum=this_row_num)
+        self.add_idf_selection_row("NoWeather:", self.idf_selection_noweather, row_num=this_row_num)
         this_row_num += 1
-        self.add_idf_selection_row("Underscore:", self.idf_selection_underscore, rownum=this_row_num)
+        self.add_idf_selection_row("Underscore:", self.idf_selection_underscore, row_num=this_row_num)
         this_row_num += 1
 
         label = Gtk.Label("")
@@ -696,25 +696,25 @@ class PyApp(Gtk.Window):
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(button1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_basecheckbutton = Gtk.CheckButton("< select a dir >", use_underline=False)
-        self.suite_option_handler_basecheckbutton.set_active(self.suiteargs.buildA.run)
-        self.suite_option_handler_basecheckbutton.connect("toggled", self.suite_option_handler_basedir_check)
+        self.suite_option_handler_base_check_button = Gtk.CheckButton("< select a dir >", use_underline=False)
+        self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
+        self.suite_option_handler_base_check_button.connect("toggled", self.suite_option_handler_basedir_check)
         if self.suiteargs.buildA.build:
-            self.suite_option_handler_basecheckbutton.set_label(self.suiteargs.buildA.build)
+            self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_handler_basecheckbutton)
+        alignment.add(self.suite_option_handler_base_check_button)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
         this_label = Gtk.Label("Executable name for dir 1 (relative to directory):")
-        self.suite_option_baseexe = Gtk.Entry()
-        self.suite_option_baseexe.set_size_request(200, -1)
+        self.suite_option_base_exe = Gtk.Entry()
+        self.suite_option_base_exe.set_size_request(200, -1)
         if self.suiteargs.buildA.executable:
-            self.suite_option_baseexe.set_text(self.suiteargs.buildA.executable)
-        self.suite_option_baseexe.connect("changed", self.suite_option_handler_baseexe)
+            self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
+        self.suite_option_base_exe.connect("changed", self.suite_option_handler_base_exe)
         this_h_box = Gtk.HBox(False, box_spacing)
         this_h_box.pack_start(this_label, False, False, box_spacing)
-        this_h_box.pack_start(self.suite_option_baseexe, False, False, box_spacing)
+        this_h_box.pack_start(self.suite_option_base_exe, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
@@ -725,25 +725,25 @@ class PyApp(Gtk.Window):
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(button2)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_modcheckbutton = Gtk.CheckButton("< select a dir >", use_underline=False)
-        self.suite_option_handler_modcheckbutton.set_active(self.suiteargs.buildB.run)
-        self.suite_option_handler_modcheckbutton.connect("toggled", self.suite_option_handler_moddir_check)
+        self.suite_option_handler_mod_check_button = Gtk.CheckButton("< select a dir >", use_underline=False)
+        self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
+        self.suite_option_handler_mod_check_button.connect("toggled", self.suite_option_handler_mod_dir_check)
         if self.suiteargs.buildB.build:
-            self.suite_option_handler_modcheckbutton.set_label(self.suiteargs.buildB.build)
+            self.suite_option_handler_mod_check_button.set_label(self.suiteargs.buildB.build)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_handler_modcheckbutton)
+        alignment.add(self.suite_option_handler_mod_check_button)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
         this_label = Gtk.Label("Executable name for dir 2 (relative to directory):")
-        self.suite_option_modexe = Gtk.Entry()
-        self.suite_option_modexe.set_size_request(200, -1)
+        self.suite_option_mod_exe = Gtk.Entry()
+        self.suite_option_mod_exe.set_size_request(200, -1)
         if self.suiteargs.buildB.executable:
-            self.suite_option_modexe.set_text(self.suiteargs.buildB.executable)
-        self.suite_option_modexe.connect("changed", self.suite_option_handler_modexe)
+            self.suite_option_mod_exe.set_text(self.suiteargs.buildB.executable)
+        self.suite_option_mod_exe.connect("changed", self.suite_option_handler_mod_exe)
         alignment = Gtk.Alignment(xalign=0.1, yalign=0.0, xscale=0.6, yscale=0.0)
         this_h_box = Gtk.HBox(False, box_spacing)
-        alignment.add(self.suite_option_modexe)
+        alignment.add(self.suite_option_mod_exe)
         this_h_box.pack_start(this_label, False, False, box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
@@ -752,31 +752,31 @@ class PyApp(Gtk.Window):
 
         # multirheading in the GUI doesn't works in windows, so don't add the spinbutton if we are on windows
         if platform != "windows":
-            numthreadsbox = Gtk.HBox(False, box_spacing)
-            self.suite_option_numthreads = Gtk.SpinButton()
-            self.suite_option_numthreads.set_range(1, 8)
-            self.suite_option_numthreads.set_increments(1, 4)
-            self.suite_option_numthreads.spin(Gtk.SpinType.PAGE_FORWARD, 1)  # EDWIN: Had to add a 1 here
-            self.suite_option_numthreads.connect("value-changed", self.suite_option_handler_numthreads)
+            num_threads_box = Gtk.HBox(False, box_spacing)
+            self.suite_option_num_threads = Gtk.SpinButton()
+            self.suite_option_num_threads.set_range(1, 8)
+            self.suite_option_num_threads.set_increments(1, 4)
+            self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)  # EDWIN: Had to add a 1 here
+            self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
             num_threads_label = Gtk.Label("Number of threads to use for suite")
             num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
             num_threads_label_aligner.add(num_threads_label)
-            numthreadsbox.pack_start(num_threads_label_aligner, False, False, box_spacing)
-            numthreadsbox.pack_start(self.suite_option_numthreads, False, False, box_spacing)
-            notebook_page_suite_options.pack_start(numthreadsbox, False, False, box_spacing)
+            num_threads_box.pack_start(num_threads_label_aligner, False, False, box_spacing)
+            num_threads_box.pack_start(self.suite_option_num_threads, False, False, box_spacing)
+            notebook_page_suite_options.pack_start(num_threads_box, False, False, box_spacing)
 
         h_box_1 = Gtk.HBox(False, box_spacing)
         label1 = Gtk.Label("Select a test suite run configuration: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.runtypecombobox = Gtk.ComboBoxText()
-        self.runtypecombobox.append_text(force_none)
-        self.runtypecombobox.append_text(force_dd)
-        self.runtypecombobox.append_text(force_annual)
-        self.runtypecombobox.connect("changed", self.suite_option_handler_forceruntype)
+        self.run_type_combo_box = Gtk.ComboBoxText()
+        self.run_type_combo_box.append_text(force_none)
+        self.run_type_combo_box.append_text(force_dd)
+        self.run_type_combo_box.append_text(force_annual)
+        self.run_type_combo_box.connect("changed", self.suite_option_handler_force_run_type)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(self.runtypecombobox)
+        alignment.add(self.run_type_combo_box)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
@@ -785,18 +785,18 @@ class PyApp(Gtk.Window):
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.reportfreqcombobox = Gtk.ComboBoxText()
-        self.reportfreqcombobox.append_text(ReportingFreq.DETAILED)
-        self.reportfreqcombobox.append_text(ReportingFreq.TIMESTEP)
-        self.reportfreqcombobox.append_text(ReportingFreq.HOURLY)
-        self.reportfreqcombobox.append_text(ReportingFreq.DAILY)
-        self.reportfreqcombobox.append_text(ReportingFreq.MONTHLY)
-        self.reportfreqcombobox.append_text(ReportingFreq.RUNPERIOD)
-        self.reportfreqcombobox.append_text(ReportingFreq.ENVIRONMENT)
-        self.reportfreqcombobox.append_text(ReportingFreq.ANNUAL)
-        self.reportfreqcombobox.connect("changed", self.suite_option_handler_reportfreq)
+        self.report_frequency_combo_box = Gtk.ComboBoxText()
+        self.report_frequency_combo_box.append_text(ReportingFreq.DETAILED)
+        self.report_frequency_combo_box.append_text(ReportingFreq.TIMESTEP)
+        self.report_frequency_combo_box.append_text(ReportingFreq.HOURLY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.DAILY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.MONTHLY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.RUNPERIOD)
+        self.report_frequency_combo_box.append_text(ReportingFreq.ENVIRONMENT)
+        self.report_frequency_combo_box.append_text(ReportingFreq.ANNUAL)
+        self.report_frequency_combo_box.connect("changed", self.suite_option_handler_report_frequency)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(self.reportfreqcombobox)
+        alignment.add(self.report_frequency_combo_box)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
@@ -823,13 +823,13 @@ class PyApp(Gtk.Window):
 
         h_box_1 = Gtk.HBox(False, box_spacing)
         button1 = Gtk.Button("Choose Dir...")
-        button1.connect("clicked", self.suite_option_handler_eplusinstall)
+        button1.connect("clicked", self.suite_option_handler_eplus_install)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(button1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_eplusinstall_label = Gtk.Label("< select a dir >")
+        self.suite_option_ep_install_label = Gtk.Label("< select a dir >")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_eplusinstall_label)
+        alignment.add(self.suite_option_ep_install_label)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
@@ -843,12 +843,12 @@ class PyApp(Gtk.Window):
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        self.suite_option_handler_runtimereportcheck = Gtk.CheckButton("Generate a runtime summary for this run?",
-                                                                       use_underline=False)
-        self.suite_option_handler_runtimereportcheck.set_active(True)
-        self.suite_option_handler_runtimereportcheck.connect("toggled", self.suite_option_handler_runtime_check)
+        self.suite_option_handler_runtime_report_check = Gtk.CheckButton("Generate a runtime summary for this run?",
+                                                                         use_underline=False)
+        self.suite_option_handler_runtime_report_check.set_active(True)
+        self.suite_option_handler_runtime_report_check.connect("toggled", self.suite_option_handler_runtime_check)
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(self.suite_option_handler_runtimereportcheck)
+        alignment.add(self.suite_option_handler_runtime_report_check)
         this_h_box = Gtk.HBox(False, box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
@@ -892,29 +892,29 @@ class PyApp(Gtk.Window):
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         # make the list store and the treeview
-        self.verifyliststore = Gtk.ListStore(str, str, bool, str)
-        self.verifyliststore.append(["Press verify to see results", "", True, None])
-        self.verifytreeView = Gtk.TreeView(self.verifyliststore)
-        self.verifytreeView.set_rules_hint(True)
+        self.verify_list_store = Gtk.ListStore(str, str, bool, str)
+        self.verify_list_store.append(["Press verify to see results", "", True, None])
+        self.verify_tree_view = Gtk.TreeView(self.verify_list_store)
+        self.verify_tree_view.set_rules_hint(True)
         # make the columns for the treeview; could add more columns including a checkbox
         # column: idf name
         renderer_text = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Verified Parameter", renderer_text, text=0)
         column.set_sort_column_id(0)
         column.set_resizable(True)
-        self.verifytreeView.append_column(column)
+        self.verify_tree_view.append_column(column)
         # column: selected for run
         renderer_text = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Verified?", renderer_text, text=2, foreground=3)
         column.set_sort_column_id(1)
-        self.verifytreeView.append_column(column)
+        self.verify_tree_view.append_column(column)
         # column: epw name
         renderer_text = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Parameter Value", renderer_text, text=1)
         column.set_sort_column_id(2)
         column.set_resizable(True)
-        self.verifytreeView.append_column(column)
-        listview_window.add(self.verifytreeView)
+        self.verify_tree_view.append_column(column)
+        listview_window.add(self.verify_tree_view)
 
         notebook_page_suite.pack1(self.add_shadow_frame(notebook_page_suite_options))
         notebook_page_suite.pack2(self.add_shadow_frame(listview_window))
@@ -928,41 +928,41 @@ class PyApp(Gtk.Window):
         notebook_page_results.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         notebook_page_results.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.resultsliststore = Gtk.TreeStore(str)
-        self.resultsparent_numrun = self.resultsliststore.append(None, ["Cases run:"])
-        self.resultsparent_success = self.resultsliststore.append(None, ["Case 1 Successful runs:"])
-        self.resultsparent_unsuccess = self.resultsliststore.append(None, ["Case 1 Unsuccessful run:"])
-        self.resultsparent_success2 = self.resultsliststore.append(None, ["Case 2 Successful runs:"])
-        self.resultsparent_unsuccess2 = self.resultsliststore.append(None, ["Case 2 Unsuccessful run:"])
-        self.resultsparent_filescompared = self.resultsliststore.append(None, ["Files compared:"])
-        self.resultsparent_bigmath = self.resultsliststore.append(None, ["Files with BIG mathdiffs:"])
-        self.resultsparent_smallmath = self.resultsliststore.append(None, ["Files with small mathdiffs:"])
-        self.resultsparent_bigtable = self.resultsliststore.append(None, ["Files with BIG tablediffs:"])
-        self.resultsparent_smalltable = self.resultsliststore.append(None, ["Files with small tablediffs:"])
-        self.resultsparent_textual = self.resultsliststore.append(None, ["Files with textual diffs:"])
+        self.results_list_store = Gtk.TreeStore(str)
+        self.results_parent_num_run = self.results_list_store.append(None, ["Cases run:"])
+        self.results_parent_success = self.results_list_store.append(None, ["Case 1 Successful runs:"])
+        self.results_parent_not_success = self.results_list_store.append(None, ["Case 1 Unsuccessful run:"])
+        self.results_parent_success_2 = self.results_list_store.append(None, ["Case 2 Successful runs:"])
+        self.results_parent_not_success_2 = self.results_list_store.append(None, ["Case 2 Unsuccessful run:"])
+        self.results_parent_files_compared = self.results_list_store.append(None, ["Files compared:"])
+        self.results_parent_big_math = self.results_list_store.append(None, ["Files with BIG mathdiffs:"])
+        self.results_parent_small_math = self.results_list_store.append(None, ["Files with small mathdiffs:"])
+        self.results_parent_big_table = self.results_list_store.append(None, ["Files with BIG tablediffs:"])
+        self.results_parent_small_table = self.results_list_store.append(None, ["Files with small tablediffs:"])
+        self.results_parent_textual = self.results_list_store.append(None, ["Files with textual diffs:"])
 
-        self.resultschild_numrun = None
-        self.resultschild_success = None
-        self.resultschild_unsuccess = None
-        self.resultschild_success2 = None
-        self.resultschild_unsuccess2 = None
-        self.resultschild_filescompared = None
-        self.resultschild_bigmath = None
-        self.resultschild_smallmath = None
-        self.resultschild_bigtable = None
-        self.resultschild_smalltable = None
-        self.resultschild_textual = None
+        self.results_child_num_run = None
+        self.results_child_success = None
+        self.results_child_not_success = None
+        self.results_child_success_2 = None
+        self.results_child_not_success_2 = None
+        self.results_child_files_compared = None
+        self.results_child_big_math = None
+        self.results_child_small_math = None
+        self.results_child_big_table = None
+        self.results_child_small_table = None
+        self.results_child_textual = None
 
-        self.tree_view = Gtk.TreeView(self.resultsliststore)
+        self.tree_view = Gtk.TreeView(self.results_list_store)
         self.tree_view.set_rules_hint(True)
-        tvcolumn = Gtk.TreeViewColumn('Results Summary')
+        tree_view_column = Gtk.TreeViewColumn('Results Summary')
         cell = Gtk.CellRendererText()
-        tvcolumn.pack_start(cell, True)
-        tvcolumn.add_attribute(cell, 'text', 0)
-        self.tree_view.append_column(tvcolumn)
+        tree_view_column.pack_start(cell, True)
+        tree_view_column.add_attribute(cell, 'text', 0)
+        self.tree_view.append_column(tree_view_column)
 
-        self.tree_view.connect_object("event", self.handle_treeview_context_menu, self.lastrun_context)
-        self.tree_view.connect("row-activated", self.handle_treeview_row_activated)
+        self.tree_view.connect_object("event", self.handle_treeview_context_menu, self.last_run_context)
+        self.tree_view.connect("row-activated", self.handle_tree_view_row_activated)
         self.tree_selection = self.tree_view.get_selection()
 
         self.last_run_heading = Gtk.Label(None)
@@ -973,14 +973,14 @@ class PyApp(Gtk.Window):
         this_hbox = Gtk.HBox(False, box_spacing)
         this_hbox.pack_start(alignment, False, False, box_spacing)
 
-        vbox = Gtk.VBox(False, box_spacing)
-        vbox.pack_start(this_hbox, False, False, box_spacing)
+        v_box = Gtk.VBox(False, box_spacing)
+        v_box.pack_start(this_hbox, False, False, box_spacing)
         notebook_page_results.add(self.tree_view)
 
-        vbox.add(notebook_page_results)
-        return vbox
+        v_box.add(notebook_page_results)
+        return v_box
 
-    def handle_treeview_row_activated(self, tv_widget, path_tuple, view_column):
+    def handle_tree_view_row_activated(self, tv_widget, path_tuple, view_column):
         # Get currently selected item        
         (model, item_path) = self.tree_selection.get_selected()
         # If we aren't at the filename level, exit out
@@ -1019,18 +1019,18 @@ class PyApp(Gtk.Window):
                 print("Could not open file:")
                 print(exc)
 
-    def gui_build_notebookpage_log(self):
+    def gui_build_notebook_page_log(self):
 
-        self.log_scroller_notebook_page = Gtk.ScrolledWindow()
-        self.log_scroller_notebook_page.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
-        self.log_scroller_notebook_page.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.log_scroll_notebook_page = Gtk.ScrolledWindow()
+        self.log_scroll_notebook_page.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        self.log_scroll_notebook_page.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.logstore = Gtk.ListStore(str, str)
-        self.logstore.append(["%s" % str(datetime.now()), "%s" % "Program initialized"])
+        self.log_store = Gtk.ListStore(str, str)
+        self.log_store.append(["%s" % str(datetime.now()), "%s" % "Program initialized"])
 
-        tree_view = Gtk.TreeView(self.logstore)
+        tree_view = Gtk.TreeView(self.log_store)
         tree_view.set_rules_hint(True)
-        tree_view.connect("size-allocate", self.treeview_size_changed)
+        tree_view.connect("size-allocate", self.tree_view_size_changed)
 
         column = Gtk.TreeViewColumn("TimeStamp", Gtk.CellRendererText(), text=0)
         column.set_sort_column_id(0)
@@ -1041,11 +1041,11 @@ class PyApp(Gtk.Window):
         column.set_sort_column_id(1)
         column.set_resizable(True)
         tree_view.append_column(column)
-        self.log_scroller_notebook_page.add(tree_view)
+        self.log_scroll_notebook_page.add(tree_view)
 
         v_box = Gtk.VBox(False, box_spacing)
         v_box.pack_start(
-            self.log_scroller_notebook_page, False, False, box_spacing
+            self.log_scroll_notebook_page, False, False, box_spacing
         )  # EDWIN: Added False False here, verify this
 
         clear_button = Gtk.Button("Clear Log Messages")
@@ -1058,13 +1058,15 @@ class PyApp(Gtk.Window):
         return v_box
 
     def clear_log(self, widget):
-        self.logstore.clear()
+        self.log_store.clear()
 
-    def treeview_size_changed(self, widget, event, data=None):
+    def tree_view_size_changed(self, widget, event, data=None):
 
-        # this routine should autoscroll the vadjustment if the user is scrolled to within 0.2*page height of the widget
+        # this routine should auto-scroll the v-adjustment if
+        # the user is scrolled to within 0.2*page height of the widget
+
         # get things once
-        adj = self.log_scroller_notebook_page.get_vadjustment()
+        adj = self.log_scroll_notebook_page.get_vadjustment()
         cur_val = adj.get_value()
         new_upper = adj.get_upper()
         page_size = adj.get_page_size()
@@ -1086,7 +1088,7 @@ class PyApp(Gtk.Window):
         self.notebook.append_page(self.gui_build_notebook_page_idf_selection(), Gtk.Label("IDF Selection"))
         self.notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
         self.notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
-        self.notebook.append_page(self.gui_build_notebookpage_log(), Gtk.Label("Log Messages"))
+        self.notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
         return self.notebook
 
     def gui_build_messaging(self):
@@ -1104,31 +1106,33 @@ class PyApp(Gtk.Window):
     def build_pre_gui_stuff(self):
 
         # build the last run context menu
-        self.lastrun_context = Gtk.Menu()
-        self.lastrun_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
-        self.lastrun_context.append(self.lastrun_context_copy)
-        self.lastrun_context_copy.connect("activate", self.handle_resultslistcopy)
-        self.lastrun_context_copy.hide()
-        self.lastrun_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
-        self.lastrun_context.append(self.lastrun_context_nocopy)
-        self.lastrun_context_nocopy.show()
+        self.last_run_context = Gtk.Menu()
+        self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
+        self.last_run_context.append(self.last_run_context_copy)
+        self.last_run_context_copy.connect("activate", self.handle_resultslistcopy)
+        self.last_run_context_copy.hide()
+        self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
+        self.last_run_context.append(self.last_run_context_nocopy)
+        self.last_run_context_nocopy.show()
 
-    def add_frame(self, widget):
+    @staticmethod
+    def add_frame(widget):
         frame = Gtk.Frame()
         frame.modify_bg(Gtk.STATE_NORMAL, Gtk.gdk.Color(56283, 22359, 0))
         frame.add(widget)
         return frame
 
-    def add_shadow_frame(self, widget):
+    @staticmethod
+    def add_shadow_frame(widget):
         frame = Gtk.Frame()
         frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(widget)
         return frame
 
     def add_log_entry(self, message):
-        if len(self.logstore) >= 5000:
-            self.logstore.remove(self.logstore[0].iter)
-        self.logstore.append(["%s" % str(datetime.now()), "%s" % message])
+        if len(self.log_store) >= 5000:
+            self.log_store.remove(self.log_store[0].iter)
+        self.log_store.append(["%s" % str(datetime.now()), "%s" % message])
 
     def warning_dialog(self, message, do_log_entry=True):
         dialog = Gtk.MessageDialog(self, Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MESSAGE_WARNING,
@@ -1188,8 +1192,8 @@ class PyApp(Gtk.Window):
 
         this_builder = file_list_builder(self.file_list_builder_configuration)
         this_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
-        status, verified_idfs, idfs_missing_in_folder, idfs_missing_from_csvfile = this_builder.build_verified_list(
-            self.file_list_builder_configuration)
+        return_data = this_builder.build_verified_list(self.file_list_builder_configuration)
+        status, verified_idf_files, idf_files_missing_in_folder, idf_files_missing_from_csv_file = return_data
 
         # reset the progress bar either way
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
@@ -1199,14 +1203,14 @@ class PyApp(Gtk.Window):
             return
 
         self.idf_list_store.clear()
-        for filea in verified_idfs:
-            this_file = [True, filea.filename]
-            if filea.has_weather_file:
-                this_file.append(filea.weatherfilename)
+        for file_a in verified_idf_files:
+            this_file = [True, file_a.filename]
+            if file_a.has_weather_file:
+                this_file.append(file_a.weatherfilename)
             else:
                 this_file.append(self.missing_weather_file_key)
-            for attr in [filea.external_interface, filea.ground_ht, filea.external_dataset, filea.parametric,
-                         filea.macro, filea.delight]:
+            for attr in [file_a.external_interface, file_a.ground_ht, file_a.external_dataset, file_a.parametric,
+                         file_a.macro, file_a.delight]:
                 if attr:
                     this_file.append("Y")
                 else:
@@ -1214,17 +1218,17 @@ class PyApp(Gtk.Window):
             self.idf_list_store.append(this_file)
 
         self.add_log_entry("Completed building idf list")
-        self.add_log_entry("Resulting file list has %s entries; During verification:" % len(verified_idfs))
+        self.add_log_entry("Resulting file list has %s entries; During verification:" % len(verified_idf_files))
         self.add_log_entry(
             "\t there were %s files listed in the csv database that were missing in verification folder(s), and" % len(
-                idfs_missing_in_folder))
+                idf_files_missing_in_folder))
         self.add_log_entry(
             "\t there were %s files found in the verification folder(s) that were missing from csv datafile" % len(
-                idfs_missing_from_csvfile))
+                idf_files_missing_from_csv_file))
         self.idf_files_have_been_built = True
 
     def build_callback_print(self, msg):
-        # no need to invoke gobject on this since the builder isn't on a separate thread
+        # no need to invoke g-object on this since the builder isn't on a separate thread
         self.status_bar.push(self.status_bar_context_id, msg)
         self.add_log_entry(msg)
 
@@ -1244,8 +1248,8 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            filea[0] = selection
+        for this_file in self.idf_list_store:
+            this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_extint(self, widget, calltype):
@@ -1256,9 +1260,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_groundht(self, widget, calltype):
@@ -1269,9 +1273,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_dataset(self, widget, calltype):
@@ -1282,9 +1286,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_delight(self, widget, calltype):
@@ -1295,9 +1299,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_macro(self, widget, calltype):
@@ -1308,9 +1312,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_parametric(self, widget, calltype):
@@ -1321,9 +1325,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == "Y":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == "Y":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_noweather(self, widget, calltype):
@@ -1334,9 +1338,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column] == self.missing_weather_file_key:
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column] == self.missing_weather_file_key:
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_underscore(self, widget, calltype):
@@ -1347,9 +1351,9 @@ class PyApp(Gtk.Window):
         selection = False
         if calltype == "select":
             selection = True
-        for filea in self.idf_list_store:
-            if filea[column][0] == "_":
-                filea[0] = selection
+        for this_file in self.idf_list_store:
+            if this_file[column][0] == "_":
+                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_random(self, widget, calltype):
@@ -1357,15 +1361,15 @@ class PyApp(Gtk.Window):
             self.warning_not_yet_built()
             return
         # clear them all first; eventually this could be changed to just randomly "down-select" already checked items
-        for filea in self.idf_list_store:
-            filea[0] = False
+        for this_file in self.idf_list_store:
+            this_file[0] = False
         number_to_select = int(self.file_list_num_files.get_value())
-        number_of_idfs = len(self.idf_list_store)
+        number_of_idf_files = len(self.idf_list_store)
         if len(self.idf_list_store) <= number_to_select:  # just take all of them
             pass
         else:  # down select randomly
-            indeces_to_take = random.sample(range(number_of_idfs), number_to_select)
-            for i in indeces_to_take:
+            indices_to_take = random.sample(range(number_of_idf_files), number_to_select)
+            for i in indices_to_take:
                 self.idf_list_store[i][0] = True
         self.update_status_with_num_selected()
 
@@ -1392,16 +1396,16 @@ class PyApp(Gtk.Window):
             files_to_select.append(file_no_ext)
         # do a diagnostic check
         files_entered_not_available = []
-        filenames_in_liststore = [x[1] for x in self.idf_list_store]
-        for filea in files_to_select:
-            if filea not in filenames_in_liststore:
-                files_entered_not_available.append(filea)
+        file_names_in_list_store = [x[1] for x in self.idf_list_store]
+        for this_file in files_to_select:
+            if this_file not in file_names_in_list_store:
+                files_entered_not_available.append(this_file)
         if len(files_entered_not_available) > 0:
             text = ""
             num = 0
-            for filea in files_entered_not_available:
+            for this_file in files_entered_not_available:
                 num += 1
-                text += "\t%s\n" % filea
+                text += "\t%s\n" % this_file
                 if num == 3:
                     break
             num_missing = len(files_entered_not_available)
@@ -1418,33 +1422,33 @@ class PyApp(Gtk.Window):
                     num_missing, word, text), False)
             self.add_log_entry("Warning: %s files typed in %s not available for selection" % (num_missing, word))
         # deselect them all first
-        for filea in self.idf_list_store:
-            if filea[1] in files_to_select:
-                filea[0] = True
+        for this_file in self.idf_list_store:
+            if this_file[1] in files_to_select:
+                this_file[0] = True
             else:
-                filea[0] = False
+                this_file[0] = False
         self.update_status_with_num_selected()
 
     def idf_selection_list(self, widget):
         if not self.idf_files_have_been_built:
             self.warning_not_yet_built()
             return
-        self.add_log_entry("User is entering idfs for selection using dialog")
+        self.add_log_entry("User is entering idf files for selection using dialog")
         dialog = Gtk.MessageDialog(self, Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MESSAGE_QUESTION,
                                    Gtk.BUTTONS_OK_CANCEL, None)
         dialog.set_title("Enter list of files to select")
-        dialog.set_markup('Enter filenames to select, one per line\nFile extensions are optional')
-        scroller = Gtk.ScrolledWindow()
-        scroller.set_size_request(400, 400)
-        scroller.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
-        scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        dialog.set_markup('Enter file names to select, one per line\nFile extensions are optional')
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_size_request(400, 400)
+        scrolled_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
+        scrolled_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         entry = Gtk.TextView()
-        scroller.add(entry)
-        dialog.vbox.pack_end(scroller, True, True, 0)
+        scrolled_window.add(entry)
+        dialog.vbox.pack_end(scrolled_window, True, True, 0)
         dialog.show_all()
         result = dialog.run()
-        mybuffer = entry.get_buffer()
-        text = mybuffer.get_text(mybuffer.get_start_iter(), mybuffer.get_end_iter())
+        my_buffer = entry.get_buffer()
+        text = my_buffer.get_text(my_buffer.get_start_iter(), my_buffer.get_end_iter())
         dialog.destroy()
         if result != Gtk.RESPONSE_OK:
             return
@@ -1460,16 +1464,16 @@ class PyApp(Gtk.Window):
             files_to_select.append(this_line)
         # do a diagnostic check
         files_entered_not_available = []
-        filenames_in_liststore = [x[1] for x in self.idf_list_store]
-        for filea in files_to_select:
-            if filea not in filenames_in_liststore:
-                files_entered_not_available.append(filea)
+        file_names_in_list_store = [x[1] for x in self.idf_list_store]
+        for this_file in files_to_select:
+            if this_file not in file_names_in_list_store:
+                files_entered_not_available.append(this_file)
         if len(files_entered_not_available) > 0:
             text = ""
             num = 0
-            for filea in files_entered_not_available:
+            for this_file in files_entered_not_available:
                 num += 1
-                text += "\t%s\n" % filea
+                text += "\t%s\n" % this_file
                 if num == 3:
                     break
             num_missing = len(files_entered_not_available)
@@ -1486,11 +1490,11 @@ class PyApp(Gtk.Window):
                     num_missing, word, text), False)
             self.add_log_entry("Warning: %s files typed in %s not available for selection" % (num_missing, word))
         # deselect them all first
-        for filea in self.idf_list_store:
-            if filea[1] in files_to_select:
-                filea[0] = True
+        for this_file in self.idf_list_store:
+            if this_file[1] in files_to_select:
+                this_file[0] = True
             else:
-                filea[0] = False
+                this_file[0] = False
         self.update_status_with_num_selected()
 
     def file_list_handler_toggle_listview(self, widget, this_path, list_store):
@@ -1499,8 +1503,8 @@ class PyApp(Gtk.Window):
 
     def update_status_with_num_selected(self):
         num_selected = 0
-        for filea in self.idf_list_store:
-            if filea[0]:
+        for this_file in self.idf_list_store:
+            if this_file[0]:
                 num_selected += 1
         self.status_bar.push(self.status_bar_context_id, "%i IDFs selected now" % num_selected)
 
@@ -1573,12 +1577,16 @@ class PyApp(Gtk.Window):
 
         # Now create a file list to pass in
         entries = []
-        for filea in self.idf_list_store:
-            if filea[IDFListViewColumnIndex.RUN]:  # if it is checked
-                if self.missing_weather_file_key not in filea[IDFListViewColumnIndex.EPW]:
-                    entries.append(TestEntry(filea[IDFListViewColumnIndex.IDF], filea[IDFListViewColumnIndex.EPW]))
+        for this_file in self.idf_list_store:
+            if this_file[IDFListViewColumnIndex.RUN]:  # if it is checked
+                if self.missing_weather_file_key not in this_file[IDFListViewColumnIndex.EPW]:
+                    entries.append(
+                        TestEntry(this_file[IDFListViewColumnIndex.IDF], this_file[IDFListViewColumnIndex.EPW])
+                    )
                 else:
-                    entries.append(TestEntry(filea[IDFListViewColumnIndex.IDF], None))
+                    entries.append(
+                        TestEntry(this_file[IDFListViewColumnIndex.IDF], None)
+                    )
 
         if len(entries) == 0:
             self.warning_dialog("Attempted to run a test suite with no files selected")
@@ -1587,12 +1595,12 @@ class PyApp(Gtk.Window):
         # set up the test suite
         self.runner = TestSuiteRunner(self.suiteargs, entries)
         self.runner.add_callbacks(print_callback=self.print_callback,
-                                  simstarting_callback=self.simstarting_callback,
-                                  casecompleted_callback=self.casecompleted_callback,
-                                  simulationscomplete_callback=self.simulationscomplete_callback,
-                                  enderrcompleted_callback=self.enderrcompleted_callback,
-                                  diffcompleted_callback=self.diffcompleted_callback,
-                                  alldone_callback=self.alldone_callback,
+                                  simstarting_callback=self.sim_starting_callback,
+                                  casecompleted_callback=self.case_completed_callback,
+                                  simulationscomplete_callback=self.simulations_complete_callback,
+                                  enderrcompleted_callback=self.end_err_completed_callback,
+                                  diffcompleted_callback=self.diff_completed_callback,
+                                  alldone_callback=self.all_done_callback,
                                   cancel_callback=self.cancel_callback)
 
         # create a background thread to do it
@@ -1619,15 +1627,17 @@ class PyApp(Gtk.Window):
         if response == Gtk.RESPONSE_OK:
             self.last_folder_path = dialog.get_filename()
             self.suiteargs.buildA.build = self.last_folder_path
-            self.suite_option_handler_basecheckbutton.set_label(self.last_folder_path)
+            self.suite_option_handler_base_check_button.set_label(self.last_folder_path)
         dialog.destroy()
 
     def suite_option_handler_basedir_check(self, widget):
         self.suiteargs.buildA.run = widget.get_active()
 
     def suite_option_handler_moddir(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Select folder",
-                                       buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL, Gtk.STOCK_OPEN, Gtk.RESPONSE_OK))
+        dialog = Gtk.FileChooserDialog(
+            title="Select folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL, Gtk.STOCK_OPEN, Gtk.RESPONSE_OK)
+        )
         dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
         dialog.set_select_multiple(False)
         if self.last_folder_path:
@@ -1636,25 +1646,25 @@ class PyApp(Gtk.Window):
         if response == Gtk.RESPONSE_OK:
             self.last_folder_path = dialog.get_filename()
             self.suiteargs.buildB.build = self.last_folder_path
-            self.suite_option_handler_modcheckbutton.set_label(self.last_folder_path)
+            self.suite_option_handler_mod_check_button.set_label(self.last_folder_path)
         dialog.destroy()
 
-    def suite_option_handler_moddir_check(self, widget):
+    def suite_option_handler_mod_dir_check(self, widget):
         self.suiteargs.buildB.run = widget.get_active()
 
-    def suite_option_handler_baseexe(self, widget):
+    def suite_option_handler_base_exe(self, widget):
         if widget.get_text():
             self.suiteargs.buildA.executable = widget.get_text()
         else:
             self.suiteargs.buildA.executable = ''
 
-    def suite_option_handler_modexe(self, widget):
+    def suite_option_handler_mod_exe(self, widget):
         if widget.get_text():
             self.suiteargs.buildB.executable = widget.get_text()
         else:
             self.suiteargs.buildB.executable = ''
 
-    def suite_option_handler_forceruntype(self, widget):
+    def suite_option_handler_force_run_type(self, widget):
         text = widget.get_active_text()
         if text == force_none:
             self.suiteargs.force_run_type = ForceRunType.NONE
@@ -1667,11 +1677,11 @@ class PyApp(Gtk.Window):
             widget.set_active(0)
         self.gui_update_label_for_run_config()
 
-    def suite_option_handler_reportfreq(self, widget):
+    def suite_option_handler_report_frequency(self, widget):
         self.suiteargs.report_freq = widget.get_active_text()
         self.gui_update_label_for_run_config()
 
-    def suite_option_handler_eplusinstall(self, widget):
+    def suite_option_handler_eplus_install(self, widget):
         dialog = Gtk.FileChooserDialog(title="Select folder",
                                        buttons=(Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL, Gtk.STOCK_OPEN, Gtk.RESPONSE_OK))
         dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
@@ -1682,13 +1692,14 @@ class PyApp(Gtk.Window):
         if response == Gtk.RESPONSE_OK:
             self.last_folder_path = dialog.get_filename()
             self.suiteargs.eplus_install = self.last_folder_path
-            self.suite_option_eplusinstall_label.set_label(self.last_folder_path)
+            self.suite_option_ep_install_label.set_label(self.last_folder_path)
         dialog.destroy()
 
-    def suite_option_handler_numthreads(self, widget):
+    def suite_option_handler_num_threads(self, widget):
         self.suiteargs.num_threads = widget.get_value()
 
-    def get_row_color(self, boolean):
+    @staticmethod
+    def get_row_color(boolean):
         if boolean:
             return None  # Gtk.gdk.Color(127, 255, 0)
         else:
@@ -1724,28 +1735,28 @@ class PyApp(Gtk.Window):
         self.add_log_entry("Verifying directory structure")
 
         # check for directory, then executable and IDD, then input files
-        self.verifyliststore.clear()
+        self.verify_list_store.clear()
         if run_type == ForceRunType.REVERSEDD:
             basedir = self.suiteargs.buildA.build
             exec_path = os.path.join(basedir, self.suiteargs.buildA.executable)
             idd_path = os.path.join(basedir, "Energy+.idd")
             idf_folder = os.path.join(basedir, "InputFiles")
             basedir_exists = os.path.exists(basedir)
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Suite Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
             checked = self.suiteargs.buildA.run
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Suite Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
             exec_exists = os.path.exists(exec_path)
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Suite Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
             idd_exists = os.path.exists(idd_path)
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Suite Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-            idfdir_exists = os.path.exists(idf_folder)
-            self.verifyliststore.append(
-                ["Suite Input File Folder Exists:", idf_folder, idfdir_exists, self.get_row_color(idfdir_exists)])
-            if basedir_exists and checked and exec_exists and idd_exists and idfdir_exists:
+            idf_dir_exists = os.path.exists(idf_folder)
+            self.verify_list_store.append(
+                ["Suite Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
+            if basedir_exists and checked and exec_exists and idd_exists and idf_dir_exists:
                 self.add_log_entry("Reverse Design Day directory verification passed")
             else:
                 self.add_log_entry("Reverse Design Day directory verification FAILED")
@@ -1755,99 +1766,115 @@ class PyApp(Gtk.Window):
             idd_path = os.path.join(basedir, "Energy+.idd")
             idf_folder = os.path.join(basedir, "InputFiles")
             basedir_exists = os.path.exists(basedir)
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Base Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
             checked = self.suiteargs.buildA.run
             if checked:
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Base Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
                 exec_exists = os.path.exists(exec_path)
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Base Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
                 idd_exists = os.path.exists(idd_path)
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Base Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-                idfdir_exists = os.path.exists(idf_folder)
-                self.verifyliststore.append(
-                    ["Base Input File Folder Exists:", idf_folder, idfdir_exists, self.get_row_color(idfdir_exists)])
+                idf_dir_exists = os.path.exists(idf_folder)
+                self.verify_list_store.append(
+                    ["Base Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
 
             basedir = self.suiteargs.buildB.build
             exec_path = os.path.join(basedir, self.suiteargs.buildB.executable)
             idd_path = os.path.join(basedir, "Energy+.idd")
             idf_folder = os.path.join(basedir, "InputFiles")
             basedir_exists = os.path.exists(basedir)
-            self.verifyliststore.append(
+            self.verify_list_store.append(
                 ["Mod Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
             checked = self.suiteargs.buildB.run
             if checked:
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Mod Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
                 exec_exists = os.path.exists(exec_path)
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Mod Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
                 idd_exists = os.path.exists(idd_path)
-                self.verifyliststore.append(
+                self.verify_list_store.append(
                     ["Mod Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-                idfdir_exists = os.path.exists(idf_folder)
-                self.verifyliststore.append(
-                    ["Mod Input File Folder Exists:", idf_folder, idfdir_exists, self.get_row_color(idfdir_exists)])
+                idf_dir_exists = os.path.exists(idf_folder)
+                self.verify_list_store.append(
+                    ["Mod Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
 
         # set up paths
-        eplus_install = self.suiteargs.eplus_install
-        basement = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'Basement')
-        slab = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'Slab')
-        basementidd = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd')
-        slabidd = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd')
-        expandobjects = os.path.join(eplus_install, 'ExpandObjects')
-        epmacro = os.path.join(eplus_install, 'EPMacro')
-        readvars = os.path.join(eplus_install, 'PostProcess', 'ReadVarsESO')
-        parametric = os.path.join(eplus_install, 'PreProcess', 'ParametricPreProcessor', 'parametricpreprocessor')
+        ep_install = self.suiteargs.eplus_install
+        basement = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'Basement')
+        slab = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'Slab')
+        basement_idd = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd')
+        slab_idd = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd')
+        expand_objects = os.path.join(ep_install, 'ExpandObjects')
+        ep_macro = os.path.join(ep_install, 'EPMacro')
+        read_var = os.path.join(ep_install, 'PostProcess', 'ReadVarsESO')
+        parametric = os.path.join(ep_install, 'PreProcess', 'ParametricPreProcessor', 'parametricpreprocessor')
 
         # if we're on windows, append the executable extension
         if platform == "windows":
             basement += ".exe"
             slab += ".exe"
-            expandobjects += ".exe"
-            epmacro += ".exe"
-            readvars += ".exe"
+            expand_objects += ".exe"
+            ep_macro += ".exe"
+            read_var += ".exe"
             parametric += ".exe"
 
         # check if they exist
-        eplus_install_exists = os.path.exists(eplus_install)
+        ep_install_exists = os.path.exists(ep_install)
         basement_exists = os.path.exists(basement)
         slab_exists = os.path.exists(slab)
-        basementidd_exists = os.path.exists(basementidd)
-        slabidd_exists = os.path.exists(slabidd)
-        expandobjects_exists = os.path.exists(expandobjects)
-        epmacro_exists = os.path.exists(epmacro)
-        readvars_exists = os.path.exists(readvars)
+        basement_idd_exists = os.path.exists(basement_idd)
+        slab_idd_exists = os.path.exists(slab_idd)
+        expand_objects_exists = os.path.exists(expand_objects)
+        ep_macro_exists = os.path.exists(ep_macro)
+        read_var_exists = os.path.exists(read_var)
         parametric_exists = os.path.exists(parametric)
 
-        # add to liststore
-        self.verifyliststore.append(
-            ["E+ Install Dir Exists:", eplus_install, eplus_install_exists, self.get_row_color(eplus_install_exists)])
-        self.verifyliststore.append(
-            ["Basement Executable Exists:", basement, basement_exists, self.get_row_color(basement_exists)])
-        self.verifyliststore.append(["Slab Executable Exists:", slab, slab_exists, self.get_row_color(slab_exists)])
-        self.verifyliststore.append(
-            ["Basement IDD Exists:", basementidd, basementidd_exists, self.get_row_color(basementidd_exists)])
-        self.verifyliststore.append(["Slab IDD Exists:", slabidd, slabidd_exists, self.get_row_color(slabidd_exists)])
-        self.verifyliststore.append(["ExpandObjects Executable Exists:", expandobjects, expandobjects_exists,
-                                     self.get_row_color(expandobjects_exists)])
-        self.verifyliststore.append(
-            ["EPMacro Executable Exists:", epmacro, epmacro_exists, self.get_row_color(epmacro_exists)])
-        self.verifyliststore.append(
-            ["ReadVars Executable Exists:", readvars, readvars_exists, self.get_row_color(readvars_exists)])
-        self.verifyliststore.append(
-            ["Parametric PreProcessor Exists:", parametric, parametric_exists, self.get_row_color(parametric_exists)])
+        # add to list-store
+        self.verify_list_store.append(
+            ["E+ Install Dir Exists:", ep_install, ep_install_exists, self.get_row_color(ep_install_exists)]
+        )
+        self.verify_list_store.append(
+            ["Basement Executable Exists:", basement, basement_exists, self.get_row_color(basement_exists)]
+        )
+        self.verify_list_store.append(
+            ["Slab Executable Exists:", slab, slab_exists, self.get_row_color(slab_exists)]
+        )
+        self.verify_list_store.append(
+            ["Basement IDD Exists:", basement_idd, basement_idd_exists, self.get_row_color(basement_idd_exists)]
+        )
+        self.verify_list_store.append(
+            ["Slab IDD Exists:", slab_idd, slab_idd_exists, self.get_row_color(slab_idd_exists)]
+        )
+        self.verify_list_store.append(
+            [
+                "ExpandObjects Executable Exists:",
+                expand_objects,
+                expand_objects_exists,
+                self.get_row_color(expand_objects_exists)
+            ]
+        )
+        self.verify_list_store.append(
+            ["EPMacro Executable Exists:", ep_macro, ep_macro_exists, self.get_row_color(ep_macro_exists)]
+        )
+        self.verify_list_store.append(
+            ["ReadVars Executable Exists:", read_var, read_var_exists, self.get_row_color(read_var_exists)]
+        )
+        self.verify_list_store.append(
+            ["Parametric PreProcessor Exists:", parametric, parametric_exists, self.get_row_color(parametric_exists)]
+        )
 
-        if all([item[2] for item in self.verifyliststore]):
+        if all([item[2] for item in self.verify_list_store]):
             return True
         else:
             return False
 
     def handle_resultslistcopy(self, widget):
-        current_list = self.results_lists_to_copy[self.resultslist_selected_entry_root_index]
+        current_list = self.results_lists_to_copy[self.results_list_selected_entry_root_index]
         if current_list is not None:
             string = ""
             for item in current_list:
@@ -1862,18 +1889,18 @@ class PyApp(Gtk.Window):
             x = int(event.x)
             y = int(event.y)
             time = event.time
-            pthinfo = self.tree_view.get_path_at_pos(x, y)
-            if pthinfo is not None:
-                this_path, col, cellx, celly = pthinfo
+            path_info = self.tree_view.get_path_at_pos(x, y)
+            if path_info is not None:
+                this_path, col, cellx, celly = path_info
                 self.tree_view.grab_focus()
                 self.tree_view.set_cursor(this_path, col, 0)
                 widget.popup(None, None, None, event.button, time)
-                self.resultslist_selected_entry_root_index = this_path[0]
-                self.lastrun_context_copy.show()
-                self.lastrun_context_nocopy.hide()
+                self.results_list_selected_entry_root_index = this_path[0]
+                self.last_run_context_copy.show()
+                self.last_run_context_nocopy.hide()
             else:
-                self.lastrun_context_copy.hide()
-                self.lastrun_context_nocopy.show()
+                self.last_run_context_copy.hide()
+                self.last_run_context_nocopy.show()
 
     def gui_update_label_for_run_config(self):
         current_config = self.suiteargs.force_run_type
@@ -1904,10 +1931,10 @@ class PyApp(Gtk.Window):
         self.status_bar.push(self.status_bar_context_id, msg)
         self.add_log_entry(msg)
 
-    def simstarting_callback(self, number_of_builds, number_of_cases_per_build):
-        result = GObject.idle_add(self.simstarting_callback_handler, number_of_builds, number_of_cases_per_build)
+    def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):
+        result = GObject.idle_add(self.sim_starting_callback_handler, number_of_builds, number_of_cases_per_build)
 
-    def simstarting_callback_handler(self, number_of_builds, number_of_cases_per_build):
+    def sim_starting_callback_handler(self, number_of_builds, number_of_cases_per_build):
         self.current_progress_value = 0.0
         multiplier = 0.0
         # total number of increments is:
@@ -1924,10 +1951,10 @@ class PyApp(Gtk.Window):
         self.progress.set_fraction(0.0)
         self.status_bar.push(self.status_bar_context_id, "Simulations running...")
 
-    def casecompleted_callback(self, test_case_completed_instance):
-        result = GObject.idle_add(self.casecompleted_callback_handler, test_case_completed_instance)
+    def case_completed_callback(self, test_case_completed_instance):
+        result = GObject.idle_add(self.case_completed_callback_handler, test_case_completed_instance)
 
-    def casecompleted_callback_handler(self, test_case_completed_instance):
+    def case_completed_callback_handler(self, test_case_completed_instance):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
         if not test_case_completed_instance.muffle_err_msg:
@@ -1938,374 +1965,382 @@ class PyApp(Gtk.Window):
                 self.print_callback_handler("Completed %s : %s, Failed" % (
                     test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
 
-    def simulationscomplete_callback(self):
-        result = GObject.idle_add(self.simulationscomplete_callback_handler)
+    def simulations_complete_callback(self):
+        result = GObject.idle_add(self.simulations_complete_callback_handler)
 
-    def simulationscomplete_callback_handler(self):
+    def simulations_complete_callback_handler(self):
         self.status_bar.push(self.status_bar_context_id, "Simulations done; Post-processing...")
 
-    def enderrcompleted_callback(self, build_name, case_name):
-        result = GObject.idle_add(self.enderrcompleted_callback_handler, build_name, case_name)
+    def end_err_completed_callback(self, build_name, case_name):
+        result = GObject.idle_add(self.end_err_completed_callback_handler, build_name, case_name)
 
-    def enderrcompleted_callback_handler(self, build_name, case_name):
+    def end_err_completed_callback_handler(self, build_name, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def diffcompleted_callback(self, case_name):
-        result = GObject.idle_add(self.diffcompleted_callback_handler, case_name)
+    def diff_completed_callback(self, case_name):
+        result = GObject.idle_add(self.diff_completed_callback_handler, case_name)
 
-    def diffcompleted_callback_handler(self, case_name):
+    def diff_completed_callback_handler(self, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def alldone_callback(self, results):
-        result = GObject.idle_add(self.alldone_callback_handler, results)
+    def all_done_callback(self, results):
+        result = GObject.idle_add(self.all_done_callback_handler, results)
 
-    def alldone_callback_handler(self, results):
+    def all_done_callback_handler(self, results):
 
-        totalnum = 0
-        totalnum_ = []
-        totalnum_files = []
-        totaldifffiles = 0
-        totaldifffiles_ = []
-        totaldifffiles_files = []
-        numbigdiffs = 0
-        numbigdiffs_ = []
-        numbigdiffs_files = []
-        numsmalldiffs = 0
-        numsmalldiffs_ = []
-        numsmalldiffs_files = []
-        numsuccess = 0
-        numsuccess_ = []
-        numsuccess_files = []
-        numnotsuccess = 0
-        numnotsuccess_ = []
-        numnotsuccess_files = []
-        numsuccess2 = 0
-        numsuccess2_ = []
-        numsuccess2_files = []
-        numnotsuccess2 = 0
-        numnotsuccess2_ = []
-        numnotsuccess2_files = []
-        numtablebigdiffs = 0
-        numtablebigdiffs_ = []
-        numtablebigdiffs_files = []
-        numtablesmalldiffs = 0
-        numtablesmalldiffs_ = []
-        numtablesmalldiffs_files = []
-        numtextdiffs = 0
-        numtextdiffs_ = []
-        numtextdiffs_files = []
+        total_num = 0
+        total_num_ = []
+        total_num_files = []
+        total_diff_files = 0
+        total_diff_files_ = []
+        total_diff_files_files = []
+        num_big_diffs = 0
+        num_big_diffs_ = []
+        num_big_diffs_files = []
+        num_small_diffs = 0
+        num_small_diffs_ = []
+        num_small_diffs_files = []
+        num_success = 0
+        num_success_ = []
+        num_success_files = []
+        num_not_success = 0
+        num_not_success_ = []
+        num_not_success_files = []
+        num_success_2 = 0
+        num_success_2_ = []
+        num_success_2_files = []
+        num_not_success_2 = 0
+        num_not_success_2_ = []
+        num_not_success_2_files = []
+        num_table_big_diffs = 0
+        num_table_big_diffs_ = []
+        num_table_big_diffs_files = []
+        num_table_small_diffs = 0
+        num_table_small_diffs_ = []
+        num_table_small_diffs_files = []
+        num_text_diffs = 0
+        num_text_diffs_ = []
+        num_text_diffs_files = []
 
         for entry in results:
-            totalnum += 1
-            totalnum_.append(["%s" % entry.basename])
-            totalnum_files.append(entry.basename)
+            total_num += 1
+            total_num_.append(["%s" % entry.basename])
+            total_num_files.append(entry.basename)
             if entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-                numsuccess += 1
-                numsuccess_.append(["%s" % entry.basename])
-                numsuccess_files.append(entry.basename)
+                num_success += 1
+                num_success_.append(["%s" % entry.basename])
+                num_success_files.append(entry.basename)
             else:
-                numnotsuccess += 1
-                numnotsuccess_.append(["%s" % entry.basename])
-                numnotsuccess_files.append(entry.basename)
+                num_not_success += 1
+                num_not_success_.append(["%s" % entry.basename])
+                num_not_success_files.append(entry.basename)
             if entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-                numsuccess2 += 1
-                numsuccess2_.append(["%s" % entry.basename])
-                numsuccess2_files.append(entry.basename)
+                num_success_2 += 1
+                num_success_2_.append(["%s" % entry.basename])
+                num_success_2_files.append(entry.basename)
             else:
-                numnotsuccess2 += 1
-                numnotsuccess2_.append(["%s" % entry.basename])
-                numnotsuccess2_files.append(entry.basename)
+                num_not_success_2 += 1
+                num_not_success_2_.append(["%s" % entry.basename])
+                num_not_success_2_files.append(entry.basename)
             if entry.has_eso_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: eso" % entry.basename])
-                if entry.basename not in totaldifffiles_files:
-                    totaldifffiles_files.append(entry.basename)
+                total_diff_files += 1
+                total_diff_files_.append(["%s: eso" % entry.basename])
+                if entry.basename not in total_diff_files_files:
+                    total_diff_files_files.append(entry.basename)
                 if entry.eso_diffs.count_of_big_diff > 0:
-                    numbigdiffs += 1
-                    numbigdiffs_.append(["%s: %s" % (entry.basename, "eso")])
-                    if entry.basename not in numbigdiffs_files:
-                        numbigdiffs_files.append(entry.basename)
+                    num_big_diffs += 1
+                    num_big_diffs_.append(["%s: %s" % (entry.basename, "eso")])
+                    if entry.basename not in num_big_diffs_files:
+                        num_big_diffs_files.append(entry.basename)
                 elif entry.eso_diffs.count_of_small_diff > 0:
-                    numsmalldiffs += 1
-                    numsmalldiffs_.append(["%s: %s" % (entry.basename, "eso")])
-                    if entry.basename not in numsmalldiffs_files:
-                        numsmalldiffs_files.append(entry.basename)
+                    num_small_diffs += 1
+                    num_small_diffs_.append(["%s: %s" % (entry.basename, "eso")])
+                    if entry.basename not in num_small_diffs_files:
+                        num_small_diffs_files.append(entry.basename)
             if entry.has_mtr_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: mtr" % entry.basename])
-                if entry.basename not in totaldifffiles_files:
-                    totaldifffiles_files.append(entry.basename)
+                total_diff_files += 1
+                total_diff_files_.append(["%s: mtr" % entry.basename])
+                if entry.basename not in total_diff_files_files:
+                    total_diff_files_files.append(entry.basename)
                 if entry.mtr_diffs.count_of_big_diff > 0:
-                    numbigdiffs += 1
-                    numbigdiffs_.append(["%s: %s" % (entry.basename, "mtr")])
-                    if entry.basename not in numbigdiffs_files:
-                        numbigdiffs_files.append(entry.basename)
+                    num_big_diffs += 1
+                    num_big_diffs_.append(["%s: %s" % (entry.basename, "mtr")])
+                    if entry.basename not in num_big_diffs_files:
+                        num_big_diffs_files.append(entry.basename)
                 elif entry.mtr_diffs.count_of_small_diff > 0:
-                    numsmalldiffs += 1
-                    numsmalldiffs_.append(["%s: %s" % (entry.basename, "mtr")])
-                    if entry.basename not in numsmalldiffs_files:
-                        numsmalldiffs_files.append(entry.basename)
+                    num_small_diffs += 1
+                    num_small_diffs_.append(["%s: %s" % (entry.basename, "mtr")])
+                    if entry.basename not in num_small_diffs_files:
+                        num_small_diffs_files.append(entry.basename)
             if entry.has_zsz_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: zsz" % entry.basename])
-                if entry.basename not in totaldifffiles_files:
-                    totaldifffiles_files.append(entry.basename)
+                total_diff_files += 1
+                total_diff_files_.append(["%s: zsz" % entry.basename])
+                if entry.basename not in total_diff_files_files:
+                    total_diff_files_files.append(entry.basename)
                 if entry.zsz_diffs.count_of_big_diff > 0:
-                    numbigdiffs += 1
-                    numbigdiffs_.append(["%s: %s" % (entry.basename, "zsz")])
-                    if entry.basename not in numbigdiffs_files:
-                        numbigdiffs_files.append(entry.basename)
+                    num_big_diffs += 1
+                    num_big_diffs_.append(["%s: %s" % (entry.basename, "zsz")])
+                    if entry.basename not in num_big_diffs_files:
+                        num_big_diffs_files.append(entry.basename)
                 elif entry.zsz_diffs.count_of_small_diff > 0:
-                    numsmalldiffs += 1
-                    numsmalldiffs_.append(["%s: %s" % (entry.basename, "zsz")])
-                    if entry.basename not in numsmalldiffs_files:
-                        numsmalldiffs_files.append(entry.basename)
+                    num_small_diffs += 1
+                    num_small_diffs_.append(["%s: %s" % (entry.basename, "zsz")])
+                    if entry.basename not in num_small_diffs_files:
+                        num_small_diffs_files.append(entry.basename)
             if entry.has_ssz_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: ssz" % entry.basename])
-                if entry.basename not in totaldifffiles_files:
-                    totaldifffiles_files.append(entry.basename)
+                total_diff_files += 1
+                total_diff_files_.append(["%s: ssz" % entry.basename])
+                if entry.basename not in total_diff_files_files:
+                    total_diff_files_files.append(entry.basename)
                 if entry.ssz_diffs.count_of_big_diff > 0:
-                    numbigdiffs += 1
-                    numbigdiffs_.append(["%s: %s" % (entry.basename, "ssz")])
-                    if entry.basename not in numbigdiffs_files:
-                        numbigdiffs_files.append(entry.basename)
+                    num_big_diffs += 1
+                    num_big_diffs_.append(["%s: %s" % (entry.basename, "ssz")])
+                    if entry.basename not in num_big_diffs_files:
+                        num_big_diffs_files.append(entry.basename)
                 elif entry.ssz_diffs.count_of_small_diff > 0:
-                    numsmalldiffs += 1
-                    numsmalldiffs_.append(["%s: %s" % (entry.basename, "ssz")])
-                    if entry.basename not in numsmalldiffs_files:
-                        numsmalldiffs_files.append(entry.basename)
+                    num_small_diffs += 1
+                    num_small_diffs_.append(["%s: %s" % (entry.basename, "ssz")])
+                    if entry.basename not in num_small_diffs_files:
+                        num_small_diffs_files.append(entry.basename)
             if entry.has_table_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: table" % entry.basename])
-                if entry.basename not in totaldifffiles_files:
-                    totaldifffiles_files.append(entry.basename)
+                total_diff_files += 1
+                total_diff_files_.append(["%s: table" % entry.basename])
+                if entry.basename not in total_diff_files_files:
+                    total_diff_files_files.append(entry.basename)
                 if entry.table_diffs.bigdiff_count > 0:
-                    numtablebigdiffs += 1
-                    numtablebigdiffs_.append(["%s: %s" % (entry.basename, "table")])
-                    if entry.basename not in numbigdiffs_files:
-                        numtablebigdiffs_files.append(entry.basename)
+                    num_table_big_diffs += 1
+                    num_table_big_diffs_.append(["%s: %s" % (entry.basename, "table")])
+                    if entry.basename not in num_big_diffs_files:
+                        num_table_big_diffs_files.append(entry.basename)
                 elif entry.table_diffs.smalldiff_count > 0:
-                    numtablesmalldiffs += 1
-                    numtablesmalldiffs_.append(["%s: %s" % (entry.basename, "table")])
-                    if entry.basename not in numsmalldiffs_files:
-                        numtablesmalldiffs_files.append(entry.basename)
+                    num_table_small_diffs += 1
+                    num_table_small_diffs_.append(["%s: %s" % (entry.basename, "table")])
+                    if entry.basename not in num_small_diffs_files:
+                        num_table_small_diffs_files.append(entry.basename)
             if entry.has_aud_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: audit" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: audit" % entry.basename])
                 if entry.aud_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "audit")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "audit")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_bnd_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: bnd" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: bnd" % entry.basename])
                 if entry.bnd_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "bnd")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "bnd")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_dxf_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: dxf" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: dxf" % entry.basename])
                 if entry.dxf_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "dxf")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "dxf")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_eio_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: eio" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: eio" % entry.basename])
                 if entry.eio_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "eio")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "eio")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_mdd_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: mdd" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: mdd" % entry.basename])
                 if entry.mdd_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "mdd")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "mdd")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_mtd_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: mtd" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: mtd" % entry.basename])
                 if entry.mtd_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "mtd")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "mtd")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_rdd_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: rdd" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: rdd" % entry.basename])
                 if entry.rdd_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "rdd")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "rdd")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_shd_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: shd" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: shd" % entry.basename])
                 if entry.shd_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "shd")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "shd")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_err_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: err" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: err" % entry.basename])
                 if entry.err_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "err")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "err")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_dlin_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: delightin" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: delightin" % entry.basename])
                 if entry.dlin_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "delightin")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "delightin")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
             if entry.has_dlout_diffs:
-                totaldifffiles += 1
-                totaldifffiles_.append(["%s: delightout" % entry.basename])
+                total_diff_files += 1
+                total_diff_files_.append(["%s: delightout" % entry.basename])
                 if entry.dlout_diffs.diff_type != TextDifferences.EQUAL:
-                    if entry.basename not in totaldifffiles_files:
-                        totaldifffiles_files.append(entry.basename)
-                    numtextdiffs += 1
-                    numtextdiffs_.append(["%s: %s" % (entry.basename, "delightout")])
-                    if entry.basename not in numtextdiffs_files:
-                        numtextdiffs_files.append(entry.basename)
+                    if entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(entry.basename)
+                    num_text_diffs += 1
+                    num_text_diffs_.append(["%s: %s" % (entry.basename, "delightout")])
+                    if entry.basename not in num_text_diffs_files:
+                        num_text_diffs_files.append(entry.basename)
 
         self.results_lists_to_copy = []
 
-        if self.resultschild_numrun:
-            self.resultsliststore.remove(self.resultschild_numrun)
-        self.resultschild_numrun = self.resultsliststore.append(self.resultsparent_numrun, [str(totalnum)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_numrun)
+        if self.results_child_num_run:
+            self.results_list_store.remove(self.results_child_num_run)
+        self.results_child_num_run = self.results_list_store.append(self.results_parent_num_run, [str(total_num)])
+        this_path = self.results_list_store.get_path(self.results_parent_num_run)
         self.tree_view.expand_row(this_path, False)
-        for result in totalnum_:
-            self.resultsliststore.append(self.resultschild_numrun, result)
-        self.results_lists_to_copy.append(totalnum_files)
+        for result in total_num_:
+            self.results_list_store.append(self.results_child_num_run, result)
+        self.results_lists_to_copy.append(total_num_files)
 
-        if self.resultschild_success:
-            self.resultsliststore.remove(self.resultschild_success)
-        self.resultschild_success = self.resultsliststore.append(self.resultsparent_success, [str(numsuccess)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_success)
+        if self.results_child_success:
+            self.results_list_store.remove(self.results_child_success)
+        self.results_child_success = self.results_list_store.append(self.results_parent_success, [str(num_success)])
+        this_path = self.results_list_store.get_path(self.results_parent_success)
         self.tree_view.expand_row(this_path, False)
-        for result in numsuccess_:
-            self.resultsliststore.append(self.resultschild_success, result)
-        self.results_lists_to_copy.append(numsuccess_files)
+        for result in num_success_:
+            self.results_list_store.append(self.results_child_success, result)
+        self.results_lists_to_copy.append(num_success_files)
 
-        if self.resultschild_unsuccess:
-            self.resultsliststore.remove(self.resultschild_unsuccess)
-        self.resultschild_unsuccess = self.resultsliststore.append(self.resultsparent_unsuccess, [str(numnotsuccess)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_unsuccess)
+        if self.results_child_not_success:
+            self.results_list_store.remove(self.results_child_not_success)
+        self.results_child_not_success = self.results_list_store.append(
+            self.results_parent_not_success, [str(num_not_success)]
+        )
+        this_path = self.results_list_store.get_path(self.results_parent_not_success)
         self.tree_view.expand_row(this_path, False)
-        for result in numnotsuccess_:
-            self.resultsliststore.append(self.resultschild_unsuccess, result)
-        self.results_lists_to_copy.append(numnotsuccess_files)
+        for result in num_not_success_:
+            self.results_list_store.append(self.results_child_not_success, result)
+        self.results_lists_to_copy.append(num_not_success_files)
 
-        if self.resultschild_success2:
-            self.resultsliststore.remove(self.resultschild_success2)
-        self.resultschild_success2 = self.resultsliststore.append(self.resultsparent_success2, [str(numsuccess2)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_success2)
+        if self.results_child_success_2:
+            self.results_list_store.remove(self.results_child_success_2)
+        self.results_child_success_2 = self.results_list_store.append(
+            self.results_parent_success_2, [str(num_success_2)]
+        )
+        this_path = self.results_list_store.get_path(self.results_parent_success_2)
         self.tree_view.expand_row(this_path, False)
-        for result in numsuccess2_:
-            self.resultsliststore.append(self.resultschild_success2, result)
-        self.results_lists_to_copy.append(numsuccess2_files)
+        for result in num_success_2_:
+            self.results_list_store.append(self.results_child_success_2, result)
+        self.results_lists_to_copy.append(num_success_2_files)
 
-        if self.resultschild_unsuccess2:
-            self.resultsliststore.remove(self.resultschild_unsuccess2)
-        self.resultschild_unsuccess2 = self.resultsliststore.append(self.resultsparent_unsuccess2,
-                                                                    [str(numnotsuccess2)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_unsuccess2)
+        if self.results_child_not_success_2:
+            self.results_list_store.remove(self.results_child_not_success_2)
+        self.results_child_not_success_2 = self.results_list_store.append(self.results_parent_not_success_2,
+                                                                          [str(num_not_success_2)])
+        this_path = self.results_list_store.get_path(self.results_parent_not_success_2)
         self.tree_view.expand_row(this_path, False)
-        for result in numnotsuccess2_:
-            self.resultsliststore.append(self.resultschild_unsuccess2, result)
-        self.results_lists_to_copy.append(numnotsuccess2_files)
+        for result in num_not_success_2_:
+            self.results_list_store.append(self.results_child_not_success_2, result)
+        self.results_lists_to_copy.append(num_not_success_2_files)
 
-        if self.resultschild_filescompared:
-            self.resultsliststore.remove(self.resultschild_filescompared)
-        self.resultschild_filescompared = self.resultsliststore.append(self.resultsparent_filescompared,
-                                                                       [str(totaldifffiles)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_filescompared)
+        if self.results_child_files_compared:
+            self.results_list_store.remove(self.results_child_files_compared)
+        self.results_child_files_compared = self.results_list_store.append(self.results_parent_files_compared,
+                                                                           [str(total_diff_files)])
+        this_path = self.results_list_store.get_path(self.results_parent_files_compared)
         self.tree_view.expand_row(this_path, False)
-        for result in totaldifffiles_:
-            self.resultsliststore.append(self.resultschild_filescompared, result)
-        self.results_lists_to_copy.append(totaldifffiles_files)
+        for result in total_diff_files_:
+            self.results_list_store.append(self.results_child_files_compared, result)
+        self.results_lists_to_copy.append(total_diff_files_files)
 
-        if self.resultschild_bigmath:
-            self.resultsliststore.remove(self.resultschild_bigmath)
-        self.resultschild_bigmath = self.resultsliststore.append(self.resultsparent_bigmath, [str(numbigdiffs)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_bigmath)
+        if self.results_child_big_math:
+            self.results_list_store.remove(self.results_child_big_math)
+        self.results_child_big_math = self.results_list_store.append(self.results_parent_big_math, [str(num_big_diffs)])
+        this_path = self.results_list_store.get_path(self.results_parent_big_math)
         self.tree_view.expand_row(this_path, False)
-        for result in numbigdiffs_:
-            self.resultsliststore.append(self.resultschild_bigmath, result)
-        self.results_lists_to_copy.append(numbigdiffs_files)
+        for result in num_big_diffs_:
+            self.results_list_store.append(self.results_child_big_math, result)
+        self.results_lists_to_copy.append(num_big_diffs_files)
 
-        if self.resultschild_smallmath:
-            self.resultsliststore.remove(self.resultschild_smallmath)
-        self.resultschild_smallmath = self.resultsliststore.append(self.resultsparent_smallmath, [str(numsmalldiffs)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_smallmath)
+        if self.results_child_small_math:
+            self.results_list_store.remove(self.results_child_small_math)
+        self.results_child_small_math = self.results_list_store.append(
+            self.results_parent_small_math, [str(num_small_diffs)]
+        )
+        this_path = self.results_list_store.get_path(self.results_parent_small_math)
         self.tree_view.expand_row(this_path, False)
-        for result in numsmalldiffs_:
-            self.resultsliststore.append(self.resultschild_smallmath, result)
-        self.results_lists_to_copy.append(numsmalldiffs_files)
+        for result in num_small_diffs_:
+            self.results_list_store.append(self.results_child_small_math, result)
+        self.results_lists_to_copy.append(num_small_diffs_files)
 
-        if self.resultschild_bigtable:
-            self.resultsliststore.remove(self.resultschild_bigtable)
-        self.resultschild_bigtable = self.resultsliststore.append(self.resultsparent_bigtable, [str(numtablebigdiffs)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_bigtable)
+        if self.results_child_big_table:
+            self.results_list_store.remove(self.results_child_big_table)
+        self.results_child_big_table = self.results_list_store.append(
+            self.results_parent_big_table, [str(num_table_big_diffs)]
+        )
+        this_path = self.results_list_store.get_path(self.results_parent_big_table)
         self.tree_view.expand_row(this_path, False)
-        for result in numtablebigdiffs_:
-            self.resultsliststore.append(self.resultschild_bigtable, result)
-        self.results_lists_to_copy.append(numtablebigdiffs_files)
+        for result in num_table_big_diffs_:
+            self.results_list_store.append(self.results_child_big_table, result)
+        self.results_lists_to_copy.append(num_table_big_diffs_files)
 
-        if self.resultschild_smalltable:
-            self.resultsliststore.remove(self.resultschild_smalltable)
-        self.resultschild_smalltable = self.resultsliststore.append(self.resultsparent_smalltable,
-                                                                    [str(numtablesmalldiffs)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_smalltable)
+        if self.results_child_small_table:
+            self.results_list_store.remove(self.results_child_small_table)
+        self.results_child_small_table = self.results_list_store.append(self.results_parent_small_table,
+                                                                        [str(num_table_small_diffs)])
+        this_path = self.results_list_store.get_path(self.results_parent_small_table)
         self.tree_view.expand_row(this_path, False)
-        for result in numtablesmalldiffs_:
-            self.resultsliststore.append(self.resultschild_smalltable, result)
-        self.results_lists_to_copy.append(numtablesmalldiffs_files)
+        for result in num_table_small_diffs_:
+            self.results_list_store.append(self.results_child_small_table, result)
+        self.results_lists_to_copy.append(num_table_small_diffs_files)
 
-        if self.resultschild_textual:
-            self.resultsliststore.remove(self.resultschild_textual)
-        self.resultschild_textual = self.resultsliststore.append(self.resultsparent_textual, [str(numtextdiffs)])
-        this_path = self.resultsliststore.get_path(self.resultsparent_textual)
+        if self.results_child_textual:
+            self.results_list_store.remove(self.results_child_textual)
+        self.results_child_textual = self.results_list_store.append(self.results_parent_textual, [str(num_text_diffs)])
+        this_path = self.results_list_store.get_path(self.results_parent_textual)
         self.tree_view.expand_row(this_path, False)
-        for result in numtextdiffs_:
-            self.resultsliststore.append(self.resultschild_textual, result)
-        self.results_lists_to_copy.append(numtextdiffs_files)
+        for result in num_text_diffs_:
+            self.results_list_store.append(self.results_child_textual, result)
+        self.results_lists_to_copy.append(num_text_diffs_files)
 
         if self.do_runtime_report:
             try:
