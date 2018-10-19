@@ -12,18 +12,19 @@ import datetime  # datetime allows us to generate timestamps for the log
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
 from datetime import datetime  # get datetime to do date/time calculations for timestamps, etc.
-
 from xml.dom import minidom  # TODO: Remove XML - use JSON
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, parse
 
 # graphics stuff
 import gi
-from gi.repository import Gtk, GObject
 
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import *
 from epregressions.runtests import *
+
+gi.require_version("Gtk", "3.0")  # unfortunately this has to go before the import
+from gi.repository import Gtk, GObject
 
 python_version = float("%s.%s" % (sys.version_info.major, sys.version_info.minor))
 platform = ''
@@ -40,7 +41,6 @@ box_spacing = 2
 force_none = "Don't force anything"
 force_dd = "Force design day simulations only"
 force_annual = "Force annual run-period simulations"
-gi.require_version("Gtk", "3.0")
 
 
 class IDFListViewColumnIndex:
@@ -1885,22 +1885,24 @@ class PyApp(Gtk.Window):
             pass
 
     def handle_treeview_context_menu(self, widget, event):
-        if event.type == Gtk.gdk.BUTTON_PRESS and event.button == 3:
-            x = int(event.x)
-            y = int(event.y)
-            time = event.time
-            path_info = self.tree_view.get_path_at_pos(x, y)
-            if path_info is not None:
-                this_path, col, cellx, celly = path_info
-                self.tree_view.grab_focus()
-                self.tree_view.set_cursor(this_path, col, 0)
-                widget.popup(None, None, None, event.button, time)
-                self.results_list_selected_entry_root_index = this_path[0]
-                self.last_run_context_copy.show()
-                self.last_run_context_nocopy.hide()
-            else:
-                self.last_run_context_copy.hide()
-                self.last_run_context_nocopy.show()
+        # EDWIN: I need to figure out what this was trying to do, we may not need it at all now
+        pass
+        # if event.type == Gtk.gdk.BUTTON_PRESS and event.button == 3:
+        #     x = int(event.x)
+        #     y = int(event.y)
+        #     time = event.time
+        #     path_info = self.tree_view.get_path_at_pos(x, y)
+        #     if path_info is not None:
+        #         this_path, col, cellx, celly = path_info
+        #         self.tree_view.grab_focus()
+        #         self.tree_view.set_cursor(this_path, col, 0)
+        #         widget.popup(None, None, None, event.button, time)
+        #         self.results_list_selected_entry_root_index = this_path[0]
+        #         self.last_run_context_copy.show()
+        #         self.last_run_context_nocopy.hide()
+        #     else:
+        #         self.last_run_context_copy.hide()
+        #         self.last_run_context_nocopy.show()
 
     def gui_update_label_for_run_config(self):
         current_config = self.suiteargs.force_run_type
