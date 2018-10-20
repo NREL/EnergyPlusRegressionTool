@@ -5,7 +5,6 @@ import glob
 import os
 import shutil
 import subprocess
-import sys
 from multiprocessing import current_process
 
 from epregressions.Structures import *
@@ -14,38 +13,34 @@ path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
 
-def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_reporting_freq, this_parametric_file,
-                       weather_file_name, eplus_install):
+def execute_energyplus(source_directory, build_directory, entry_name, test_run_directory,
+                       run_type, min_reporting_freq, this_parametric_file, weather_file_name):
     # setup a few paths
-    builddir = base_dir
-    simdir = case_dir
-    energyplus = os.path.join(builddir, exe_name)
-    idd = os.path.join(builddir, 'Energy+.idd')
+    energyplus = os.path.join(build_directory, 'Products', 'energyplus')
 
     # external tools also
-    basement = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'Basement')
-    slab = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'Slab')
-    basementidd = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd')
-    slabidd = os.path.join(eplus_install, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd')
-    expandobjects = os.path.join(eplus_install, 'ExpandObjects')
-    epmacro = os.path.join(eplus_install, 'EPMacro')
-    readvars = os.path.join(eplus_install, 'PostProcess', 'ReadVarsESO')
-    parametric = os.path.join(eplus_install, 'PreProcess', 'ParametricPreProcessor', 'parametricpreprocessor')
+    basement = os.path.join(build_directory, 'Products', 'Basement')
+    idd_path = os.path.join(build_directory, 'Products', 'Energy+.idd')  # TODO: Shouldn't need the IDD anymore
+    slab = os.path.join(build_directory, 'Products', 'Slab')
+    basementidd = os.path.join(build_directory, 'Products', 'BasementGHT.idd')
+    slabidd = os.path.join(build_directory, 'Products', 'SlabGHT.idd')
+    expandobjects = os.path.join(build_directory, 'Products', 'ExpandObjects')
+    epmacro = os.path.join(source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro')
+    readvars = os.path.join(build_directory, 'Products', 'ReadVarsESO')
+    parametric = os.path.join(build_directory, 'Products', 'ParametricPreProcessor')
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
 
     try:
+        shutil.copy(idd_path, os.path.join(test_run_directory, 'Energy+.idd'))
 
         # Copy the weather file into the simulation directory
         if run_type != ForceRunType.DD:
-            shutil.copy(weather_file_name, os.path.join(simdir, 'in.epw'))
-
-        # Copy the idd into the simulation directory
-        shutil.copy(idd, simdir)
+            shutil.copy(weather_file_name, os.path.join(test_run_directory, 'in.epw'))
 
         # Switch to the simulation directory
-        os.chdir(simdir)
+        os.chdir(test_run_directory)
 
         # Run EPMacro as necessary
         if os.path.exists('in.imf'):
@@ -79,7 +74,7 @@ def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_r
                 os.rename(file_to_run_here, 'in.idf')
             else:
                 # print("in-000001.idf file doesn't exist -- parametric preprocessor failed")
-                return [base_dir, entry_name, False, current_process().name]
+                return [build_directory, entry_name, False, current_process().name]
 
         # Run ExpandObjects and process as necessary
         expand_objects_run = subprocess.Popen(expandobjects, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -90,7 +85,7 @@ def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_r
             os.rename('expanded.idf', 'in.idf')
 
             if os.path.exists('BasementGHTIn.idf'):
-                shutil.copy(basementidd, simdir)
+                shutil.copy(basementidd, test_run_directory)
                 basement_run = subprocess.Popen(basement, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 basement_run.communicate()
                 with open('EPObjects.TXT') as f:
@@ -105,7 +100,7 @@ def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_r
                 os.remove('BasementGHT.idd')
 
             if os.path.exists('GHTIn.idf'):
-                shutil.copy(slabidd, simdir)
+                shutil.copy(slabidd, test_run_directory)
                 slab_run = subprocess.Popen(slab, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 slab_run.communicate()
                 with open('SLABSurfaceTemps.TXT') as f:
@@ -129,10 +124,6 @@ def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_r
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = "Y"
-        elif run_type == ForceRunType.REVERSEDD:
-            os.environ["DDONLY"] = "Y"
-            os.environ["REVERSEDD"] = "Y"
-            os.environ["FULLANNUALRUN"] = ""
         elif run_type == ForceRunType.NONE:
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
@@ -158,77 +149,77 @@ def execute_energyplus(base_dir, entry_name, case_dir, exe_name, run_type, min_r
         mtr_run = subprocess.Popen([readvars, 'test.mvi'], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mtr_run.communicate()
 
-        # Handle outputs (eplusout.csv and eplusmtr.csv) for reverse DD cases
-        if run_type == ForceRunType.REVERSEDD:
-            # find out how many DD's there are
-            num_design_days = 0
-            with open("in.idf") as f:
-                for line in f:
-                    if "SizingPeriod:DesignDay," in line:
-                        num_design_days += 1
-
-            # read all lines from csv
-            csv_contents = []
-            with open("eplusout.csv") as f:
-                for line in f:
-                    csv_contents.append(line)
-            meter_exists = os.path.exists("eplusmtr.csv")
-            mtr_contents = []
-            if meter_exists:
-                with open("eplusmtr.csv") as f:
-                    for line in f:
-                        mtr_contents.append(line)
-
-            # now find out how many lines of data there are in each file and each environment
-            csv_data_rows = len(csv_contents) - 1
-            csv_data_rows_per_envrn = csv_data_rows / num_design_days
-            if meter_exists:
-                mtr_data_rows = len(mtr_contents) - 1
-                mtr_data_rows_per_envrn = mtr_data_rows / num_design_days
-
-            # write the files back out in the appropriate order
-            shutil.copy("eplusout.csv", "eplusout-before_revDD_swapback.csv")
-            with open("eplusout.csv", "w") as f:
-                f.write("%s" % csv_contents[0])
-                for row_num in range(csv_data_rows_per_envrn + 1, 2 * csv_data_rows_per_envrn + 1):
-                    f.write("%s" % csv_contents[row_num])
-                for row_num in range(1, csv_data_rows_per_envrn + 1):
-                    f.write("%s" % csv_contents[row_num])
-                if num_design_days > 2:
-                    for row_num in range(2 * csv_data_rows_per_envrn + 1, csv_data_rows + 1):
-                        f.write("%s" % csv_contents[row_num])
-            if meter_exists:
-                shutil.copy("eplusmtr.csv", "eplusmtr-before_revDD_swapback.csv")
-                with open("eplusmtr.csv", "w") as f:
-                    f.write("%s" % mtr_contents[0])
-                    for row_num in range(mtr_data_rows_per_envrn + 1, 2 * mtr_data_rows_per_envrn + 1):
-                        f.write("%s" % mtr_contents[row_num])
-                    for row_num in range(1, mtr_data_rows_per_envrn + 1):
-                        f.write("%s" % mtr_contents[row_num])
-                    if num_design_days > 2:
-                        for row_num in range(2 * mtr_data_rows_per_envrn + 1, mtr_data_rows + 1):
-                            f.write("%s" % mtr_contents[row_num])
+        # # Handle outputs (eplusout.csv and eplusmtr.csv) for reverse DD cases
+        # if run_type == ForceRunType.REVERSEDD:
+        #     # find out how many DD's there are
+        #     num_design_days = 0
+        #     with open("in.idf") as f:
+        #         for line in f:
+        #             if "SizingPeriod:DesignDay," in line:
+        #                 num_design_days += 1
+        #
+        #     # read all lines from csv
+        #     csv_contents = []
+        #     with open("eplusout.csv") as f:
+        #         for line in f:
+        #             csv_contents.append(line)
+        #     meter_exists = os.path.exists("eplusmtr.csv")
+        #     mtr_contents = []
+        #     if meter_exists:
+        #         with open("eplusmtr.csv") as f:
+        #             for line in f:
+        #                 mtr_contents.append(line)
+        #
+        #     # now find out how many lines of data there are in each file and each environment
+        #     csv_data_rows = len(csv_contents) - 1
+        #     csv_data_rows_per_envrn = csv_data_rows / num_design_days
+        #     if meter_exists:
+        #         mtr_data_rows = len(mtr_contents) - 1
+        #         mtr_data_rows_per_envrn = mtr_data_rows / num_design_days
+        #
+        #     # write the files back out in the appropriate order
+        #     shutil.copy("eplusout.csv", "eplusout-before_revDD_swapback.csv")
+        #     with open("eplusout.csv", "w") as f:
+        #         f.write("%s" % csv_contents[0])
+        #         for row_num in range(csv_data_rows_per_envrn + 1, 2 * csv_data_rows_per_envrn + 1):
+        #             f.write("%s" % csv_contents[row_num])
+        #         for row_num in range(1, csv_data_rows_per_envrn + 1):
+        #             f.write("%s" % csv_contents[row_num])
+        #         if num_design_days > 2:
+        #             for row_num in range(2 * csv_data_rows_per_envrn + 1, csv_data_rows + 1):
+        #                 f.write("%s" % csv_contents[row_num])
+        #     if meter_exists:
+        #         shutil.copy("eplusmtr.csv", "eplusmtr-before_revDD_swapback.csv")
+        #         with open("eplusmtr.csv", "w") as f:
+        #             f.write("%s" % mtr_contents[0])
+        #             for row_num in range(mtr_data_rows_per_envrn + 1, 2 * mtr_data_rows_per_envrn + 1):
+        #                 f.write("%s" % mtr_contents[row_num])
+        #             for row_num in range(1, mtr_data_rows_per_envrn + 1):
+        #                 f.write("%s" % mtr_contents[row_num])
+        #             if num_design_days > 2:
+        #                 for row_num in range(2 * mtr_data_rows_per_envrn + 1, mtr_data_rows + 1):
+        #                     f.write("%s" % mtr_contents[row_num])
 
         os.remove('Energy+.idd')
-        return [base_dir, entry_name, True, False, current_process().name]
+        return [build_directory, entry_name, True, False, current_process().name]
 
     except Exception as e:
         f = open("aa_testSuite_error.txt", 'w')
         print(e, file=f)
-        return [base_dir, entry_name, False, False, current_process().name]
+        return [build_directory, entry_name, False, False, current_process().name]
 
     finally:
         os.chdir(start_path)
 
-
-if __name__ == "__main__":
-    build_directory = sys.argv[1]
-    sim_run_directory = sys.argv[2]
-    executable_name = sys.argv[3]
-    force_run_type = sys.argv[4]
-    parametric_file = sys.argv[5]
-    weather_file = sys.argv[6]
-    eplus_install_path = sys.argv[7]
-
-    execute_energyplus(build_directory, "entry_name", sim_run_directory, executable_name, force_run_type, "min_freq",
-                       parametric_file, weather_file, eplus_install_path)
+#
+# if __name__ == "__main__":
+#     build_directory = sys.argv[1]
+#     sim_run_directory = sys.argv[2]
+#     executable_name = sys.argv[3]
+#     force_run_type = sys.argv[4]
+#     parametric_file = sys.argv[5]
+#     weather_file = sys.argv[6]
+#     eplus_install_path = sys.argv[7]
+#
+#     execute_energyplus(build_directory, "entry_name", sim_run_directory, executable_name, force_run_type, "min_freq",
+#                        parametric_file, weather_file, eplus_install_path)

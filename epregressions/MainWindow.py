@@ -20,6 +20,7 @@ import gi
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import *
 from epregressions.runtests import *
+from epregressions.Structures import SingleCaseInformation
 
 gi.require_version("Gtk", "3.0")  # unfortunately this has to go before the import
 from gi.repository import Gtk, GObject
@@ -75,8 +76,7 @@ class PyApp(Gtk.Window):
         self.suite_option_num_threads = None
         self.run_type_combo_box = None
         self.report_frequency_combo_box = None
-        self.suite_dir_struc_info = None
-        self.suite_option_ep_install_label = None
+        self.suite_dir_struct_info = None
         self.suite_option_handler_runtime_report_check = None
         self.suite_option_runtime_file_label = None
         self.btn_run_suite = None
@@ -127,6 +127,11 @@ class PyApp(Gtk.Window):
         self.work_thread = None
         self.results_list_selected_entry_root_index = None
         self.results_lists_to_copy = None
+
+        self.case_1_source_dir_label = None
+        self.case_1_build_dir_label = None
+        self.case_2_source_dir_label = None
+        self.case_2_build_dir_label = None
 
         # set up default arguments for the idf list builder and the test suite engine
         # NOTE the GUI will set itself up according to these defaults, so do this before gui_build()
@@ -290,7 +295,7 @@ class PyApp(Gtk.Window):
             idf_select_data = project_tree['idfselection']
             if "masterfile" in idf_select_data:
                 self.file_list_builder_configuration.master_data_file = idf_select_data["masterfile"]
-            for idf_entry in self.idf_list_store:
+            for idf_entry in self.idf_list_store:  # TODO: idf_list_store isn't available at this point during startup
                 idf_entry[IDFListViewColumnIndex.RUN] = False
             if 'selectedfiles' in idf_select_data:
                 for filename in idf_select_data['selectedfiles']:
@@ -303,16 +308,14 @@ class PyApp(Gtk.Window):
             suite_data = project_tree['suiteoptions']
             if 'case_a' in suite_data:
                 case_a = suite_data['case_a']
-                self.suiteargs.buildA.build = case_a['dirpath']
+                self.suiteargs.buildA.source_directory = case_a['source_directory']
                 self.suiteargs.buildA.run = case_a['selected']
-                self.suiteargs.buildA.executable = case_a["executable"]
+                self.suiteargs.buildA.build_directory = case_a['build_directory']
             if 'case_b' in suite_data:
                 case_b = suite_data['case_b']
-                self.suiteargs.buildB.build = case_b['dirpath']
+                self.suiteargs.buildB.source_directory = case_b['source_directory']
                 self.suiteargs.buildB.run = case_b['selected']
-                self.suiteargs.buildB.executable = case_b["executable"]
-            if 'epinstalldir' in suite_data:
-                self.suiteargs.eplus_install = suite_data['epinstalldir']
+                self.suiteargs.buildB.build_directory = case_b["build_directory"]
             if 'runconfig' in suite_data:
                 run_config_option = suite_data['runconfig']
                 if run_config_option == "NONE":
@@ -329,16 +332,19 @@ class PyApp(Gtk.Window):
             self.gui_fill_with_data()
 
     def gui_fill_with_data(self):
+
         self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
-        if self.suiteargs.buildA.build:
-            self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
-        if self.suiteargs.buildA.executable:
-            self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
+        if self.suiteargs.buildA.source_directory:
+            self.case_1_source_dir_label.set_text(self.suiteargs.buildA.source_directory)
+        if self.suiteargs.buildA.build_directory:
+            self.case_1_build_dir_label.set_text(self.suiteargs.buildA.build_directory)
+
         self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
-        if self.suiteargs.buildB.build:
-            self.suite_option_handler_mod_check_button.set_label(self.suiteargs.buildB.build)
-        if self.suiteargs.buildB.executable:
-            self.suite_option_mod_exe.set_text(self.suiteargs.buildB.executable)
+        if self.suiteargs.buildB.source_directory:
+            self.case_2_source_dir_label.set_text(self.suiteargs.buildB.source_directory)
+        if self.suiteargs.buildB.build_directory:
+            self.case_2_build_dir_label.set_text(self.suiteargs.buildB.build_directory)
+
         # num threads here
         if self.suiteargs.force_run_type:
             if self.suiteargs.force_run_type == ForceRunType.NONE:
@@ -347,8 +353,6 @@ class PyApp(Gtk.Window):
                 self.run_type_combo_box.set_active(1)
             elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
                 self.run_type_combo_box.set_active(2)
-            elif self.suiteargs.force_run_type == ForceRunType.REVERSEDD:
-                self.run_type_combo_box.set_active(3)
         if self.suiteargs.report_freq:
             if self.suiteargs.report_freq == ReportingFreq.DETAILED:
                 self.report_frequency_combo_box.set_active(0)
@@ -366,8 +370,6 @@ class PyApp(Gtk.Window):
                 self.report_frequency_combo_box.set_active(6)
             elif self.suiteargs.report_freq == ReportingFreq.ANNUAL:
                 self.report_frequency_combo_box.set_active(7)
-        if self.suiteargs.eplus_install:
-            self.suite_option_ep_install_label.set_label(self.suiteargs.eplus_install)
 
     def save_settings(self, widget, from_menu=False):
 
@@ -419,16 +421,15 @@ class PyApp(Gtk.Window):
         output_object['idfselection']['randomnumber'] = self.file_list_num_files.get_value()
         output_object['suiteoptions'] = {}
         output_object['suiteoptions']['case_a'] = {
-            'dirpath': self.suiteargs.buildA.build,
+            'source_directory': self.suiteargs.buildA.source_directory,
             'selected': self.suiteargs.buildA.run,
-            'executable': self.suiteargs.buildA.executable
+            'build_directory': self.suiteargs.buildA.build_directory
         }
         output_object['suiteoptions']['case_b'] = {
-            'dirpath': self.suiteargs.buildB.build,
+            'source_directory': self.suiteargs.buildB.source_directory,
             'selected': self.suiteargs.buildB.run,
-            'executable': self.suiteargs.buildB.executable
+            'build_directory': self.suiteargs.buildB.build_directory
         }
-        output_object['suiteoptions']['epinstalldir'] = self.suiteargs.eplus_install
         if self.suiteargs.force_run_type == ForceRunType.NONE:
             output_object['suiteoptions']['runconfig'] = "NONE"
         elif self.suiteargs.force_run_type == ForceRunType.DD:
@@ -486,16 +487,15 @@ class PyApp(Gtk.Window):
 
         # PAGE: IDF LIST RESULTS
         listview_window = Gtk.ScrolledWindow()
-        listview_window.set_size_request(550, -1)
+        listview_window.set_size_request(750, -1)
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        # make the list store and the tree view
 
         self.idf_list_store = Gtk.ListStore(bool, str, str, str, str, str, str, str, str)
         self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", "", "", "", "", "", ""])
         tree_view = Gtk.TreeView(self.idf_list_store)
         tree_view.set_rules_hint(True)
-        # make the columns for the treeview; could add more columns including a checkbox
+        # make the columns for the tree view; could add more columns including a checkbox
         # column: selected for run
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.file_list_handler_toggle_listview, self.idf_list_store)
@@ -648,9 +648,7 @@ class PyApp(Gtk.Window):
 
     def gui_build_notebook_page_test_suite(self):
 
-        # PAGE: TEST SUITE OPTIONS
         notebook_page_suite = Gtk.HPaned()
-
         notebook_page_suite_options = Gtk.VBox(False, box_spacing)
 
         heading = Gtk.Label(None)
@@ -666,67 +664,106 @@ class PyApp(Gtk.Window):
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
 
+        # if self.suiteargs.buildA.build:
+        #    self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
+
         h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Choose Dir 1...")
-        button1.connect("clicked", self.suite_option_handler_basedir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(button1)
+        this_label = Gtk.Label("Case 1: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(this_label)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_base_check_button = Gtk.CheckButton("< select a dir >", use_underline=False)
+        self.suite_option_handler_base_check_button = Gtk.CheckButton("Run Case 1?", use_underline=False)
         self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
         self.suite_option_handler_base_check_button.connect("toggled", self.suite_option_handler_basedir_check)
-        if self.suiteargs.buildA.build:
-            self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.suite_option_handler_base_check_button)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        this_label = Gtk.Label("Executable name for dir 1 (relative to directory):")
-        self.suite_option_base_exe = Gtk.Entry()
-        self.suite_option_base_exe.set_size_request(200, -1)
-        if self.suiteargs.buildA.executable:
-            self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
-        self.suite_option_base_exe.connect("changed", self.suite_option_handler_base_exe)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(this_label, False, False, box_spacing)
-        this_h_box.pack_start(self.suite_option_base_exe, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+        h_box_case_1_source = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Source Directory: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
+        alignment.add(this_label)
+        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
+        self.case_1_source_dir_label = Gtk.Label("<select_source_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_1_source_dir_label)
+        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
+        button1 = Gtk.Button("Change...")
+        button1.connect("clicked", self.suite_option_handler_base_source_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
+        alignment.add(button1)
+        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_1_source, False, False, box_spacing)
+
+        h_box_case_1_build = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Build Directory: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
+        alignment.add(this_label)
+        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
+        self.case_1_build_dir_label = Gtk.Label("<select_build_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_1_build_dir_label)
+        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
+        button1 = Gtk.Button("Change...")
+        button1.connect("clicked", self.suite_option_handler_base_build_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
+        alignment.add(button1)
+        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
+
+        # if self.suiteargs.buildA.executable:
+        #     self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button2 = Gtk.Button("Choose Dir 2...")
-        button2.connect("clicked", self.suite_option_handler_moddir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(button2)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_mod_check_button = Gtk.CheckButton("< select a dir >", use_underline=False)
+        h_box_2 = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Case 2: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(this_label)
+        h_box_2.pack_start(alignment, False, False, box_spacing)
+        self.suite_option_handler_mod_check_button = Gtk.CheckButton("Run Case 2?", use_underline=False)
         self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
         self.suite_option_handler_mod_check_button.connect("toggled", self.suite_option_handler_mod_dir_check)
-        if self.suiteargs.buildB.build:
-            self.suite_option_handler_mod_check_button.set_label(self.suiteargs.buildB.build)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.suite_option_handler_mod_check_button)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+        h_box_2.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_2, False, False, box_spacing)
 
-        this_label = Gtk.Label("Executable name for dir 2 (relative to directory):")
-        self.suite_option_mod_exe = Gtk.Entry()
-        self.suite_option_mod_exe.set_size_request(200, -1)
-        if self.suiteargs.buildB.executable:
-            self.suite_option_mod_exe.set_text(self.suiteargs.buildB.executable)
-        self.suite_option_mod_exe.connect("changed", self.suite_option_handler_mod_exe)
-        alignment = Gtk.Alignment(xalign=0.1, yalign=0.0, xscale=0.6, yscale=0.0)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        alignment.add(self.suite_option_mod_exe)
-        this_h_box.pack_start(this_label, False, False, box_spacing)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+        h_box_case_2_source = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Source Directory: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
+        alignment.add(this_label)
+        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
+        self.case_2_source_dir_label = Gtk.Label("<select_source_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_2_source_dir_label)
+        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
+        button1 = Gtk.Button("Change...")
+        button1.connect("clicked", self.suite_option_handler_mod_source_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
+        alignment.add(button1)
+        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_2_source, False, False, box_spacing)
+
+        h_box_case_2_build = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Build Directory: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
+        alignment.add(this_label)
+        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
+        self.case_2_build_dir_label = Gtk.Label("<select_build_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_2_build_dir_label)
+        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
+        button1 = Gtk.Button("Change...")
+        button1.connect("clicked", self.suite_option_handler_mod_build_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
+        alignment.add(button1)
+        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_2_build, False, False, box_spacing)
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
 
-        # multirheading in the GUI doesn't works in windows, so don't add the spinbutton if we are on windows
+        # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
         if platform != "windows":
             num_threads_box = Gtk.HBox(False, box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
@@ -776,38 +813,13 @@ class PyApp(Gtk.Window):
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        self.suite_dir_struc_info = Gtk.Label("<Test suite run directory structure information>")
+        self.suite_dir_struct_info = Gtk.Label("<Test suite run directory structure information>")
         self.gui_update_label_for_run_config()
         aligner = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        aligner.add(self.suite_dir_struc_info)
+        aligner.add(self.suite_dir_struct_info)
         this_h_box = Gtk.HBox(False, box_spacing)
         this_h_box.pack_start(aligner, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        heading = Gtk.Label(None)
-        heading.set_markup(
-            "<b>E+ Install Dir:</b>\n  External utilities will be accessed from this directory.\n" +
-            "  This includes pre- and post-processors."
-        )
-        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Choose Dir...")
-        button1.connect("clicked", self.suite_option_handler_eplus_install)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(button1)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_ep_install_label = Gtk.Label("< select a dir >")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_ep_install_label)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
 
@@ -975,7 +987,7 @@ class PyApp(Gtk.Window):
             test_dir = "Tests-DDOnly"
         elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
             test_dir = "Tests-Annual"
-        dir_to_open = os.path.join(self.suiteargs.buildA.build, test_dir, case_name)
+        dir_to_open = os.path.join(self.suiteargs.buildA.build_directory, test_dir, case_name)
         if platform == "linux":
             try:
                 subprocess.Popen(['xdg-open', dir_to_open])
@@ -1021,7 +1033,7 @@ class PyApp(Gtk.Window):
 
         v_box = Gtk.VBox(False, box_spacing)
         v_box.pack_start(
-            self.log_scroll_notebook_page, False, False, box_spacing
+            self.log_scroll_notebook_page, True, True, box_spacing
         )  # EDWIN: Added False False here, verify this
 
         clear_button = Gtk.Button("Clear Log Messages")
@@ -1058,17 +1070,14 @@ class PyApp(Gtk.Window):
             return False
 
     def gui_build_notebook(self):
-
         self.notebook = Gtk.Notebook()
-        # self.notebook.set_tab_pos(Gtk.POS_TOP)
-        self.notebook.append_page(self.gui_build_notebook_page_idf_selection(), Gtk.Label("IDF Selection"))
         self.notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
+        self.notebook.append_page(self.gui_build_notebook_page_idf_selection(), Gtk.Label("IDF Selection"))
         self.notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
         self.notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
         return self.notebook
 
     def gui_build_messaging(self):
-
         self.progress = Gtk.ProgressBar()
         self.status_bar = Gtk.Statusbar()
         aligner = Gtk.Alignment(xalign=1.0, yalign=0.0, xscale=0.4, yscale=1.0)
@@ -1080,7 +1089,6 @@ class PyApp(Gtk.Window):
         return aligner
 
     def build_pre_gui_stuff(self):
-
         # build the last run context menu
         self.last_run_context = Gtk.Menu()
         self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
@@ -1111,8 +1119,8 @@ class PyApp(Gtk.Window):
         self.log_store.append(["%s" % str(datetime.now()), "%s" % message])
 
     def warning_dialog(self, message, do_log_entry=True):
-        dialog = Gtk.MessageDialog(self, Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MESSAGE_WARNING,
-                                   Gtk.BUTTONS_OK, message)
+        dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.WARNING,
+                                   Gtk.ButtonsType.OK, message)
         dialog.set_title("Warning message")
         dialog.run()
         if do_log_entry:
@@ -1125,7 +1133,7 @@ class PyApp(Gtk.Window):
     def show_help_pdf(self, widget):
         path_to_pdf = os.path.join(script_dir, "..", "Documentation", "ep-testsuite.pdf")
         if not os.path.exists(path_to_pdf):
-            dialog = Gtk.MessageDialog(self, Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MESSAGE_ERROR, Gtk.BUTTONS_CLOSE,
+            dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
                                        "Could not find help file; expected at:\n %s" % path_to_pdf)
             dialog.run()
             dialog.destroy()
@@ -1141,7 +1149,7 @@ class PyApp(Gtk.Window):
         except Exception as exc:
             # error message
             dialog = Gtk.MessageDialog(
-                self, Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MESSAGE_ERROR, Gtk.BUTTONS_CLOSE,
+                self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
                 "Could not open help file.  Try opening manually.  File is at:\n %s" % path_to_pdf
             )
             dialog.run()
@@ -1354,9 +1362,11 @@ class PyApp(Gtk.Window):
             self.warning_not_yet_built()
             return
         self.add_log_entry("User is entering idfs for selection using a folder of idfs")
-        dialog = Gtk.FileChooserDialog(title="Select folder",
-                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        dialog = Gtk.FileChooserDialog(
+            title="Select folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         dialog.set_select_multiple(False)
         if self.last_folder_path:
             dialog.set_current_folder(self.last_folder_path)
@@ -1410,8 +1420,8 @@ class PyApp(Gtk.Window):
             self.warning_not_yet_built()
             return
         self.add_log_entry("User is entering idf files for selection using dialog")
-        dialog = Gtk.MessageDialog(self, Gtk.DIALOG_MODAL | Gtk.DIALOG_DESTROY_WITH_PARENT, Gtk.MessageType.QUESTION,
-                                   Gtk.BUTTONS_OK_CANCEL, None)
+        dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.QUESTION,
+                                   Gtk.ButtonsType.OK_CANCEL, None)
         dialog.set_title("Enter list of files to select")
         dialog.set_markup('Enter file names to select, one per line\nFile extensions are optional')
         scrolled_window = Gtk.ScrolledWindow()
@@ -1490,49 +1500,43 @@ class PyApp(Gtk.Window):
 
         self.do_runtime_report = True
         if platform == "windows":
-            self.runtime_report_file = "C:\temp\runtimes.csv"
+            self.runtime_report_file = "C:\\temp\\runtimes.csv"
         else:
-            self.runtime_report_file = "/tmp/runtimes.csv"
+            self.runtime_report_file = "/tmp/run_times.csv"
 
-        # For ALL runs use BuildA
         if platform == "windows":
-            suiteargs_base = SingleBuildDirectory(directory_path="C:\ResearchProjects\EnergyPlus\Versions\V8.1Release",
-                                                  executable_name="build\Debug\EnergyPlus.exe",
+            suiteargs_base = SingleCaseInformation(source_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1",
+                                                   build_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build",
+                                                   run_this_directory=True)
+        else:
+            suiteargs_base = SingleCaseInformation(source_directory="/home/user/EnergyPlus/repo1/",
+                                                   build_directory="/home/user/EnergyPlus/repo1/build/",
+                                                   run_this_directory=True)
+
+        if platform == "windows":
+            suiteargs_mod = SingleCaseInformation(source_directory="C:\\ResearchProjects\\EnergyPlus\\Repo2",
+                                                  build_directory="C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build",
                                                   run_this_directory=True)
         else:
-            suiteargs_base = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
-                                                  executable_name="8.1.0.009_ifort_release",
+            suiteargs_mod = SingleCaseInformation(source_directory="/home/user/EnergyPlus/repo2/",
+                                                  build_directory="/home/user/EnergyPlus/repo2/build/",
                                                   run_this_directory=True)
-
-            # If using ReverseDD, builB can just be None
-        if platform == "windows":
-            suiteargs_mod = SingleBuildDirectory(directory_path="C:\ResearchProjects\EnergyPlus\Versions\V8.1ReRelease",
-                                                 executable_name="build\Debug\EnergyPlus.exe",
-                                                 run_this_directory=True)
-        else:
-            suiteargs_mod = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
-                                                 executable_name="8.2.0.001_ifort_release",
-                                                 run_this_directory=True)
 
         # Build the run configuration and the number of threads; using 1 for
-        #  windows causes the runtests script to not even use the multithread libraries
-        installpath = ""
+        #  windows causes the runtests script to not even use the multi-thread libraries
         num_threads_to_run = 1
         if platform == "windows":
-            installpath = 'C:\EnergyPlusV8-1-0'
             num_threads_to_run = 1
         else:
-            installpath = '/home/elee/EnergyPlus/EnergyPlus-8-1-0'
             num_threads_to_run = 4
         self.suiteargs = TestRunConfiguration(run_mathdiff=True,
                                               do_composite_err=True,
-                                              force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
+                                              force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE
                                               single_test_run=False,
-                                              eplus_install_path=installpath,
                                               num_threads=num_threads_to_run,
                                               report_freq=ReportingFreq.HOURLY,
-                                              buildA=suiteargs_base,
-                                              buildB=suiteargs_mod)
+                                              build_a=suiteargs_base,
+                                              build_b=suiteargs_mod)
 
     def run_button(self, widget):
 
@@ -1592,53 +1596,75 @@ class PyApp(Gtk.Window):
         self.btn_run_suite.set_label("Cancel Suite")
         self.test_suite_is_running = True
 
-    def suite_option_handler_basedir(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Select folder",
-                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+    def suite_option_handler_base_source_dir(self, widget):
+        dialog = Gtk.FileChooserDialog(
+            title="Select source folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
         dialog.set_select_multiple(False)
         if self.last_folder_path:
             dialog.set_current_folder(self.last_folder_path)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildA.build = self.last_folder_path
-            self.suite_option_handler_base_check_button.set_label(self.last_folder_path)
+            self.suiteargs.buildA.source_directory = self.last_folder_path
+            self.case_1_source_dir_label.set_text(self.last_folder_path)
+        dialog.destroy()
+
+    def suite_option_handler_base_build_dir(self, widget):
+        dialog = Gtk.FileChooserDialog(
+            title="Select build folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        dialog.set_select_multiple(False)
+        if self.last_folder_path:
+            dialog.set_current_folder(self.last_folder_path)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.last_folder_path = dialog.get_filename()
+            self.suiteargs.buildA.build_directory = self.last_folder_path
+            self.case_1_build_dir_label.set_text(self.last_folder_path)
+        dialog.destroy()
+
+    def suite_option_handler_mod_source_dir(self, widget):
+        dialog = Gtk.FileChooserDialog(
+            title="Select source folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        dialog.set_select_multiple(False)
+        if self.last_folder_path:
+            dialog.set_current_folder(self.last_folder_path)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.last_folder_path = dialog.get_filename()
+            self.suiteargs.buildB.source_directory = self.last_folder_path
+            self.case_2_source_dir_label.set_text(self.last_folder_path)
+        dialog.destroy()
+
+    def suite_option_handler_mod_build_dir(self, widget):
+        dialog = Gtk.FileChooserDialog(
+            title="Select build folder",
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        dialog.set_select_multiple(False)
+        if self.last_folder_path:
+            dialog.set_current_folder(self.last_folder_path)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.last_folder_path = dialog.get_filename()
+            self.suiteargs.buildB.build_directory = self.last_folder_path
+            self.case_2_build_dir_label.set_text(self.last_folder_path)
         dialog.destroy()
 
     def suite_option_handler_basedir_check(self, widget):
         self.suiteargs.buildA.run = widget.get_active()
 
-    def suite_option_handler_moddir(self, widget):
-        dialog = Gtk.FileChooserDialog(
-            title="Select folder",
-            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        )
-        dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-        dialog.set_select_multiple(False)
-        if self.last_folder_path:
-            dialog.set_current_folder(self.last_folder_path)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildB.build = self.last_folder_path
-            self.suite_option_handler_mod_check_button.set_label(self.last_folder_path)
-        dialog.destroy()
-
     def suite_option_handler_mod_dir_check(self, widget):
         self.suiteargs.buildB.run = widget.get_active()
-
-    def suite_option_handler_base_exe(self, widget):
-        if widget.get_text():
-            self.suiteargs.buildA.executable = widget.get_text()
-        else:
-            self.suiteargs.buildA.executable = ''
-
-    def suite_option_handler_mod_exe(self, widget):
-        if widget.get_text():
-            self.suiteargs.buildB.executable = widget.get_text()
-        else:
-            self.suiteargs.buildB.executable = ''
 
     def suite_option_handler_force_run_type(self, widget):
         text = widget.get_active_text()
@@ -1657,20 +1683,6 @@ class PyApp(Gtk.Window):
         self.suiteargs.report_freq = widget.get_active_text()
         self.gui_update_label_for_run_config()
 
-    def suite_option_handler_eplus_install(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Select folder",
-                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        dialog.set_action(Gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-        dialog.set_select_multiple(False)
-        if self.last_folder_path:
-            dialog.set_current_folder(self.last_folder_path)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.last_folder_path = dialog.get_filename()
-            self.suiteargs.eplus_install = self.last_folder_path
-            self.suite_option_ep_install_label.set_label(self.last_folder_path)
-        dialog.destroy()
-
     def suite_option_handler_num_threads(self, widget):
         self.suiteargs.num_threads = widget.get_value()
 
@@ -1682,7 +1694,7 @@ class PyApp(Gtk.Window):
             return "red"  # Gtk.gdk.Color(220, 20, 60)
 
     def suite_option_handler_runtime_file(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Select runtime file save name", action=Gtk.FILE_CHOOSER_ACTION_SAVE,
+        dialog = Gtk.FileChooserDialog(title="Select runtime file save name", action=Gtk.FileChooserAction.SAVE,
                                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_select_multiple(False)
         if self.last_folder_path:
@@ -1712,137 +1724,95 @@ class PyApp(Gtk.Window):
 
         # check for directory, then executable and IDD, then input files
         self.verify_list_store.clear()
-        if run_type == ForceRunType.REVERSEDD:
-            basedir = self.suiteargs.buildA.build
-            exec_path = os.path.join(basedir, self.suiteargs.buildA.executable)
-            idd_path = os.path.join(basedir, "Energy+.idd")
-            idf_folder = os.path.join(basedir, "InputFiles")
-            basedir_exists = os.path.exists(basedir)
-            self.verify_list_store.append(
-                ["Suite Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
-            checked = self.suiteargs.buildA.run
-            self.verify_list_store.append(
-                ["Suite Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
-            exec_exists = os.path.exists(exec_path)
-            self.verify_list_store.append(
-                ["Suite Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
-            idd_exists = os.path.exists(idd_path)
-            self.verify_list_store.append(
-                ["Suite Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-            idf_dir_exists = os.path.exists(idf_folder)
-            self.verify_list_store.append(
-                ["Suite Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
-            if basedir_exists and checked and exec_exists and idd_exists and idf_dir_exists:
-                self.add_log_entry("Reverse Design Day directory verification passed")
-            else:
-                self.add_log_entry("Reverse Design Day directory verification FAILED")
-        else:
-            basedir = self.suiteargs.buildA.build
-            exec_path = os.path.join(basedir, self.suiteargs.buildA.executable)
-            idd_path = os.path.join(basedir, "Energy+.idd")
-            idf_folder = os.path.join(basedir, "InputFiles")
-            basedir_exists = os.path.exists(basedir)
-            self.verify_list_store.append(
-                ["Base Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
-            checked = self.suiteargs.buildA.run
-            if checked:
-                self.verify_list_store.append(
-                    ["Base Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
-                exec_exists = os.path.exists(exec_path)
-                self.verify_list_store.append(
-                    ["Base Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
-                idd_exists = os.path.exists(idd_path)
-                self.verify_list_store.append(
-                    ["Base Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-                idf_dir_exists = os.path.exists(idf_folder)
-                self.verify_list_store.append(
-                    ["Base Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
 
-            basedir = self.suiteargs.buildB.build
-            exec_path = os.path.join(basedir, self.suiteargs.buildB.executable)
-            idd_path = os.path.join(basedir, "Energy+.idd")
-            idf_folder = os.path.join(basedir, "InputFiles")
-            basedir_exists = os.path.exists(basedir)
-            self.verify_list_store.append(
-                ["Mod Directory Exists:", basedir, basedir_exists, self.get_row_color(basedir_exists)])
-            checked = self.suiteargs.buildB.run
-            if checked:
-                self.verify_list_store.append(
-                    ["Mod Directory Selected:", "Checkbox checked?", checked, self.get_row_color(checked)])
-                exec_exists = os.path.exists(exec_path)
-                self.verify_list_store.append(
-                    ["Mod Executable Exists:", exec_path, exec_exists, self.get_row_color(exec_exists)])
-                idd_exists = os.path.exists(idd_path)
-                self.verify_list_store.append(
-                    ["Mod Energy+.idd Exists:", idd_path, idd_exists, self.get_row_color(idd_exists)])
-                idf_dir_exists = os.path.exists(idf_folder)
-                self.verify_list_store.append(
-                    ["Mod Input File Folder Exists:", idf_folder, idf_dir_exists, self.get_row_color(idf_dir_exists)])
+        # Check case 1
+        source_dir = self.suiteargs.buildA.source_directory
+        exists = os.path.exists(source_dir)
+        self.verify_list_store.append(
+            ["Case 1 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
+        )
+        test_files_dir = os.path.join(self.suiteargs.buildA.source_directory, 'testfiles')
+        exists = os.path.exists(test_files_dir)
+        self.verify_list_store.append(
+            ["Case 1 Test Files Directory Exists? ", test_files_dir, exists, self.get_row_color(exists)]
+        )
+        data_sets_dir = os.path.join(self.suiteargs.buildA.source_directory, 'datasets')
+        exists = os.path.exists(data_sets_dir)
+        self.verify_list_store.append(
+            ["Case 1 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
+        )
+        build_dir = self.suiteargs.buildA.build_directory
+        exists = os.path.exists(build_dir)
+        self.verify_list_store.append(
+            ["Case 1 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
+        )
+        products_dir = os.path.join(self.suiteargs.buildA.build_directory, 'Products')
+        exists = os.path.exists(products_dir)
+        self.verify_list_store.append(
+            ["Case 1 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
+        )
+        exe_extension = ''
+        if platform == 'Windows':
+            exe_extension = '.exe'
+        energy_plus_exe = os.path.join(self.suiteargs.buildA.build_directory, 'Products', 'energyplus' + exe_extension)
+        exists = os.path.exists(energy_plus_exe)
+        self.verify_list_store.append(
+            ["Case 1 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
+        )
+        basement_exe = os.path.join(self.suiteargs.buildA.build_directory, 'Products', 'Basement' + exe_extension)
+        exists = os.path.exists(basement_exe)
+        self.verify_list_store.append(
+            ["Case 1 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
+        )
 
-        # set up paths
-        ep_install = self.suiteargs.eplus_install
-        basement = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'Basement')
-        slab = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'Slab')
-        basement_idd = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd')
-        slab_idd = os.path.join(ep_install, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd')
-        expand_objects = os.path.join(ep_install, 'ExpandObjects')
-        ep_macro = os.path.join(ep_install, 'EPMacro')
-        read_var = os.path.join(ep_install, 'PostProcess', 'ReadVarsESO')
-        parametric = os.path.join(ep_install, 'PreProcess', 'ParametricPreProcessor', 'parametricpreprocessor')
+        # Check case 2
+        source_dir = self.suiteargs.buildB.source_directory
+        exists = os.path.exists(source_dir)
+        self.verify_list_store.append(
+            ["Case 2 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
+        )
+        test_files_dir = os.path.join(self.suiteargs.buildB.source_directory, 'testfiles')
+        exists = os.path.exists(test_files_dir)
+        self.verify_list_store.append(
+            ["Case 2 Test Files Directory Exists? ", test_files_dir, exists, self.get_row_color(exists)]
+        )
+        data_sets_dir = os.path.join(self.suiteargs.buildB.source_directory, 'datasets')
+        exists = os.path.exists(data_sets_dir)
+        self.verify_list_store.append(
+            ["Case 2 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
+        )
+        build_dir = self.suiteargs.buildB.build_directory
+        exists = os.path.exists(build_dir)
+        self.verify_list_store.append(
+            ["Case 2 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
+        )
+        products_dir = os.path.join(self.suiteargs.buildB.build_directory, 'Products')
+        exists = os.path.exists(products_dir)
+        self.verify_list_store.append(
+            ["Case 2 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
+        )
+        exe_extension = ''
+        if platform == 'Windows':
+            exe_extension = '.exe'
+        energy_plus_exe = os.path.join(self.suiteargs.buildB.build_directory, 'Products', 'energyplus' + exe_extension)
+        exists = os.path.exists(energy_plus_exe)
+        self.verify_list_store.append(
+            ["Case 2 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
+        )
+        basement_exe = os.path.join(self.suiteargs.buildB.build_directory, 'Products', 'Basement' + exe_extension)
+        exists = os.path.exists(basement_exe)
+        self.verify_list_store.append(
+            ["Case 2 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
+        )
 
-        # if we're on windows, append the executable extension
-        if platform == "windows":
-            basement += ".exe"
-            slab += ".exe"
-            expand_objects += ".exe"
-            ep_macro += ".exe"
-            read_var += ".exe"
-            parametric += ".exe"
-
-        # check if they exist
-        ep_install_exists = os.path.exists(ep_install)
-        basement_exists = os.path.exists(basement)
-        slab_exists = os.path.exists(slab)
-        basement_idd_exists = os.path.exists(basement_idd)
-        slab_idd_exists = os.path.exists(slab_idd)
-        expand_objects_exists = os.path.exists(expand_objects)
-        ep_macro_exists = os.path.exists(ep_macro)
-        read_var_exists = os.path.exists(read_var)
-        parametric_exists = os.path.exists(parametric)
-
-        # add to list-store
-        self.verify_list_store.append(
-            ["E+ Install Dir Exists:", ep_install, ep_install_exists, self.get_row_color(ep_install_exists)]
-        )
-        self.verify_list_store.append(
-            ["Basement Executable Exists:", basement, basement_exists, self.get_row_color(basement_exists)]
-        )
-        self.verify_list_store.append(
-            ["Slab Executable Exists:", slab, slab_exists, self.get_row_color(slab_exists)]
-        )
-        self.verify_list_store.append(
-            ["Basement IDD Exists:", basement_idd, basement_idd_exists, self.get_row_color(basement_idd_exists)]
-        )
-        self.verify_list_store.append(
-            ["Slab IDD Exists:", slab_idd, slab_idd_exists, self.get_row_color(slab_idd_exists)]
-        )
-        self.verify_list_store.append(
-            [
-                "ExpandObjects Executable Exists:",
-                expand_objects,
-                expand_objects_exists,
-                self.get_row_color(expand_objects_exists)
-            ]
-        )
-        self.verify_list_store.append(
-            ["EPMacro Executable Exists:", ep_macro, ep_macro_exists, self.get_row_color(ep_macro_exists)]
-        )
-        self.verify_list_store.append(
-            ["ReadVars Executable Exists:", read_var, read_var_exists, self.get_row_color(read_var_exists)]
-        )
-        self.verify_list_store.append(
-            ["Parametric PreProcessor Exists:", parametric, parametric_exists, self.get_row_color(parametric_exists)]
-        )
+        # basement_exists = os.path.exists(basement)
+        # slab_exists = os.path.exists(slab)
+        # basement_idd_exists = os.path.exists(basement_idd)
+        # slab_idd_exists = os.path.exists(slab_idd)
+        # expand_objects_exists = os.path.exists(expand_objects)
+        # ep_macro_exists = os.path.exists(ep_macro)
+        # read_var_exists = os.path.exists(read_var)
+        # parametric_exists = os.path.exists(parametric)
 
         if all([item[2] for item in self.verify_list_store]):
             return True
@@ -1883,17 +1853,17 @@ class PyApp(Gtk.Window):
     def gui_update_label_for_run_config(self):
         current_config = self.suiteargs.force_run_type
         if current_config == ForceRunType.NONE:
-            self.suite_dir_struc_info.set_markup(
+            self.suite_dir_struct_info.set_markup(
                 "<b>Results:</b>\n  A 'Tests' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
         elif current_config == ForceRunType.DD:
-            self.suite_dir_struc_info.set_markup(
+            self.suite_dir_struct_info.set_markup(
                 "<b>Results:</b>\n  A 'Tests-DDOnly' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
         elif current_config == ForceRunType.ANNUAL:
-            self.suite_dir_struc_info.set_markup(
+            self.suite_dir_struct_info.set_markup(
                 "<b>Results:</b>\n  A 'Tests-Annual' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
@@ -2022,7 +1992,7 @@ class PyApp(Gtk.Window):
                 num_not_success_2 += 1
                 num_not_success_2_.append(["%s" % this_entry.basename])
                 num_not_success_2_files.append(this_entry.basename)
-            if this_entry.has_eso_diffs:
+            if this_entry.eso_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: eso" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
@@ -2037,7 +2007,7 @@ class PyApp(Gtk.Window):
                     num_small_diffs_.append(["%s: %s" % (this_entry.basename, "eso")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_small_diffs_files.append(this_entry.basename)
-            if this_entry.has_mtr_diffs:
+            if this_entry.mtr_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: mtr" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
@@ -2052,7 +2022,7 @@ class PyApp(Gtk.Window):
                     num_small_diffs_.append(["%s: %s" % (this_entry.basename, "mtr")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_small_diffs_files.append(this_entry.basename)
-            if this_entry.has_zsz_diffs:
+            if this_entry.zsz_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: zsz" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
@@ -2067,7 +2037,7 @@ class PyApp(Gtk.Window):
                     num_small_diffs_.append(["%s: %s" % (this_entry.basename, "zsz")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_small_diffs_files.append(this_entry.basename)
-            if this_entry.has_ssz_diffs:
+            if this_entry.ssz_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: ssz" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
@@ -2082,7 +2052,7 @@ class PyApp(Gtk.Window):
                     num_small_diffs_.append(["%s: %s" % (this_entry.basename, "ssz")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_small_diffs_files.append(this_entry.basename)
-            if this_entry.has_table_diffs:
+            if this_entry.table_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: table" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
@@ -2097,7 +2067,7 @@ class PyApp(Gtk.Window):
                     num_table_small_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_table_small_diffs_files.append(this_entry.basename)
-            if this_entry.has_aud_diffs:
+            if this_entry.aud_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: audit" % this_entry.basename])
                 if this_entry.aud_diffs.diff_type != TextDifferences.EQUAL:
@@ -2107,7 +2077,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "audit")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_bnd_diffs:
+            if this_entry.bnd_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: bnd" % this_entry.basename])
                 if this_entry.bnd_diffs.diff_type != TextDifferences.EQUAL:
@@ -2117,7 +2087,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "bnd")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_dxf_diffs:
+            if this_entry.dxf_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: dxf" % this_entry.basename])
                 if this_entry.dxf_diffs.diff_type != TextDifferences.EQUAL:
@@ -2127,7 +2097,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "dxf")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_eio_diffs:
+            if this_entry.eio_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: eio" % this_entry.basename])
                 if this_entry.eio_diffs.diff_type != TextDifferences.EQUAL:
@@ -2137,7 +2107,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "eio")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_mdd_diffs:
+            if this_entry.mdd_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: mdd" % this_entry.basename])
                 if this_entry.mdd_diffs.diff_type != TextDifferences.EQUAL:
@@ -2147,7 +2117,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "mdd")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_mtd_diffs:
+            if this_entry.mtd_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: mtd" % this_entry.basename])
                 if this_entry.mtd_diffs.diff_type != TextDifferences.EQUAL:
@@ -2157,7 +2127,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "mtd")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_rdd_diffs:
+            if this_entry.rdd_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: rdd" % this_entry.basename])
                 if this_entry.rdd_diffs.diff_type != TextDifferences.EQUAL:
@@ -2167,7 +2137,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "rdd")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_shd_diffs:
+            if this_entry.shd_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: shd" % this_entry.basename])
                 if this_entry.shd_diffs.diff_type != TextDifferences.EQUAL:
@@ -2177,7 +2147,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "shd")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_err_diffs:
+            if this_entry.err_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: err" % this_entry.basename])
                 if this_entry.err_diffs.diff_type != TextDifferences.EQUAL:
@@ -2187,7 +2157,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "err")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_dlin_diffs:
+            if this_entry.dlin_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: delightin" % this_entry.basename])
                 if this_entry.dlin_diffs.diff_type != TextDifferences.EQUAL:
@@ -2197,7 +2167,7 @@ class PyApp(Gtk.Window):
                     num_text_diffs_.append(["%s: %s" % (this_entry.basename, "delightin")])
                     if this_entry.basename not in num_text_diffs_files:
                         num_text_diffs_files.append(this_entry.basename)
-            if this_entry.has_dlout_diffs:
+            if this_entry.dlout_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: delightout" % this_entry.basename])
                 if this_entry.dlout_diffs.diff_type != TextDifferences.EQUAL:
@@ -2329,7 +2299,7 @@ class PyApp(Gtk.Window):
                     for this_entry in results:
                         runtime1 = -1
                         runtime2 = -1
-                        if this_entry.has_summary_result:
+                        if this_entry.summary_result:
                             this_summary = this_entry.summary_result
                             if this_summary.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
                                 runtime1 = this_summary.run_time_seconds_case1

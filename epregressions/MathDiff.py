@@ -268,7 +268,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
 
     # convert time matrix to dictionary (both time matrices should be identical here)
     tdict = matrix2hdict(time1)
-    tkey = tdict.keys()[0]
+    tkey = list(tdict.keys())[0]
 
     # convert data matrices to dictionaries
     hdict1 = matrix2hdict(mat1)
@@ -278,8 +278,8 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     abs_diff_dict = {}
     rel_diff_dict = {}
     for key in horder:
-        abs_diff_dict[key] = map(abs_diff, hdict1[key], hdict2[key])
-        rel_diff_dict[key] = map(rel_diff, hdict1[key], hdict2[key])
+        abs_diff_dict[key] = list(map(abs_diff, hdict1[key], hdict2[key]))
+        rel_diff_dict[key] = list(map(rel_diff, hdict1[key], hdict2[key]))
 
     err_dict = {}
     for key in horder:

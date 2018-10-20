@@ -48,26 +48,25 @@ class TestSuiteRunner:
         self.entries = these_entries
 
         # Main test configuration here
-        self.buildA = run_config.buildA.build
-        self.executableA = run_config.buildA.executable
-        self.runA = run_config.buildA.run
-        self.buildB = run_config.buildB.build
-        self.executableB = run_config.buildB.executable
-        self.runB = run_config.buildB.run
+        self.source_directory_a = run_config.buildA.source_directory
+        self.build_directory_a = run_config.buildA.build_directory
+        self.run_case_a = run_config.buildA.run
+        self.data_sets_dir_a = os.path.join(run_config.buildA.source_directory, 'datasets')
+        self.weather_dir_a = os.path.join(run_config.buildA.source_directory, 'weather')
+        self.test_files_a = os.path.join(run_config.buildA.source_directory, 'testfiles')
 
-        # For the other tools
-        self.eplus_install_path = run_config.eplus_install
+        self.source_directory_b = run_config.buildB.source_directory
+        self.build_directory_b = run_config.buildB.build_directory
+        self.run_case_b = run_config.buildB.run
+        self.data_sets_dir_b = os.path.join(run_config.buildB.source_directory, 'datasets')
+        self.weather_dir_b = os.path.join(run_config.buildB.source_directory, 'weather')
+        self.test_files_b = os.path.join(run_config.buildB.source_directory, 'testfiles')
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
         self.thresh_dict_file = os.path.join(script_dir, "MathDiff.config")
         self.math_diff_executable = os.path.join(script_dir, "MathDiff.py")
         self.table_diff_executable = os.path.join(script_dir, "TableDiff.py")
-        self.ep_run_executable = os.path.join(script_dir, "epsim.py")
-        self.weather_data_dir = os.path.join(script_dir, "..", "WeatherData")
-        self.data_sets_dirname = "DataSets"
-        self.data_sets_dir = os.path.join(script_dir, "..", self.data_sets_dirname)
-        self.input_files_dir = "InputFiles"
 
         # Settings/paths defined relative to the buildA/buildB test directories
         # the tests directory will be different based on forceRunType
@@ -75,10 +74,6 @@ class TestSuiteRunner:
             self.test_output_dir = "Tests-Annual"
         elif self.force_run_type == ForceRunType.DD:
             self.test_output_dir = "Tests-DDOnly"
-        elif self.force_run_type == ForceRunType.REVERSEDD:
-            self.my_print(
-                "ReverseDD not currently supported by runtests.py. A separate tool will be available soon. Aborting...")
-            self.my_alldone(self.entries)
         elif self.force_run_type == ForceRunType.NONE:
             self.test_output_dir = "Tests"
 
@@ -98,13 +93,8 @@ class TestSuiteRunner:
         # reset this flag
         self.id_like_to_stop_now = False
 
-        # some shorthand conveniences
-        b_a = self.buildA
-        b_b = self.buildB
-        d_test = self.test_output_dir
-
         # do some preparation
-        self.prepare_dir_structure(b_a, b_b, d_test)
+        self.prepare_dir_structure(self.build_directory_a, self.build_directory_b, self.test_output_dir)
 
         if self.id_like_to_stop_now:
             self.my_cancelled()
@@ -114,13 +104,15 @@ class TestSuiteRunner:
         self.my_starting(num_builds, len(self.entries))
 
         # run the energyplus script
-        if self.runA:
-            self.copy_and_run_for_build(b_a, self.executableA)
+        if self.run_case_a:
+            self.run_build(self.source_directory_a, self.test_files_a, self.weather_dir_a,
+                           self.data_sets_dir_a, self.build_directory_a)
             if self.id_like_to_stop_now:
                 self.my_cancelled()
                 return
-        if self.runB:
-            self.copy_and_run_for_build(b_b, self.executableB)
+        if self.run_case_b:
+            self.run_build(self.source_directory_b, self.test_files_b, self.weather_dir_b,
+                           self.data_sets_dir_b, self.build_directory_b)
             if self.id_like_to_stop_now:
                 self.my_cancelled()
                 return
@@ -129,8 +121,8 @@ class TestSuiteRunner:
         self.diff_logs_for_build()
 
         self.my_print("Test suite complete for directories:")
-        self.my_print("\t%s" % b_a)
-        self.my_print("\t%s" % b_b)
+        self.my_print("\t%s" % self.build_directory_a)
+        self.my_print("\t%s" % self.build_directory_b)
         self.my_print("Test suite complete")
 
         self.my_alldone(self.entries)
@@ -144,7 +136,7 @@ class TestSuiteRunner:
                 if not os.path.exists(os.path.join(build, d_test)):
                     os.mkdir(os.path.join(build, d_test))
 
-    def copy_and_run_for_build(self, build, executable):
+    def run_build(self, source_dir, test_files_dir, weather_dir, data_sets_dir, build_dir):
 
         this_test_dir = self.test_output_dir
         local_run_type = self.force_run_type
@@ -160,12 +152,13 @@ class TestSuiteRunner:
         for this_entry in self.entries:
 
             # first remove the previous test directory for this file and rename it
-            if os.path.exists(os.path.join(build, this_test_dir, this_entry.basename)):
-                shutil.rmtree(os.path.join(build, this_test_dir, this_entry.basename))
-            os.mkdir(os.path.join(build, this_test_dir, this_entry.basename))
+            test_run_directory = os.path.join(build_dir, this_test_dir, this_entry.basename)
+            if os.path.exists(test_run_directory):
+                shutil.rmtree(test_run_directory)
+            os.mkdir(test_run_directory)
 
             # establish the absolute path to the idf or imf, and append .idf or .imf as necessary
-            idf_base = os.path.join(build, self.input_files_dir, this_entry.basename)
+            idf_base = os.path.join(test_files_dir, this_entry.basename)
             idf_base = idf_base.strip()
             idf_path = ''
             imf_path = ''
@@ -181,65 +174,70 @@ class TestSuiteRunner:
             if os.path.exists(idf_path):
 
                 # copy the idf into the test directory, renaming to in.idf
-                shutil.copy(idf_path, os.path.join(build, this_test_dir, this_entry.basename, self.ep_in_filename))
+                shutil.copy(idf_path, os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename))
 
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
-                with open(os.path.join(build, this_test_dir, this_entry.basename, self.ep_in_filename)) as f_idf:
+                with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename)) as f_idf:
                     idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
                     # idf_text = unicode(idf_text, errors='ignore')
 
                 # if the file requires the window 5 data set file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:
-                    os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
-                    shutil.copy(os.path.join(self.data_sets_dir, 'Window5DataFile.dat'),
-                                os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
+                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
+                    shutil.copy(os.path.join(data_sets_dir, 'Window5DataFile.dat'),
+                                os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
+                    idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
 
                 # if the file requires the TDV data set file, bring it
                 #  into the test run directory, right now I think it's broken
                 if 'DataSets\TDV' in idf_text:
-                    os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
-                    os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname, 'TDV'))
-                    source_dir = os.path.join(self.data_sets_dir, 'TDV')
-                    src_files = os.listdir(source_dir)
+                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
+                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets', 'TDV'))
+                    tdv_dir = os.path.join(data_sets_dir, 'TDV')
+                    src_files = os.listdir(tdv_dir)
                     for file_name in src_files:
-                        full_file_name = os.path.join(source_dir, file_name)
+                        full_file_name = os.path.join(tdv_dir, file_name)
                         if os.path.isfile(full_file_name):
-                            shutil.copy(full_file_name,
-                                        os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname,
-                                                     'TDV'))
+                            shutil.copy(
+                                full_file_name,
+                                os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets', 'TDV')
+                            )
+                    idf_text = idf_text.replace(
+                        '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
+                        'datasets/TDV/TDV_2008_kBtu_CTZ06.csv'
+                    )
 
                 if 'Parametric:' in idf_text:
                     parametric_file = True
 
-                # if the file requires the FMUs data set file, bring it
-                #  into the test run directory, right now I think it's broken
-                if 'ExternalInterface:' in idf_text:
-                    os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
-                    os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname, 'FMUs'))
-                    source_dir = os.path.join(self.data_sets_dir, 'FMUs')
-                    src_files = os.listdir(source_dir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(source_dir, file_name)
-                        if os.path.isfile(full_file_name):
-                            shutil.copy(full_file_name,
-                                        os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname,
-                                                     'FMUs'))
+                # # if the file requires the FMUs data set file, bring it
+                # #  into the test run directory, right now I think it's broken
+                # if 'ExternalInterface:' in idf_text:
+                #     os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
+                #     os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname, 'FMUs'))
+                #     source_dir = os.path.join(self.data_sets_dir, 'FMUs')
+                #     src_files = os.listdir(source_dir)
+                #     for file_name in src_files:
+                #         full_file_name = os.path.join(source_dir, file_name)
+                #         if os.path.isfile(full_file_name):
+                #             shutil.copy(full_file_name,
+                #                        os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname,
+                #                                      'FMUs'))
 
                 # rewrite the idf with the (potentially) modified idf text
-                with open(os.path.join(build, this_test_dir, this_entry.basename, self.ep_in_filename), 'w') as f_idf:
-                    f_idf.write("%s\n" % idf_text)
+                with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename), 'w') as f_i:
+                    f_i.write("%s\n" % idf_text)
 
             elif os.path.exists(imf_path):
 
-                shutil.copy(imf_path, os.path.join(build, this_test_dir, this_entry.basename, 'in.imf'))
+                shutil.copy(imf_path, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.imf'))
                 # find the rest of the imf files and copy them into the test directory
-                source_dir = os.path.join(build, self.input_files_dir)
-                source_files = os.listdir(source_dir)
+                source_files = os.listdir(test_files_dir)
                 for file_name in source_files:
                     if file_name[-4:] == '.imf':
-                        full_file_name = os.path.join(source_dir, file_name)
-                        shutil.copy(full_file_name, os.path.join(build, this_test_dir, this_entry.basename))
+                        full_file_name = os.path.join(test_files_dir, file_name)
+                        shutil.copy(full_file_name, os.path.join(build_dir, this_test_dir, this_entry.basename))
 
             else:
 
@@ -250,16 +248,16 @@ class TestSuiteRunner:
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
                 continue
 
-            rvi = os.path.join(build, self.input_files_dir, this_entry.basename) + '.rvi'
+            rvi = os.path.join(test_files_dir, this_entry.basename) + '.rvi'
             if os.path.exists(rvi):
-                shutil.copy(rvi, os.path.join(build, this_test_dir, this_entry.basename, 'in.rvi'))
+                shutil.copy(rvi, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.rvi'))
 
-            mvi = os.path.join(build, self.input_files_dir, this_entry.basename) + '.mvi'
+            mvi = os.path.join(test_files_dir, this_entry.basename) + '.mvi'
             if os.path.exists(mvi):
-                shutil.copy(mvi, os.path.join(build, this_test_dir, this_entry.basename, 'in.mvi'))
+                shutil.copy(mvi, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.mvi'))
 
             if this_entry.epw:
-                epw_path = os.path.join(self.weather_data_dir, this_entry.epw + '.epw')
+                epw_path = os.path.join(weather_dir, this_entry.epw + '.epw')
                 epw_exists = os.path.exists(epw_path)
                 if (local_run_type != ForceRunType.DD) and (not epw_exists):
                     self.my_print("Weather file doesn't exist: %s .. skipping this input file" % epw_path)
@@ -270,15 +268,14 @@ class TestSuiteRunner:
                         (
                             epsim.execute_energyplus,
                             (
-                                build,
+                                source_dir,
+                                build_dir,
                                 this_entry.basename,
-                                os.path.join(build, this_test_dir, this_entry.basename),
-                                executable,
+                                test_run_directory,
                                 local_run_type,
                                 self.min_reporting_freq,
                                 parametric_file,
-                                os.path.join(self.weather_data_dir, this_entry.epw + '.epw'),
-                                self.eplus_install_path
+                                os.path.join(weather_dir, this_entry.epw + '.epw')
                             )
                         )
                     )
@@ -287,15 +284,14 @@ class TestSuiteRunner:
                     (
                         epsim.execute_energyplus,
                         (
-                            build,
+                            source_dir,
+                            build_dir,
                             this_entry.basename,
-                            os.path.join(build, this_test_dir, this_entry.basename),
-                            executable,
+                            test_run_directory,
                             local_run_type,
                             self.min_reporting_freq,
                             parametric_file,
-                            os.path.join(self.weather_data_dir, self.default_weather_filename),
-                            self.eplus_install_path
+                            os.path.join(weather_dir, self.default_weather_filename)
                         )
                     )
                 )
@@ -594,8 +590,8 @@ class TestSuiteRunner:
 
         for this_entry in self.entries:
             try:
-                case_result_dir_1 = os.path.join(self.buildA, self.test_output_dir, this_entry.basename)
-                case_result_dir_2 = os.path.join(self.buildB, self.test_output_dir, this_entry.basename)
+                case_result_dir_1 = os.path.join(self.build_directory_a, self.test_output_dir, this_entry.basename)
+                case_result_dir_2 = os.path.join(self.build_directory_b, self.test_output_dir, this_entry.basename)
                 this_entry = self.process_diffs_for_one_case(this_entry, case_result_dir_1, case_result_dir_2)
             except Exception as e:
                 self.my_print(
@@ -744,53 +740,53 @@ class TestSuiteRunner:
         self.id_like_to_stop_now = True
 
 
-if __name__ == "__main__":
-
-    # For ALL runs use BuildA
-    base = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
-                                executable_name="8.1.0.009_ifort_release",
-                                run_this_directory=True)
-
-    # If using ReverseDD, builB can just be None
-    mod = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
-                               executable_name="8.2.0.001_ifort_release",
-                               run_this_directory=True)
-
-    # Do a single test run...
-    DoASingleTestRun = False
-
-    # Build the list of files to run here:
-    entries = []
-    with open('Scripts/files_to_run.txt') as f:  # need to ask for this name separately
-        for entry in f:
-            if entry.strip() == "":
-                continue
-            if entry[0] == '!':
-                continue
-            epw = ''
-            tokens = entry.split(' ')
-            basename = tokens[0].strip()
-            if len(tokens) > 1:
-                epw = tokens[1].strip()
-            else:
-                epw = None
-            entries.append(TestEntry(basename, epw))
-            if DoASingleTestRun:
-                break
-
-    # Build the run configuration
-    RunConfig = TestRunConfiguration(run_mathdiff=True,
-                                     do_composite_err=True,
-                                     force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
-                                     single_test_run=DoASingleTestRun,
-                                     eplus_install_path='/home/elee/EnergyPlus/EnergyPlus-8-1-0',
-                                     num_threads=3,
-                                     report_freq=ReportingFreq.HOURLY,
-                                     buildA=base,
-                                     buildB=mod)
-
-    # instantiate the test suite
-    Runner = TestSuiteRunner(RunConfig, entries)
-
-    # Run it
-    Runner.run_test_suite()
+# if __name__ == "__main__":
+#
+#     # For ALL runs use BuildA
+#     base = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
+#                                 executable_name="8.1.0.009_ifort_release",
+#                                 run_this_directory=True)
+#
+#     # If using ReverseDD, builB can just be None
+#     mod = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
+#                                executable_name="8.2.0.001_ifort_release",
+#                                run_this_directory=True)
+#
+#     # Do a single test run...
+#     DoASingleTestRun = False
+#
+#     # Build the list of files to run here:
+#     entries = []
+#     with open('Scripts/files_to_run.txt') as f:  # need to ask for this name separately
+#         for entry in f:
+#             if entry.strip() == "":
+#                 continue
+#             if entry[0] == '!':
+#                 continue
+#             epw = ''
+#             tokens = entry.split(' ')
+#             basename = tokens[0].strip()
+#             if len(tokens) > 1:
+#                 epw = tokens[1].strip()
+#             else:
+#                 epw = None
+#             entries.append(TestEntry(basename, epw))
+#             if DoASingleTestRun:
+#                 break
+#
+#     # Build the run configuration
+#     RunConfig = TestRunConfiguration(run_mathdiff=True,
+#                                      do_composite_err=True,
+#                                      force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
+#                                      single_test_run=DoASingleTestRun,
+#                                      eplus_install_path='/home/elee/EnergyPlus/EnergyPlus-8-1-0',
+#                                      num_threads=3,
+#                                      report_freq=ReportingFreq.HOURLY,
+#                                      build_a=base,
+#                                      build_b=mod)
+#
+#     # instantiate the test suite
+#     Runner = TestSuiteRunner(RunConfig, entries)
+#
+#     # Run it
+#     Runner.run_test_suite()

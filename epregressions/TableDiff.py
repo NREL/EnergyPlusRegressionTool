@@ -321,29 +321,29 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     comparingthis = 'Comparing<br> %s<br> vs<br> %s<br><hr>' % (inputfile1, inputfile2)
 
     # Error soup
-    err_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- summary', html_data.thecss,))
+    err_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- summary', html_data.thecss,), features='html.parser')
 
     # Abs diff soup
-    abs_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- absolute differences', html_data.thecss,))
+    abs_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- absolute differences', html_data.thecss,), features='html.parser')
 
     # Rel diff soup
-    rel_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- relative differences', html_data.thecss,))
+    rel_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- relative differences', html_data.thecss,), features='html.parser')
 
     # Make error table 
-    tabletag = Tag(err_soup, 'table', [('border', '1')])
+    tabletag = Tag(err_soup, name='table', attrs=[('border', '1')])
     err_soup.body.append(tabletag)
 
     # Make error table headings
-    trtag = Tag(err_soup, 'tr')
+    trtag = Tag(err_soup, name='tr')
     tabletag.append(trtag)
     for title in ['Table', 'Abs file', 'Rel file', 'Big diffs', 'Small diffs', 'Equals', 'String diffs', 'Size diffs']:
-        thtag = Tag(err_soup, 'th')
+        thtag = Tag(err_soup, name='th')
         trtag.append(thtag)
         thtag.append(title)
 
     # Soup up the HTML input files
-    soup2 = BeautifulSoup(txt2)
-    soup1 = BeautifulSoup(txt1)
+    soup2 = BeautifulSoup(txt2, features='html.parser')
+    soup1 = BeautifulSoup(txt1, features='html.parser')
 
     tables1 = soup1('table')
     tables2 = soup2('table')
@@ -367,7 +367,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     count_of_not_in_1 = 0
     count_of_not_in_2 = 0
 
-    for i1 in range(0, len(uheadings1)):
+    for i1 in range(0, len(list(uheadings1))):
 
         count_of_tables += 1
 
@@ -379,7 +379,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         table_not_in_1 = 0
         table_not_in_2 = 0
 
-        uheading1 = uheadings1[i1]
+        uheading1 = list(uheadings1)[i1]
 
         # Table missing in second input file
         if not uheading1 in uhset_match:
@@ -391,7 +391,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
             continue
 
         table1 = tables1[i1]
-        table2 = tables2[uheadings2.index(uheading1)]
+        table2 = tables2[list(uheadings2).index(uheading1)]
 
         # Table size error
         if (len(table1('tr')) != len(table2('tr')) or len(table1('td')) != len(table2('td'))):
