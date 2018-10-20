@@ -37,7 +37,6 @@ class IDFListViewColumnIndex:
     RUN = 0
     IDF = 1
     EPW = 2
-    EXTERNAL_INTERFACE = 3
 
 
 # noinspection PyUnusedLocal
@@ -56,9 +55,7 @@ class PyApp(Gtk.Window):
         self.idf_selection_table = None
         self.file_list_num_files = None
         self.suite_option_handler_base_check_button = None
-        self.suite_option_base_exe = None
         self.suite_option_handler_mod_check_button = None
-        self.suite_option_mod_exe = None
         self.suite_option_num_threads = None
         self.run_type_combo_box = None
         self.report_frequency_combo_box = None
@@ -150,11 +147,12 @@ class PyApp(Gtk.Window):
     def go_away(self, what_else_goes_in_gtk_main_quit):
         try:
             self.save_settings(None)
-        except Exception as exc:
-            print(exc)
+        except Exception as this_exception:
+            print(this_exception)
         Gtk.main_quit()
 
     def gui_build(self):
+
         # put the window in the center of the (primary? current?) screen
         self.set_position(Gtk.WindowPosition.CENTER)
 
@@ -162,7 +160,7 @@ class PyApp(Gtk.Window):
         self.set_border_width(10)
 
         # set the window title
-        self.set_title("EnergyPlus Test Suite")
+        self.set_title("EnergyPlus Regressions")
 
         # set the window icon
         self.set_icon_from_file(os.path.join(script_dir, 'ep_icon.png'))
@@ -171,19 +169,19 @@ class PyApp(Gtk.Window):
         self.build_pre_gui_stuff()
 
         # create a v-box to start laying out the geometry of the form
-        vbox = Gtk.VBox(False, box_spacing)
+        this_v_box = Gtk.VBox(False, box_spacing)
 
         # add the menu to the v-box
-        vbox.pack_start(self.gui_build_menu_bar(), False, False, box_spacing)
+        this_v_box.pack_start(self.gui_build_menu_bar(), False, False, box_spacing)
 
         # add the notebook to the v-box
-        vbox.pack_start(self.gui_build_notebook(), True, True, box_spacing)
+        this_v_box.pack_start(self.gui_build_notebook(), True, True, box_spacing)
 
         # and finally add the status section at the bottom
-        vbox.pack_end(self.gui_build_messaging(), False, False, box_spacing)
+        this_v_box.pack_end(self.gui_build_messaging(), False, False, box_spacing)
 
         # now add the entire v-box to the main form
-        self.add(vbox)
+        self.add(this_v_box)
 
         # shows all child widgets recursively
         self.show_all()
@@ -477,8 +475,8 @@ class PyApp(Gtk.Window):
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.idf_list_store = Gtk.ListStore(bool, str, str, str)
-        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", ""])
+        self.idf_list_store = Gtk.ListStore(bool, str, str)
+        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --"])
         tree_view = Gtk.TreeView(self.idf_list_store)
         tree_view.set_rules_hint(True)
         # make the columns for the tree view; could add more columns including a checkbox
@@ -500,12 +498,6 @@ class PyApp(Gtk.Window):
         column.set_sort_column_id(2)
         column.set_resizable(True)
         tree_view.append_column(column)
-        # column: External Interface name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("ExtInterface?", renderer_text, text=IDFListViewColumnIndex.EXTERNAL_INTERFACE)
-        column.set_sort_column_id(3)
-        column.set_resizable(True)
-        tree_view.append_column(column)
 
         listview_window.add(tree_view)
         aligner = Gtk.Alignment(xalign=0, yalign=0, xscale=1, yscale=1)
@@ -518,7 +510,7 @@ class PyApp(Gtk.Window):
         self.idf_selection_table.set_col_spacings(box_spacing)
 
         label = Gtk.Label("")
-        label.set_markup("<b>These options will only switch the matching entries</b>")
+        label.set_markup("<b>IDF selection options</b>")
         label.set_justify(Gtk.Justification.CENTER)
         alignment = Gtk.Alignment(xalign=0.5, yalign=1.0)
         alignment.add(label)
@@ -526,16 +518,6 @@ class PyApp(Gtk.Window):
 
         this_row_num = 2
         self.add_idf_selection_row("ALL:", self.idf_selection_all, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("ExternalInterface:", self.idf_selection_extint, row_num=this_row_num)
-        this_row_num += 1
-
-        label = Gtk.Label("")
-        label.set_markup("<b>These options will clear all selections first</b>")
-        label.set_justify(Gtk.Justification.CENTER)
-        alignment = Gtk.Alignment(xalign=0.5, yalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(alignment, 0, 3, this_row_num - 1, this_row_num)
 
         this_row_num += 1
         label = Gtk.Label("Random:")
@@ -1130,15 +1112,14 @@ class PyApp(Gtk.Window):
 
         self.idf_list_store.clear()
         for file_a in verified_idf_files:
-            this_file = [True, file_a.filename]
+            if file_a.external_interface:
+                this_file = [False, file_a.filename]
+            else:
+                this_file = [True, file_a.filename]
             if file_a.has_weather_file:
                 this_file.append(file_a.weatherfilename)
             else:
                 this_file.append(self.missing_weather_file_key)
-            if file_a.external_interface:
-                this_file.append("Y")
-            else:
-                this_file.append("")
             self.idf_list_store.append(this_file)
 
         self.add_log_entry("Completed building idf list")
@@ -1174,19 +1155,6 @@ class PyApp(Gtk.Window):
             selection = True
         for this_file in self.idf_list_store:
             this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_extint(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.EXTERNAL_INTERFACE
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
         self.update_status_with_num_selected()
 
     def idf_selection_random(self, widget, calltype):
