@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 """
-    configuration file MathDiff.config customizes absolute and relative difference thresholds
+    configuration file math_diff.config customizes absolute and relative difference thresholds
     for different unit/aggregation pairs, for instance:
                C,* = 0.1, 0.005
     means that all in fields reported in C (degrees celsius) will be compared with an absolute
@@ -36,7 +36,7 @@ import sys
 import re
 import traceback
 
-# Load threshold dictionary from MathDiff.config file
+# Load threshold dictionary from math_diff.config file
 class ThreshDict(object):
 
     def __init__(self, tdname):
@@ -59,7 +59,7 @@ class ThreshDict(object):
                 tag = unit+'|'+agg
             
                 if tag in self.tdict:
-                    print >> sys.stderr, 'Over-riding existing entry for %s in threshold dictionary MathDiff.config' % (tag)
+                    print >> sys.stderr, 'Over-riding existing entry for %s in threshold dictionary math_diff.config' % (tag)
 
                 self.tdict[tag] = (float(abs_thresh), float(rel_thresh))
             except:

@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from multiprocessing import current_process
 
-from epregressions.Structures import *
+from epregressions.structures import *
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)

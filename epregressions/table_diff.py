@@ -42,7 +42,7 @@ import os.path
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 from epregressions import html_data
-from epregressions import ThreshDict
+from epregressions import thresh_dict
 
 help_message = __doc__
 
@@ -507,7 +507,7 @@ def main(argv=None):
     #    return -1
 
     # Load diffing threshold dictionary
-    thresh_dict = ThreshDict.ThreshDict(os.path.join(script_dir, 'MathDiff.config'))
+    thresh_dict = thresh_dict.ThreshDict(os.path.join(script_dir, 'math_diff.config'))
 
     # run the main program.
     table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_file)

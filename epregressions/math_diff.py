@@ -19,7 +19,7 @@ usage:
                relative differences of summary of input1 and summary of input2 
     summary_csv = output file containing csv rows for each result, but no details
 
-    configuration file MathDiff.config customizes absolute and relative difference thresholds
+    configuration file math_diff.config customizes absolute and relative difference thresholds
     for different unit/aggregation pairs, for instance:
                C,* = 0.1, 0.005
     means that all in fields reported in C (degrees celsius) will be compared with an absolute
@@ -58,7 +58,7 @@ import getopt
 import os
 import sys
 
-from epregressions import ThreshDict
+from epregressions import thresh_dict
 from epregressions import mycsv
 
 help_message = __doc__
@@ -70,7 +70,7 @@ script_dir = os.path.abspath(path)
 # This is the configurable delta threshold dictionary which we use to
 # customize thresholds based on unit (C, W, kWH, etc.) and aggregation
 # (timestep, hourly, etc.).  Customization is applied using the
-# MathDiff.config file
+# math_diff.config file
 
 class DuplicateHeaderException(Exception):
     """docstring for DuplicateHeaderException"""
@@ -447,7 +447,7 @@ def main(argv=None):
         return -1
 
     # Load diffing threshold dictionary
-    thresh_dict = ThreshDict.ThreshDict(os.path.join(script_dir, 'MathDiff.config'))
+    thresh_dict = thresh_dict.ThreshDict(os.path.join(script_dir, 'math_diff.config'))
 
     math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, csvsummary)
     return 0

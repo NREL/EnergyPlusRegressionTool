@@ -9,12 +9,12 @@ from difflib import *
 # add stuff to either make series calls, or multi-threading
 from multiprocessing import Process, Queue, freeze_support
 
-from epregressions import MathDiff
-from epregressions import TableDiff
-from epregressions import ThreshDict
+from epregressions import math_diff
+from epregressions import table_diff
+from epregressions import thresh_dict as td
 from epregressions import epsim
 # import the files related to this script
-from epregressions.Structures import *
+from epregressions.structures import *
 
 
 # get the current file path for convenience
@@ -64,9 +64,9 @@ class TestSuiteRunner:
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
-        self.thresh_dict_file = os.path.join(script_dir, "MathDiff.config")
-        self.math_diff_executable = os.path.join(script_dir, "MathDiff.py")
-        self.table_diff_executable = os.path.join(script_dir, "TableDiff.py")
+        self.thresh_dict_file = os.path.join(script_dir, "math_diff.config")
+        self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
+        self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
 
         # Settings/paths defined relative to the buildA/buildB test directories
         # the tests directory will be different based on forceRunType
@@ -457,11 +457,11 @@ class TestSuiteRunner:
             return this_entry
 
         # Load diffing threshold dictionary
-        thresh_dict = ThreshDict.ThreshDict(self.thresh_dict_file)
+        thresh_dict = td.ThreshDict(self.thresh_dict_file)
 
         # Do Math (CSV) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_1, 'eplusout.csv'):
-            this_entry.add_math_differences(MathDifferences(MathDiff.math_diff(
+            this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusout.csv'),
                 join(case_result_dir_2, 'eplusout.csv'),
@@ -470,7 +470,7 @@ class TestSuiteRunner:
                 join(out_dir, 'eplusout.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ESO)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmtr.csv'):
-            this_entry.add_math_differences(MathDifferences(MathDiff.math_diff(
+            this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusmtr.csv'),
                 join(case_result_dir_2, 'eplusmtr.csv'),
@@ -480,7 +480,7 @@ class TestSuiteRunner:
                 path_to_math_diff_log)), MathDifferences.MTR)
 
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'epluszsz.csv'):
-            this_entry.add_math_differences(MathDifferences(MathDiff.math_diff(
+            this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'epluszsz.csv'),
                 join(case_result_dir_2, 'epluszsz.csv'),
@@ -490,7 +490,7 @@ class TestSuiteRunner:
                 path_to_math_diff_log)), MathDifferences.ZSZ)
 
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
-            this_entry.add_math_differences(MathDifferences(MathDiff.math_diff(
+            this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusssz.csv'),
                 join(case_result_dir_2, 'eplusssz.csv'),
@@ -501,7 +501,7 @@ class TestSuiteRunner:
 
         # Do Tabular (HTML) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):
-            this_entry.add_table_differences(TableDifferences(TableDiff.table_diff(
+            this_entry.add_table_differences(TableDifferences(table_diff.table_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplustbl.htm'),
                 join(case_result_dir_2, 'eplustbl.htm'),

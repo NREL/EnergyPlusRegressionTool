@@ -9,7 +9,7 @@ import json
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import *
 from epregressions.runtests import *
-from epregressions.Structures import SingleCaseInformation
+from epregressions.structures import SingleCaseInformation
 
 # graphics stuff
 import gi
@@ -1110,7 +1110,7 @@ class PyApp(Gtk.Window):
 
         # override with our defaults
         self.file_list_builder_configuration.check = False
-        self.file_list_builder_configuration.master_data_file = os.path.join(script_dir, 'FullFileSetDetails.csv')
+        self.file_list_builder_configuration.master_data_file = os.path.join(script_dir, 'full_file_set_details.csv')
 
     def build_button(self, widget):
 

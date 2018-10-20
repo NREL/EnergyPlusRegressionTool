@@ -46,7 +46,7 @@ class FileListArgsBuilderForGUI:
         self.verify = None
         self.check = False
         self.verify = None
-        self.master_data_file = "FullFileSetDetails.csv"
+        self.master_data_file = "full_file_set_details.csv"
 
         # some special things for GUI
         self.gui = True
@@ -256,7 +256,7 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
 
     # these were originally inputs, but that is really bulky
     # they are now hardwired and can be manipulated outside of the script if needed
-    args.master_data_file = os.path.join(script_dir, "FullFileSetDetails.csv")
+    args.master_data_file = os.path.join(script_dir, "full_file_set_details.csv")
     args.output_file = os.path.join(script_dir, "files_to_run.txt")
 
     # backup the previous output file if one already exists and then delete it
