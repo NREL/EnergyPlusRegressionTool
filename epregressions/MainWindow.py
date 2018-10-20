@@ -47,11 +47,7 @@ class IDFListViewColumnIndex:
     IDF = 1
     EPW = 2
     EXTERNAL_INTERFACE = 3
-    GROUND_HT = 4
-    DATA_SET = 5
-    PARAMETRIC = 6
-    MACRO = 7
-    DELIGHT = 8
+    PARAMETRIC = 4
 
 
 # noinspection PyUnusedLocal
@@ -491,8 +487,8 @@ class PyApp(Gtk.Window):
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.idf_list_store = Gtk.ListStore(bool, str, str, str, str, str, str, str, str)
-        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", "", "", "", "", "", ""])
+        self.idf_list_store = Gtk.ListStore(bool, str, str, str, str)
+        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", "", ""])
         tree_view = Gtk.TreeView(self.idf_list_store)
         tree_view.set_rules_hint(True)
         # make the columns for the tree view; could add more columns including a checkbox
@@ -520,34 +516,10 @@ class PyApp(Gtk.Window):
         column.set_sort_column_id(3)
         column.set_resizable(True)
         tree_view.append_column(column)
-        # column: GroundHT name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("GroundHT?", renderer_text, text=IDFListViewColumnIndex.GROUND_HT)
-        column.set_sort_column_id(4)
-        column.set_resizable(True)
-        tree_view.append_column(column)
-        # column: Data set name name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("ExtDataset?", renderer_text, text=IDFListViewColumnIndex.DATA_SET)
-        column.set_sort_column_id(5)
-        column.set_resizable(True)
-        tree_view.append_column(column)
         # column: Parametric name
         renderer_text = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Parametrics", renderer_text, text=IDFListViewColumnIndex.PARAMETRIC)
-        column.set_sort_column_id(6)
-        column.set_resizable(True)
-        tree_view.append_column(column)
-        # column: Macro name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("MacroDefns", renderer_text, text=IDFListViewColumnIndex.MACRO)
-        column.set_sort_column_id(7)
-        column.set_resizable(True)
-        tree_view.append_column(column)
-        # column: Delight name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("DeLight", renderer_text, text=IDFListViewColumnIndex.DELIGHT)
-        column.set_sort_column_id(8)
+        column.set_sort_column_id(4)
         column.set_resizable(True)
         tree_view.append_column(column)
 
@@ -572,14 +544,6 @@ class PyApp(Gtk.Window):
         self.add_idf_selection_row("ALL:", self.idf_selection_all, row_num=this_row_num)
         this_row_num += 1
         self.add_idf_selection_row("ExternalInterface:", self.idf_selection_extint, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("GroundHT:", self.idf_selection_groundht, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("ExtDataSet:", self.idf_selection_dataset, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("DeLight:", self.idf_selection_delight, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("Macro:", self.idf_selection_macro, row_num=this_row_num)
         this_row_num += 1
         self.add_idf_selection_row("Parametric:", self.idf_selection_parametric, row_num=this_row_num)
         this_row_num += 1
@@ -1193,8 +1157,7 @@ class PyApp(Gtk.Window):
                 this_file.append(file_a.weatherfilename)
             else:
                 this_file.append(self.missing_weather_file_key)
-            for attr in [file_a.external_interface, file_a.ground_ht, file_a.external_dataset, file_a.parametric,
-                         file_a.macro, file_a.delight]:
+            for attr in [file_a.external_interface, file_a.parametric]:
                 if attr:
                     this_file.append("Y")
                 else:
@@ -1241,58 +1204,6 @@ class PyApp(Gtk.Window):
             self.warning_not_yet_built()
             return
         column = IDFListViewColumnIndex.EXTERNAL_INTERFACE
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_groundht(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.GROUND_HT
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_dataset(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.DATA_SET
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_delight(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.DELIGHT
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_macro(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.MACRO
         selection = False
         if calltype == "select":
             selection = True

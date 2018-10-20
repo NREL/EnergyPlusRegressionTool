@@ -45,15 +45,16 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
         # Run EPMacro as necessary
         if os.path.exists('in.imf'):
             print("IMF file exists")
-            with open('in.imf') as f:
+            with open('in.imf', 'rb') as f:
                 lines = f.readlines()
             newlines = []
             for line in lines:
-                if '##fileprefix' in line:
+                encoded_line = line.decode('UTF-8', 'ignore')
+                if '##fileprefix' in encoded_line:
                     newlines.append('')
                     print("Replaced fileprefix line with a blank")
                 else:
-                    newlines.append(line)
+                    newlines.append(encoded_line)
             with open('in.imf', 'w') as f:
                 for line in newlines:
                     f.write(line)
