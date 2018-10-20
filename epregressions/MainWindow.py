@@ -47,7 +47,6 @@ class IDFListViewColumnIndex:
     IDF = 1
     EPW = 2
     EXTERNAL_INTERFACE = 3
-    PARAMETRIC = 4
 
 
 # noinspection PyUnusedLocal
@@ -487,8 +486,8 @@ class PyApp(Gtk.Window):
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
 
-        self.idf_list_store = Gtk.ListStore(bool, str, str, str, str)
-        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", "", ""])
+        self.idf_list_store = Gtk.ListStore(bool, str, str, str)
+        self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --", ""])
         tree_view = Gtk.TreeView(self.idf_list_store)
         tree_view.set_rules_hint(True)
         # make the columns for the tree view; could add more columns including a checkbox
@@ -516,12 +515,6 @@ class PyApp(Gtk.Window):
         column.set_sort_column_id(3)
         column.set_resizable(True)
         tree_view.append_column(column)
-        # column: Parametric name
-        renderer_text = Gtk.CellRendererText()
-        column = Gtk.TreeViewColumn("Parametrics", renderer_text, text=IDFListViewColumnIndex.PARAMETRIC)
-        column.set_sort_column_id(4)
-        column.set_resizable(True)
-        tree_view.append_column(column)
 
         listview_window.add(tree_view)
         aligner = Gtk.Alignment(xalign=0, yalign=0, xscale=1, yscale=1)
@@ -544,12 +537,6 @@ class PyApp(Gtk.Window):
         self.add_idf_selection_row("ALL:", self.idf_selection_all, row_num=this_row_num)
         this_row_num += 1
         self.add_idf_selection_row("ExternalInterface:", self.idf_selection_extint, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("Parametric:", self.idf_selection_parametric, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("NoWeather:", self.idf_selection_noweather, row_num=this_row_num)
-        this_row_num += 1
-        self.add_idf_selection_row("Underscore:", self.idf_selection_underscore, row_num=this_row_num)
         this_row_num += 1
 
         label = Gtk.Label("")
@@ -628,9 +615,6 @@ class PyApp(Gtk.Window):
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
 
-        # if self.suiteargs.buildA.build:
-        #    self.suite_option_handler_base_check_button.set_label(self.suiteargs.buildA.build)
-
         h_box_1 = Gtk.HBox(False, box_spacing)
         this_label = Gtk.Label("Case 1: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
@@ -675,9 +659,6 @@ class PyApp(Gtk.Window):
         alignment.add(button1)
         h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
-
-        # if self.suiteargs.buildA.executable:
-        #     self.suite_option_base_exe.set_text(self.suiteargs.buildA.executable)
 
         notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
         h_box_2 = Gtk.HBox(False, box_spacing)
@@ -998,7 +979,7 @@ class PyApp(Gtk.Window):
         v_box = Gtk.VBox(False, box_spacing)
         v_box.pack_start(
             self.log_scroll_notebook_page, True, True, box_spacing
-        )  # EDWIN: Added False False here, verify this
+        )
 
         clear_button = Gtk.Button("Clear Log Messages")
         clear_button.connect("clicked", self.clear_log)
@@ -1046,7 +1027,7 @@ class PyApp(Gtk.Window):
         self.status_bar = Gtk.Statusbar()
         aligner = Gtk.Alignment(xalign=1.0, yalign=0.0, xscale=0.4, yscale=1.0)
         aligner.add(self.progress)
-        self.status_bar.pack_start(aligner, False, False, box_spacing)  # EDWIN: Added args here
+        self.status_bar.pack_start(aligner, True, True, box_spacing)
         self.status_bar_context_id = self.status_bar.get_context_id("Status")
         aligner = Gtk.Alignment(xalign=1.0, yalign=1.0, xscale=1.0, yscale=0.0)
         aligner.add(self.status_bar)
@@ -1083,8 +1064,12 @@ class PyApp(Gtk.Window):
         self.log_store.append(["%s" % str(datetime.now()), "%s" % message])
 
     def warning_dialog(self, message, do_log_entry=True):
-        dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.WARNING,
-                                   Gtk.ButtonsType.OK, message)
+        dialog = Gtk.MessageDialog(
+            self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            Gtk.MessageType.WARNING,
+            Gtk.ButtonsType.OK,
+            message
+        )
         dialog.set_title("Warning message")
         dialog.run()
         if do_log_entry:
@@ -1097,8 +1082,10 @@ class PyApp(Gtk.Window):
     def show_help_pdf(self, widget):
         path_to_pdf = os.path.join(script_dir, "..", "Documentation", "ep-testsuite.pdf")
         if not os.path.exists(path_to_pdf):
-            dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
-                                       "Could not find help file; expected at:\n %s" % path_to_pdf)
+            dialog = Gtk.MessageDialog(
+                self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
+                "Could not find help file; expected at:\n %s" % path_to_pdf
+            )
             dialog.run()
             dialog.destroy()
             return
@@ -1157,11 +1144,10 @@ class PyApp(Gtk.Window):
                 this_file.append(file_a.weatherfilename)
             else:
                 this_file.append(self.missing_weather_file_key)
-            for attr in [file_a.external_interface, file_a.parametric]:
-                if attr:
-                    this_file.append("Y")
-                else:
-                    this_file.append("")
+            if file_a.external_interface:
+                this_file.append("Y")
+            else:
+                this_file.append("")
             self.idf_list_store.append(this_file)
 
         self.add_log_entry("Completed building idf list")
@@ -1209,45 +1195,6 @@ class PyApp(Gtk.Window):
             selection = True
         for this_file in self.idf_list_store:
             if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_parametric(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.PARAMETRIC
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == "Y":
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_noweather(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.EPW
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column] == self.missing_weather_file_key:
-                this_file[0] = selection
-        self.update_status_with_num_selected()
-
-    def idf_selection_underscore(self, widget, calltype):
-        if not self.idf_files_have_been_built:
-            self.warning_not_yet_built()
-            return
-        column = IDFListViewColumnIndex.IDF
-        selection = False
-        if calltype == "select":
-            selection = True
-        for this_file in self.idf_list_store:
-            if this_file[column][0] == "_":
                 this_file[0] = selection
         self.update_status_with_num_selected()
 
@@ -1331,8 +1278,10 @@ class PyApp(Gtk.Window):
             self.warning_not_yet_built()
             return
         self.add_log_entry("User is entering idf files for selection using dialog")
-        dialog = Gtk.MessageDialog(self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.QUESTION,
-                                   Gtk.ButtonsType.OK_CANCEL, None)
+        dialog = Gtk.MessageDialog(
+            self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.QUESTION,
+            Gtk.ButtonsType.OK_CANCEL, None
+        )
         dialog.set_title("Enter list of files to select")
         dialog.set_markup('Enter file names to select, one per line\nFile extensions are optional')
         scrolled_window = Gtk.ScrolledWindow()
@@ -1345,7 +1294,7 @@ class PyApp(Gtk.Window):
         dialog.show_all()
         result = dialog.run()
         my_buffer = this_entry.get_buffer()
-        text = my_buffer.get_text(my_buffer.get_start_iter(), my_buffer.get_end_iter())
+        text = my_buffer.get_text(my_buffer.get_start_iter(), my_buffer.get_end_iter(), False)
         dialog.destroy()
         if result != Gtk.ResponseType.OK:
             return
@@ -1605,8 +1554,11 @@ class PyApp(Gtk.Window):
             return "red"  # Gtk.gdk.Color(220, 20, 60)
 
     def suite_option_handler_runtime_file(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Select runtime file save name", action=Gtk.FileChooserAction.SAVE,
-                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog = Gtk.FileChooserDialog(
+            title="Select runtime file save name",
+            action=Gtk.FileChooserAction.SAVE,
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
         dialog.set_select_multiple(False)
         if self.last_folder_path:
             dialog.set_current_folder(self.last_folder_path)
@@ -1715,15 +1667,6 @@ class PyApp(Gtk.Window):
         self.verify_list_store.append(
             ["Case 2 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
         )
-
-        # basement_exists = os.path.exists(basement)
-        # slab_exists = os.path.exists(slab)
-        # basement_idd_exists = os.path.exists(basement_idd)
-        # slab_idd_exists = os.path.exists(slab_idd)
-        # expand_objects_exists = os.path.exists(expand_objects)
-        # ep_macro_exists = os.path.exists(ep_macro)
-        # read_var_exists = os.path.exists(read_var)
-        # parametric_exists = os.path.exists(parametric)
 
         if all([item[2] for item in self.verify_list_store]):
             return True

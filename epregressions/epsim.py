@@ -27,7 +27,7 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
     expandobjects = os.path.join(build_directory, 'Products', 'ExpandObjects')
     epmacro = os.path.join(source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro')
     readvars = os.path.join(build_directory, 'Products', 'ReadVarsESO')
-    parametric = os.path.join(build_directory, 'Products', 'ParametricPreProcessor')
+    parametric = os.path.join(build_directory, 'Products', 'ParametricPreprocessor')
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
@@ -64,7 +64,7 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
 
         # Run Preprocessor -- after EPMacro?
         if this_parametric_file:
-            parametric_run = subprocess.Popen([parametric, 'in.idf'], shell=True, stdout=subprocess.PIPE,
+            parametric_run = subprocess.Popen(parametric + ' in.idf', shell=True, stdout=subprocess.PIPE,
                                               stderr=subprocess.PIPE)
             parametric_run.communicate()
             candidate_files = glob.glob('in-*.idf')
@@ -87,7 +87,11 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
 
             if os.path.exists('BasementGHTIn.idf'):
                 shutil.copy(basementidd, test_run_directory)
-                basement_run = subprocess.Popen(basement, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                basement_environment = os.environ.copy()
+                basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
+                basement_run = subprocess.Popen(
+                    basement, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=basement_environment
+                )
                 basement_run.communicate()
                 with open('EPObjects.TXT') as f:
                     append_text = f.read()

@@ -174,26 +174,26 @@ class TestSuiteRunner:
             if os.path.exists(idf_path):
 
                 # copy the idf into the test directory, renaming to in.idf
-                shutil.copy(idf_path, os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename))
+                shutil.copy(idf_path, os.path.join(test_run_directory, self.ep_in_filename))
 
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
-                with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename)) as f_idf:
+                with open(os.path.join(test_run_directory, self.ep_in_filename)) as f_idf:
                     idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
                     # idf_text = unicode(idf_text, errors='ignore')
 
                 # if the file requires the window 5 data set file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:
-                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
+                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
                     shutil.copy(os.path.join(data_sets_dir, 'Window5DataFile.dat'),
-                                os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
+                                os.path.join(test_run_directory, 'datasets'))
                     idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
 
                 # if the file requires the TDV data set file, bring it
                 #  into the test run directory, right now I think it's broken
                 if 'DataSets\TDV' in idf_text:
-                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets'))
-                    os.mkdir(os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets', 'TDV'))
+                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                    os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
                     tdv_dir = os.path.join(data_sets_dir, 'TDV')
                     src_files = os.listdir(tdv_dir)
                     for file_name in src_files:
@@ -201,29 +201,39 @@ class TestSuiteRunner:
                         if os.path.isfile(full_file_name):
                             shutil.copy(
                                 full_file_name,
-                                os.path.join(build_dir, this_test_dir, this_entry.basename, 'datasets', 'TDV')
+                                os.path.join(test_run_directory, 'datasets', 'TDV')
                             )
                     idf_text = idf_text.replace(
                         '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
-                        'datasets/TDV/TDV_2008_kBtu_CTZ06.csv'
+                        os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
                     )
+
+                if 'HybridZoneModel_TemperatureData.csv' in idf_text:
+                    shutil.copy(
+                        os.path.join(test_files_dir, 'HybridZoneModel_TemperatureData.csv'),
+                        os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
+                    )
+
+                if 'report variable dictionary' in idf_text:
+                    idf_text = idf_text.replace('report variable dictionary', '')
 
                 if 'Parametric:' in idf_text:
                     parametric_file = True
 
-                # # if the file requires the FMUs data set file, bring it
-                # #  into the test run directory, right now I think it's broken
-                # if 'ExternalInterface:' in idf_text:
-                #     os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname))
-                #     os.mkdir(os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname, 'FMUs'))
-                #     source_dir = os.path.join(self.data_sets_dir, 'FMUs')
-                #     src_files = os.listdir(source_dir)
-                #     for file_name in src_files:
-                #         full_file_name = os.path.join(source_dir, file_name)
-                #         if os.path.isfile(full_file_name):
-                #             shutil.copy(full_file_name,
-                #                        os.path.join(build, this_test_dir, this_entry.basename, self.data_sets_dirname,
-                #                                      'FMUs'))
+                # if the file requires the FMUs data set file, bring it
+                #  into the test run directory, right now I think it's broken
+                if 'ExternalInterface:' in idf_text:
+                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                    os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
+                    source_dir = os.path.join('datasets', 'FMUs')
+                    src_files = os.listdir(source_dir)
+                    for file_name in src_files:
+                        full_file_name = os.path.join(source_dir, file_name)
+                        if os.path.isfile(full_file_name):
+                            shutil.copy(
+                                full_file_name,
+                                os.path.join(test_run_directory, 'datasets', 'FMUs')
+                            )
 
                 # rewrite the idf with the (potentially) modified idf text
                 with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename), 'w') as f_i:
@@ -256,45 +266,33 @@ class TestSuiteRunner:
             if os.path.exists(mvi):
                 shutil.copy(mvi, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.mvi'))
 
+            epw_path = os.path.join(source_dir, 'weather', self.default_weather_filename)
             if this_entry.epw:
                 epw_path = os.path.join(weather_dir, this_entry.epw + '.epw')
                 epw_exists = os.path.exists(epw_path)
-                if (local_run_type != ForceRunType.DD) and (not epw_exists):
-                    self.my_print("Weather file doesn't exist: %s .. skipping this input file" % epw_path)
-                    self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, True, ""))
-                    continue
-                else:
-                    energy_plus_runs.append(
-                        (
-                            epsim.execute_energyplus,
-                            (
-                                source_dir,
-                                build_dir,
-                                this_entry.basename,
-                                test_run_directory,
-                                local_run_type,
-                                self.min_reporting_freq,
-                                parametric_file,
-                                os.path.join(weather_dir, this_entry.epw + '.epw')
-                            )
+                if not epw_exists:
+                    self.my_print(
+                        "For case %s, weather file did not exist at %s, using a default one!" % (
+                            this_entry.basename, epw_path
                         )
                     )
-            else:
-                energy_plus_runs.append(
+                    epw_path = os.path.join(source_dir, 'weather', self.default_weather_filename)
+
+            energy_plus_runs.append(
+                (
+                    epsim.execute_energyplus,
                     (
-                        epsim.execute_energyplus,
-                        (
-                            source_dir,
-                            build_dir,
-                            this_entry.basename,
-                            test_run_directory,
-                            local_run_type,
-                            self.min_reporting_freq,
-                            parametric_file,
-                            os.path.join(weather_dir, self.default_weather_filename)
-                        )
+                        source_dir,
+                        build_dir,
+                        this_entry.basename,
+                        test_run_directory,
+                        local_run_type,
+                        self.min_reporting_freq,
+                        parametric_file,
+                        epw_path
                     )
                 )
+            )
 
         if self.number_of_threads == 1:
             for task in energy_plus_runs:
@@ -400,6 +398,22 @@ class TestSuiteRunner:
         end_path = join(case_result_dir_2, 'eplusout.end')
         if os.path.exists(end_path):
             [status_case2, runtime_case2] = self.process_end_file(end_path)
+
+        # one quick check here for expect-fatal tests
+        if this_entry.basename == 'EMSTestMathAndKill':
+            if status_case1 == EndErrSummary.STATUS_FATAL and status_case2 == EndErrSummary.STATUS_FATAL:
+                # this is actually what we expect, so add a success result, print a message, and get out
+                this_entry.add_summary_result(
+                    EndErrSummary(
+                        EndErrSummary.STATUS_SUCCESS,
+                        runtime_case1,
+                        EndErrSummary.STATUS_SUCCESS,
+                        runtime_case2
+                    ))
+                self.my_print("EMSTestMathAndKill Fatal-ed as expected, continuing with no diff checking on it")
+                return this_entry
+
+        # add the initial end/err summary to the entry
         this_entry.add_summary_result(EndErrSummary(status_case1, runtime_case1, status_case2, runtime_case2))
 
         # Handle the results of the end file before doing anything with diffs
@@ -408,30 +422,38 @@ class TestSuiteRunner:
             # Case 1a: Both files are successful
             if sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 2:
                 # Just continue to process diffs
-                self.my_print("Processing (Diffs) : %s" % this_entry.basename)
+                self.my_print(
+                    "Processing (Diffs) : %s" % this_entry.basename
+                )
             # Case 1b: Both completed, but both failed: report that it failed in both cases and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 0:
                 self.my_print(
-                    "Skipping entry because it has a fatal error in both base and mod cases: %s" % this_entry.basename)
+                    "Skipping entry because it has a fatal error in both base and mod cases: %s" % this_entry.basename
+                )
                 return this_entry
             # Case 1c: Both completed, but one failed: report that it failed in one case and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 1:
                 self.my_print(
-                    "Skipping an entry because it appears to have a fatal error in one case: %s" % this_entry.basename)
+                    "Skipping an entry because it appears to have a fatal error in one case: %s" % this_entry.basename
+                )
                 return this_entry
         # Case 2: Both end files DID NOT exist
         elif all(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]):
             self.my_print(
-                "Skipping entry because it failed (crashed) in both base and mod cases: %s" % this_entry.basename)
+                "Skipping entry because it failed (crashed) in both base and mod cases: %s" % this_entry.basename
+            )
             return this_entry
         # Case 3: Both end files DID NOT exist
         elif sum(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]) == 1:
             self.my_print(
-                "Skipping an entry because it appears to have failed (crashed) in one case: %s" % this_entry.basename)
+                "Skipping an entry because it appears to have failed (crashed) in one case: %s" % this_entry.basename
+            )
             return this_entry
         # Case 4: Unhandled combination
         else:
-            self.my_print("Skipping an entry because it has an unknown end status: %s" % this_entry.basename)
+            self.my_print(
+                "Skipping an entry because it has an unknown end status: %s" % this_entry.basename
+            )
             return this_entry
 
         # Load diffing threshold dictionary
