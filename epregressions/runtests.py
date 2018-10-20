@@ -344,7 +344,7 @@ class TestSuiteRunner:
         # read the contents of the two files into a list, could read it into text first
         txt1 = open(file_a).readlines()
         txt2 = open(file_b).readlines()
-        # remove any lines that have "Program Version,EnergyPlus" in it
+        # remove any lines that have some specific listed strings in them
         txt1_cleaned = []
         skip_strings = [
             "Program Version,EnergyPlus",

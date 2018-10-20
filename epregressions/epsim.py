@@ -74,7 +74,6 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                # print("in-000001.idf file doesn't exist -- parametric preprocessor failed")
                 return [build_directory, entry_name, False, current_process().name]
 
         # Run ExpandObjects and process as necessary

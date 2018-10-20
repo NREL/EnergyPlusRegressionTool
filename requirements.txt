@@ -1,1 +1,10 @@
+# Core pip-install-able dependencies here
 beautifulsoup4
+
+# this GUI uses PyGtk
+# this is available in Python 3 as PyGObject, or gi
+# the steps for getting it installed on your system are available here:
+#  https://pygobject.readthedocs.io/en/latest/getting_started.html
+# I use virtual environments, so I needed a little extra help
+# those instructions are *also* provided by them and worked flawlessly
+#  https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv

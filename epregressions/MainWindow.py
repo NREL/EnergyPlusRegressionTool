@@ -1,31 +1,22 @@
 #!/usr/bin/env python
 
-# this GUI uses PyGtk
-# this is available in Python 3 as PyGObject, or gi
-# the steps for getting it installed on your system are available here:
-#  https://pygobject.readthedocs.io/en/latest/getting_started.html
-# I use virtual environments, so I needed a little extra help
-# those instructions are *also* provided by them and worked flawlessly
-#  https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
-
 import datetime  # datetime allows us to generate timestamps for the log
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
 from datetime import datetime  # get datetime to do date/time calculations for timestamps, etc.
 import json
 
-# graphics stuff
-import gi
-
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import *
 from epregressions.runtests import *
 from epregressions.Structures import SingleCaseInformation
 
+# graphics stuff
+import gi
+
 gi.require_version("Gtk", "3.0")  # unfortunately this has to go before the import
 from gi.repository import Gtk, GObject
 
-python_version = float("%s.%s" % (sys.version_info.major, sys.version_info.minor))
 platform = ''
 if "linux" in sys.platform:
     platform = "linux"
@@ -183,13 +174,13 @@ class PyApp(Gtk.Window):
         vbox = Gtk.VBox(False, box_spacing)
 
         # add the menu to the v-box
-        vbox.pack_start(self.gui_build_menu_bar(), False, False, padding=0)
+        vbox.pack_start(self.gui_build_menu_bar(), False, False, box_spacing)
 
         # add the notebook to the v-box
-        vbox.pack_start(self.gui_build_notebook(), True, True, padding=0)
+        vbox.pack_start(self.gui_build_notebook(), True, True, box_spacing)
 
         # and finally add the status section at the bottom
-        vbox.pack_end(self.gui_build_messaging(), False, False, padding=0)
+        vbox.pack_end(self.gui_build_messaging(), False, False, box_spacing)
 
         # now add the entire v-box to the main form
         self.add(vbox)
@@ -519,7 +510,7 @@ class PyApp(Gtk.Window):
         listview_window.add(tree_view)
         aligner = Gtk.Alignment(xalign=0, yalign=0, xscale=1, yscale=1)
         aligner.add(listview_window)
-        notebook_page_idf_list.pack_start(aligner, True, True, padding=0)
+        notebook_page_idf_list.pack_start(aligner, True, True, box_spacing)
 
         # the second side of the page is the table of buttons for selection options
         self.idf_selection_table = Gtk.Table(9, 3, True)
