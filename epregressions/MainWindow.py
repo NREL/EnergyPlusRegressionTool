@@ -1106,7 +1106,7 @@ class PyApp(Gtk.Window):
         # could read from temp file
 
         # build a default set of arguments
-        self.file_list_builder_configuration = filelist_argsbuilder_forgui()
+        self.file_list_builder_configuration = FileListArgsBuilderForGUI()
 
         # override with our defaults
         self.file_list_builder_configuration.check = False
@@ -1116,7 +1116,7 @@ class PyApp(Gtk.Window):
 
         self.status_bar.push(self.status_bar_context_id, "Building idf list")
 
-        this_builder = file_list_builder(self.file_list_builder_configuration)
+        this_builder = FileListBuilder(self.file_list_builder_configuration)
         this_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
         return_data = this_builder.build_verified_list(self.file_list_builder_configuration)
         status, verified_idf_files, idf_files_missing_in_folder, idf_files_missing_from_csv_file = return_data
