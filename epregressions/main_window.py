@@ -14,8 +14,9 @@ from epregressions.structures import SingleCaseInformation
 # graphics stuff
 import gi
 
-gi.require_version("Gtk", "3.0")  # unfortunately this has to go before the import
-from gi.repository import Gtk, GObject
+gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gdk, Gtk, GObject
 
 platform = ''
 if "linux" in sys.platform:
@@ -54,8 +55,8 @@ class PyApp(Gtk.Window):
         self.idf_list_store = None
         self.idf_selection_table = None
         self.file_list_num_files = None
-        self.suite_option_handler_base_check_button = None
-        self.suite_option_handler_mod_check_button = None
+        self.case_1_check = None
+        self.case_2_check = None
         self.suite_option_num_threads = None
         self.run_type_combo_box = None
         self.report_frequency_combo_box = None
@@ -110,10 +111,7 @@ class PyApp(Gtk.Window):
         self.work_thread = None
         self.results_list_selected_entry_root_index = None
         self.results_lists_to_copy = None
-
-        self.case_1_source_dir_label = None
         self.case_1_build_dir_label = None
-        self.case_2_source_dir_label = None
         self.case_2_build_dir_label = None
 
         # set up default arguments for the idf list builder and the test suite engine
@@ -292,12 +290,10 @@ class PyApp(Gtk.Window):
             suite_data = project_tree['suiteoptions']
             if 'case_a' in suite_data:
                 case_a = suite_data['case_a']
-                self.suiteargs.buildA.source_directory = case_a['source_directory']
                 self.suiteargs.buildA.run = case_a['selected']
                 self.suiteargs.buildA.build_directory = case_a['build_directory']
             if 'case_b' in suite_data:
                 case_b = suite_data['case_b']
-                self.suiteargs.buildB.source_directory = case_b['source_directory']
                 self.suiteargs.buildB.run = case_b['selected']
                 self.suiteargs.buildB.build_directory = case_b["build_directory"]
             if 'runconfig' in suite_data:
@@ -317,15 +313,11 @@ class PyApp(Gtk.Window):
 
     def gui_fill_with_data(self):
 
-        self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
-        if self.suiteargs.buildA.source_directory:
-            self.case_1_source_dir_label.set_text(self.suiteargs.buildA.source_directory)
+        self.case_1_check.set_active(self.suiteargs.buildA.run)
         if self.suiteargs.buildA.build_directory:
             self.case_1_build_dir_label.set_text(self.suiteargs.buildA.build_directory)
 
-        self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
-        if self.suiteargs.buildB.source_directory:
-            self.case_2_source_dir_label.set_text(self.suiteargs.buildB.source_directory)
+        self.case_2_check.set_active(self.suiteargs.buildB.run)
         if self.suiteargs.buildB.build_directory:
             self.case_2_build_dir_label.set_text(self.suiteargs.buildB.build_directory)
 
@@ -405,12 +397,10 @@ class PyApp(Gtk.Window):
         output_object['idfselection']['randomnumber'] = self.file_list_num_files.get_value()
         output_object['suiteoptions'] = {}
         output_object['suiteoptions']['case_a'] = {
-            'source_directory': self.suiteargs.buildA.source_directory,
             'selected': self.suiteargs.buildA.run,
             'build_directory': self.suiteargs.buildA.build_directory
         }
         output_object['suiteoptions']['case_b'] = {
-            'source_directory': self.suiteargs.buildB.source_directory,
             'selected': self.suiteargs.buildB.run,
             'build_directory': self.suiteargs.buildB.build_directory
         }
@@ -433,41 +423,237 @@ class PyApp(Gtk.Window):
         # for normal (manual) saving, this will return to nothingness most likely
         return True
 
-    def add_idf_selection_row(self, button_text, callback, row_num):
-        label = Gtk.Label(button_text)
-        label.set_justify(Gtk.Justification.RIGHT)
-        alignment = Gtk.Alignment(xalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(
-            alignment, 0, 1, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
-        )
-        button = Gtk.Button("Select")
-        button.connect("clicked", callback, "select")
-        self.idf_selection_table.attach(
-            button, 1, 2, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
-        )
-        button = Gtk.Button("Deselect")
-        button.connect("clicked", callback, "deselect")
-        self.idf_selection_table.attach(
-            button, 2, 3, row_num - 1, row_num, Gtk.AttachOptions.FILL, Gtk.AttachOptions.EXPAND, 4, 4
-        )
+    def gui_build_notebook_page_test_suite(self):
 
-    def gui_build_notebook_page_idf_selection(self):
+        notebook_page_suite = Gtk.HPaned()
+        notebook_page_suite_options = Gtk.VBox(False, box_spacing)
 
-        # PAGE 1: FILE LIST OPTIONS, base layout is the idf_selection HPanel
-        notebook_page_idf_selection = Gtk.HPaned()
+        notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        # idf_list is a v-box holding the verification, master file path, build command button, and idf list
-        notebook_page_idf_list = Gtk.VBox(False, box_spacing)
+        heading = Gtk.Label(None)
+        heading.set_markup("<b>Test Suite Directories:</b>")
+        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
+        alignment.add(heading)
+        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        button1 = Gtk.Button("Rebuild Master File List")
-        button1.connect("clicked", self.build_button)
-        alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
+        h_box_1 = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Case 1: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(this_label)
+        h_box_1.pack_start(alignment, False, False, box_spacing)
+        self.case_1_check = Gtk.CheckButton("Run Case 1?", use_underline=False)
+        self.case_1_check.set_active(self.suiteargs.buildA.run)
+        self.case_1_check.connect("toggled", self.suite_option_handler_basedir_check)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_1_check)
+        h_box_1.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+
+        h_box_case_1_build = Gtk.HBox(False, box_spacing)
+        button1 = Gtk.Button("Build Directory: ")
+        button1.connect("clicked", self.suite_option_handler_base_build_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
         alignment.add(button1)
-        notebook_page_idf_list.pack_start(alignment, False, False, box_spacing)
+        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
+        self.case_1_build_dir_label = Gtk.Label("<select_build_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_1_build_dir_label)
+        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
 
-        # add a separator for nicety
-        notebook_page_idf_list.pack_start(Gtk.HSeparator(), False, True, 0)
+        h_box_2 = Gtk.HBox(False, box_spacing)
+        this_label = Gtk.Label("Case 2: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(this_label)
+        h_box_2.pack_start(alignment, False, False, box_spacing)
+        self.case_2_check = Gtk.CheckButton("Run Case 2?", use_underline=False)
+        self.case_2_check.set_active(self.suiteargs.buildB.run)
+        self.case_2_check.connect("toggled", self.suite_option_handler_mod_dir_check)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_2_check)
+        h_box_2.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_2, False, False, box_spacing)
+
+        h_box_case_2_build = Gtk.HBox(False, box_spacing)
+        button1 = Gtk.Button("Build Directory: ")
+        button1.connect("clicked", self.suite_option_handler_mod_build_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
+        alignment.add(button1)
+        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
+        self.case_2_build_dir_label = Gtk.Label("<select_build_dir>")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.case_2_build_dir_label)
+        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_case_2_build, False, False, box_spacing)
+
+        notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
+
+        heading = Gtk.Label(None)
+        heading.set_markup("<b>IDF Selection:</b>")
+        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
+        alignment.add(heading)
+        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+
+        h_box_select_1 = Gtk.HBox(False, box_spacing)
+        button = Gtk.Button("Select All")
+        button.connect("clicked", self.idf_selection_all, "select")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button)
+        h_box_select_1.pack_start(alignment, True, True, box_spacing)
+        button = Gtk.Button("Deselect All")
+        button.connect("clicked", self.idf_selection_all, "deselect")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button)
+        h_box_select_1.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_select_1, False, False, box_spacing)
+
+        h_box_select_2 = Gtk.HBox(False, box_spacing)
+        self.file_list_num_files = Gtk.SpinButton()
+        self.file_list_num_files.set_range(0, 1000)
+        self.file_list_num_files.set_increments(1, 10)
+        self.file_list_num_files.spin(Gtk.SpinType.PAGE_FORWARD, 1)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(self.file_list_num_files)
+        h_box_select_2.pack_start(alignment, True, True, box_spacing)
+        button = Gtk.Button("Select N Random Files")
+        button.connect("clicked", self.idf_selection_random, "select")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button)
+        h_box_select_2.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_select_2, False, False, box_spacing)
+
+        h_box_select_3 = Gtk.HBox(False, box_spacing)
+        button = Gtk.Button("Select from List")
+        button.connect("clicked", self.idf_selection_list)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button)
+        h_box_select_3.pack_start(alignment, True, True, box_spacing)
+        button = Gtk.Button("Select from Folder")
+        button.connect("clicked", self.idf_selection_dir)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button)
+        h_box_select_3.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_select_3, False, False, box_spacing)
+
+        notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
+
+        heading = Gtk.Label(None)
+        heading.set_markup("<b>Options:</b>")
+        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
+        alignment.add(heading)
+        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+
+        # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
+        if platform != "windows":
+            num_threads_box = Gtk.HBox(False, box_spacing)
+            self.suite_option_num_threads = Gtk.SpinButton()
+            self.suite_option_num_threads.set_range(1, 8)
+            self.suite_option_num_threads.set_increments(1, 4)
+            self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)  # EDWIN: Had to add a 1 here
+            self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
+            num_threads_label = Gtk.Label("Number of threads to use for suite: ")
+            num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+            num_threads_label_aligner.add(num_threads_label)
+            num_threads_box.pack_start(num_threads_label_aligner, False, False, box_spacing)
+            num_threads_box.pack_start(self.suite_option_num_threads, True, True, box_spacing)
+            notebook_page_suite_options.pack_start(num_threads_box, False, False, box_spacing)
+
+        h_box_1 = Gtk.HBox(False, box_spacing)
+        label1 = Gtk.Label("Select a test suite run configuration: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(label1)
+        h_box_1.pack_start(alignment, False, False, box_spacing)
+        self.run_type_combo_box = Gtk.ComboBoxText()
+        self.run_type_combo_box.append_text(force_none)
+        self.run_type_combo_box.append_text(force_dd)
+        self.run_type_combo_box.append_text(force_annual)
+        self.run_type_combo_box.connect("changed", self.suite_option_handler_force_run_type)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(self.run_type_combo_box)
+        h_box_1.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+
+        h_box_1 = Gtk.HBox(False, box_spacing)
+        label1 = Gtk.Label("Select a minimum reporting frequency: ")
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(label1)
+        h_box_1.pack_start(alignment, False, False, box_spacing)
+        self.report_frequency_combo_box = Gtk.ComboBoxText()
+        self.report_frequency_combo_box.append_text(ReportingFreq.DETAILED)
+        self.report_frequency_combo_box.append_text(ReportingFreq.TIMESTEP)
+        self.report_frequency_combo_box.append_text(ReportingFreq.HOURLY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.DAILY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.MONTHLY)
+        self.report_frequency_combo_box.append_text(ReportingFreq.RUNPERIOD)
+        self.report_frequency_combo_box.append_text(ReportingFreq.ENVIRONMENT)
+        self.report_frequency_combo_box.append_text(ReportingFreq.ANNUAL)
+        self.report_frequency_combo_box.connect("changed", self.suite_option_handler_report_frequency)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(self.report_frequency_combo_box)
+        h_box_1.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+
+        this_h_box = Gtk.HBox(False, box_spacing)
+        self.suite_option_handler_runtime_report_check = Gtk.CheckButton("Create Runtime Summary?", use_underline=False)
+        self.suite_option_handler_runtime_report_check.set_active(True)
+        self.suite_option_handler_runtime_report_check.connect("toggled", self.suite_option_handler_runtime_check)
+        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
+        alignment.add(self.suite_option_handler_runtime_report_check)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        button1 = Gtk.Button("Choose Runtime File...")
+        button1.connect("clicked", self.suite_option_handler_runtime_file)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(button1)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        self.suite_option_runtime_file_label = Gtk.Label(self.runtime_report_file)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        alignment.add(self.suite_option_runtime_file_label)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+
+        notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
+
+        heading = Gtk.Label(None)
+        heading.set_markup("<b>Ready to Run:</b>")
+        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
+        alignment.add(heading)
+        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box.pack_start(alignment, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+
+        self.suite_dir_struct_info = Gtk.Label("<Test suite run directory structure information>")
+        self.gui_update_label_for_run_config()
+        aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
+        aligner.add(self.suite_dir_struct_info)
+        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box.pack_start(aligner, False, False, box_spacing)
+        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
+
+        h_box_1 = Gtk.HBox(False, box_spacing)
+        button1 = Gtk.Button("Validate Test Suite Structure")
+        button1.connect("clicked", self.suite_option_handler_suite_validate)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(button1)
+        h_box_1.pack_start(alignment, True, True, box_spacing)
+        self.btn_run_suite = Gtk.Button("Run Suite")
+        self.btn_run_suite.connect("clicked", self.run_button)
+        self.btn_run_suite.set_size_request(120, -1)
+        # green = self.btn_run_suite.get_colormap().alloc_color("green")  # EDWIN: Commented this out because no
+        # style = self.btn_run_suite.get_style().copy()
+        # style.bg[Gtk.STATE_NORMAL] = green
+        # self.btn_run_suite.set_style(style)
+        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
+        alignment.add(self.btn_run_suite)
+        h_box_1.pack_start(alignment, True, True, box_spacing)
+        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+
+        v_box_right = Gtk.VPaned()
 
         # PAGE: IDF LIST RESULTS
         listview_window = Gtk.ScrolledWindow()
@@ -502,296 +688,7 @@ class PyApp(Gtk.Window):
         listview_window.add(tree_view)
         aligner = Gtk.Alignment(xalign=0, yalign=0, xscale=1, yscale=1)
         aligner.add(listview_window)
-        notebook_page_idf_list.pack_start(aligner, True, True, box_spacing)
-
-        # the second side of the page is the table of buttons for selection options
-        self.idf_selection_table = Gtk.Table(9, 3, True)
-        self.idf_selection_table.set_row_spacings(box_spacing)
-        self.idf_selection_table.set_col_spacings(box_spacing)
-
-        label = Gtk.Label("")
-        label.set_markup("<b>IDF selection options</b>")
-        label.set_justify(Gtk.Justification.CENTER)
-        alignment = Gtk.Alignment(xalign=0.5, yalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(alignment, 0, 3, 0, 1)
-
-        this_row_num = 2
-        self.add_idf_selection_row("ALL:", self.idf_selection_all, row_num=this_row_num)
-
-        this_row_num += 1
-        label = Gtk.Label("Random:")
-        label.set_justify(Gtk.Justification.RIGHT)
-        alignment = Gtk.Alignment(xalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(alignment, 0, 1, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-        self.file_list_num_files = Gtk.SpinButton()
-        self.file_list_num_files.set_range(0, 1000)
-        self.file_list_num_files.set_increments(1, 10)
-        self.file_list_num_files.spin(Gtk.SpinType.PAGE_FORWARD,
-                                      1)  # EDWIN: Had to add a 1 here for the number of pages I guess?
-        self.idf_selection_table.attach(self.file_list_num_files, 1, 2, this_row_num - 1, this_row_num,
-                                        Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-        button = Gtk.Button("Select")
-        button.connect("clicked", self.idf_selection_random, "select")
-        self.idf_selection_table.attach(button, 2, 3, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-
-        this_row_num += 1
-        label = Gtk.Label("Enter a list:")
-        label.set_justify(Gtk.Justification.RIGHT)
-        alignment = Gtk.Alignment(xalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(alignment, 0, 1, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-        button = Gtk.Button("Click to enter list")
-        button.connect("clicked", self.idf_selection_list)
-        self.idf_selection_table.attach(button, 1, 3, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-
-        this_row_num += 1
-        label = Gtk.Label("Verify from Folder:")
-        label.set_justify(Gtk.Justification.RIGHT)
-        alignment = Gtk.Alignment(xalign=1.0)
-        alignment.add(label)
-        self.idf_selection_table.attach(alignment, 0, 1, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-        button = Gtk.Button("Click to select folder")
-        button.connect("clicked", self.idf_selection_dir)
-        self.idf_selection_table.attach(button, 1, 3, this_row_num - 1, this_row_num, Gtk.AttachOptions.FILL,
-                                        Gtk.AttachOptions.FILL, 4, 4)
-
-        # now pack both sides
-        notebook_page_idf_selection.pack1(self.add_shadow_frame(notebook_page_idf_list))
-        aligner = Gtk.Alignment(xalign=0.25, yalign=0.25, xscale=0.5, yscale=0.5)
-        aligner.add(self.idf_selection_table)
-        notebook_page_idf_selection.pack2(self.add_shadow_frame(aligner))
-        return notebook_page_idf_selection
-
-    def gui_build_notebook_page_test_suite(self):
-
-        notebook_page_suite = Gtk.HPaned()
-        notebook_page_suite_options = Gtk.VBox(False, box_spacing)
-
-        heading = Gtk.Label(None)
-        heading.set_markup(
-            "<b>Test Suite Directories:</b>\n  Mark checkbox to select a directory for running.\n" +
-            "  If the runs in the directory are already completed, uncheck it."
-        )
-        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 1: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(this_label)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_base_check_button = Gtk.CheckButton("Run Case 1?", use_underline=False)
-        self.suite_option_handler_base_check_button.set_active(self.suiteargs.buildA.run)
-        self.suite_option_handler_base_check_button.connect("toggled", self.suite_option_handler_basedir_check)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_handler_base_check_button)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
-
-        h_box_case_1_source = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Source Directory: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
-        alignment.add(this_label)
-        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
-        self.case_1_source_dir_label = Gtk.Label("<select_source_dir>")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.case_1_source_dir_label)
-        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
-        button1 = Gtk.Button("Change...")
-        button1.connect("clicked", self.suite_option_handler_base_source_dir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
-        alignment.add(button1)
-        h_box_case_1_source.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_case_1_source, False, False, box_spacing)
-
-        h_box_case_1_build = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Build Directory: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
-        alignment.add(this_label)
-        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
-        self.case_1_build_dir_label = Gtk.Label("<select_build_dir>")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.case_1_build_dir_label)
-        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
-        button1 = Gtk.Button("Change...")
-        button1.connect("clicked", self.suite_option_handler_base_build_dir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
-        alignment.add(button1)
-        h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-        h_box_2 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 2: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(this_label)
-        h_box_2.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_handler_mod_check_button = Gtk.CheckButton("Run Case 2?", use_underline=False)
-        self.suite_option_handler_mod_check_button.set_active(self.suiteargs.buildB.run)
-        self.suite_option_handler_mod_check_button.connect("toggled", self.suite_option_handler_mod_dir_check)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_handler_mod_check_button)
-        h_box_2.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_2, False, False, box_spacing)
-
-        h_box_case_2_source = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Source Directory: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
-        alignment.add(this_label)
-        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
-        self.case_2_source_dir_label = Gtk.Label("<select_source_dir>")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.case_2_source_dir_label)
-        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
-        button1 = Gtk.Button("Change...")
-        button1.connect("clicked", self.suite_option_handler_mod_source_dir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
-        alignment.add(button1)
-        h_box_case_2_source.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_case_2_source, False, False, box_spacing)
-
-        h_box_case_2_build = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Build Directory: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.4, yscale=0.0)
-        alignment.add(this_label)
-        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
-        self.case_2_build_dir_label = Gtk.Label("<select_build_dir>")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.case_2_build_dir_label)
-        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
-        button1 = Gtk.Button("Change...")
-        button1.connect("clicked", self.suite_option_handler_mod_build_dir)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.2, yscale=0.0)
-        alignment.add(button1)
-        h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_case_2_build, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
-        if platform != "windows":
-            num_threads_box = Gtk.HBox(False, box_spacing)
-            self.suite_option_num_threads = Gtk.SpinButton()
-            self.suite_option_num_threads.set_range(1, 8)
-            self.suite_option_num_threads.set_increments(1, 4)
-            self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)  # EDWIN: Had to add a 1 here
-            self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
-            num_threads_label = Gtk.Label("Number of threads to use for suite")
-            num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-            num_threads_label_aligner.add(num_threads_label)
-            num_threads_box.pack_start(num_threads_label_aligner, False, False, box_spacing)
-            num_threads_box.pack_start(self.suite_option_num_threads, False, False, box_spacing)
-            notebook_page_suite_options.pack_start(num_threads_box, False, False, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a test suite run configuration: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(label1)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.run_type_combo_box = Gtk.ComboBoxText()
-        self.run_type_combo_box.append_text(force_none)
-        self.run_type_combo_box.append_text(force_dd)
-        self.run_type_combo_box.append_text(force_annual)
-        self.run_type_combo_box.connect("changed", self.suite_option_handler_force_run_type)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(self.run_type_combo_box)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a minimum reporting frequency: ")
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(label1)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.report_frequency_combo_box = Gtk.ComboBoxText()
-        self.report_frequency_combo_box.append_text(ReportingFreq.DETAILED)
-        self.report_frequency_combo_box.append_text(ReportingFreq.TIMESTEP)
-        self.report_frequency_combo_box.append_text(ReportingFreq.HOURLY)
-        self.report_frequency_combo_box.append_text(ReportingFreq.DAILY)
-        self.report_frequency_combo_box.append_text(ReportingFreq.MONTHLY)
-        self.report_frequency_combo_box.append_text(ReportingFreq.RUNPERIOD)
-        self.report_frequency_combo_box.append_text(ReportingFreq.ENVIRONMENT)
-        self.report_frequency_combo_box.append_text(ReportingFreq.ANNUAL)
-        self.report_frequency_combo_box.connect("changed", self.suite_option_handler_report_frequency)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(self.report_frequency_combo_box)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
-
-        self.suite_dir_struct_info = Gtk.Label("<Test suite run directory structure information>")
-        self.gui_update_label_for_run_config()
-        aligner = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        aligner.add(self.suite_dir_struct_info)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(aligner, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        heading = Gtk.Label(None)
-        heading.set_markup("<b>Runtime Report:</b>")
-        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        self.suite_option_handler_runtime_report_check = Gtk.CheckButton("Generate a runtime summary for this run?",
-                                                                         use_underline=False)
-        self.suite_option_handler_runtime_report_check.set_active(True)
-        self.suite_option_handler_runtime_report_check.connect("toggled", self.suite_option_handler_runtime_check)
-        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(self.suite_option_handler_runtime_report_check)
-        this_h_box = Gtk.HBox(False, box_spacing)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Choose Runtime File...")
-        button1.connect("clicked", self.suite_option_handler_runtime_file)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(button1)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_runtime_file_label = Gtk.Label(self.runtime_report_file)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_runtime_file_label)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(Gtk.HSeparator(), False, True, box_spacing)
-
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Validate Test Suite Directory Structure")
-        button1.connect("clicked", self.suite_option_handler_suite_validate)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(button1)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-
-        self.btn_run_suite = Gtk.Button("Run Suite")
-        self.btn_run_suite.connect("clicked", self.run_button)
-        self.btn_run_suite.set_size_request(120, -1)
-        # green = self.btn_run_suite.get_colormap().alloc_color("green")  # EDWIN: Commented this out because no
-        # style = self.btn_run_suite.get_style().copy()
-        # style.bg[Gtk.STATE_NORMAL] = green
-        # self.btn_run_suite.set_style(style)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.0, xscale=0.0, yscale=0.0)
-        alignment.add(self.btn_run_suite)
-        h_box_1.pack_start(alignment, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
+        v_box_right.pack1(aligner)
 
         listview_window = Gtk.ScrolledWindow()
         listview_window.set_size_request(-1, 475)
@@ -799,7 +696,7 @@ class PyApp(Gtk.Window):
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         # make the list store and the treeview
         self.verify_list_store = Gtk.ListStore(str, str, bool, str)
-        self.verify_list_store.append(["Press verify to see results", "", True, None])
+        self.verify_list_store.append(["Press \"Validate Test Suite Structure\" to see results", "", True, None])
         self.verify_tree_view = Gtk.TreeView(self.verify_list_store)
         self.verify_tree_view.set_rules_hint(True)
         # make the columns for the treeview; could add more columns including a checkbox
@@ -821,9 +718,11 @@ class PyApp(Gtk.Window):
         column.set_resizable(True)
         self.verify_tree_view.append_column(column)
         listview_window.add(self.verify_tree_view)
+        v_box_right.pack2(listview_window)
+        v_box_right.set_position(500)
 
         notebook_page_suite.pack1(self.add_shadow_frame(notebook_page_suite_options))
-        notebook_page_suite.pack2(self.add_shadow_frame(listview_window))
+        notebook_page_suite.pack2(self.add_shadow_frame(v_box_right))
         return notebook_page_suite
 
     def gui_build_notebook_page_last_run(self):
@@ -990,7 +889,6 @@ class PyApp(Gtk.Window):
     def gui_build_notebook(self):
         self.notebook = Gtk.Notebook()
         self.notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
-        self.notebook.append_page(self.gui_build_notebook_page_idf_selection(), Gtk.Label("IDF Selection"))
         self.notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
         self.notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
         return self.notebook
@@ -1000,7 +898,7 @@ class PyApp(Gtk.Window):
         self.status_bar = Gtk.Statusbar()
         aligner = Gtk.Alignment(xalign=1.0, yalign=0.0, xscale=0.4, yscale=1.0)
         aligner.add(self.progress)
-        self.status_bar.pack_start(aligner, True, True, box_spacing)
+        self.status_bar.pack_start(aligner, False, False, box_spacing)
         self.status_bar_context_id = self.status_bar.get_context_id("Status")
         aligner = Gtk.Alignment(xalign=1.0, yalign=1.0, xscale=1.0, yscale=0.0)
         aligner.add(self.status_bar)
@@ -1018,9 +916,13 @@ class PyApp(Gtk.Window):
         self.last_run_context_nocopy.show()
 
     @staticmethod
-    def add_frame(widget):
+    def add_frame(widget, for_separator=False):
         frame = Gtk.Frame()
-        frame.modify_bg(Gtk.STATE_NORMAL, Gtk.gdk.Color(56283, 22359, 0))
+        if for_separator:
+            color = Gdk.Color(76*256, 72*256, 69*256)
+        else:
+            color = Gdk.Color(56283, 22359, 0)
+        frame.modify_bg(Gtk.StateType.NORMAL, color)
         frame.add(widget)
         return frame
 
@@ -1415,22 +1317,6 @@ class PyApp(Gtk.Window):
         self.btn_run_suite.set_label("Cancel Suite")
         self.test_suite_is_running = True
 
-    def suite_option_handler_base_source_dir(self, widget):
-        dialog = Gtk.FileChooserDialog(
-            title="Select source folder",
-            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        )
-        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        dialog.set_select_multiple(False)
-        if self.last_folder_path:
-            dialog.set_current_folder(self.last_folder_path)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildA.source_directory = self.last_folder_path
-            self.case_1_source_dir_label.set_text(self.last_folder_path)
-        dialog.destroy()
-
     def suite_option_handler_base_build_dir(self, widget):
         dialog = Gtk.FileChooserDialog(
             title="Select build folder",
@@ -1445,22 +1331,6 @@ class PyApp(Gtk.Window):
             self.last_folder_path = dialog.get_filename()
             self.suiteargs.buildA.build_directory = self.last_folder_path
             self.case_1_build_dir_label.set_text(self.last_folder_path)
-        dialog.destroy()
-
-    def suite_option_handler_mod_source_dir(self, widget):
-        dialog = Gtk.FileChooserDialog(
-            title="Select source folder",
-            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        )
-        dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        dialog.set_select_multiple(False)
-        if self.last_folder_path:
-            dialog.set_current_folder(self.last_folder_path)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildB.source_directory = self.last_folder_path
-            self.case_2_source_dir_label.set_text(self.last_folder_path)
         dialog.destroy()
 
     def suite_option_handler_mod_build_dir(self, widget):
@@ -1548,7 +1418,31 @@ class PyApp(Gtk.Window):
         self.verify_list_store.clear()
 
         # Check case 1
-        source_dir = self.suiteargs.buildA.source_directory
+        build_dir = self.suiteargs.buildA.build_directory
+        exists = os.path.exists(build_dir)
+        self.verify_list_store.append(
+            ["Case 1 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
+        )
+        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
+        exists = os.path.exists(cmake_cache_file)
+        self.verify_list_store.append(
+            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
+        )
+        source_dir = None
+        exists = False
+        with open(cmake_cache_file, 'r') as f_cache:
+            for this_line in f_cache.readlines():
+                if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
+                    tokens = this_line.strip().split('=')
+                    source_dir = tokens[1]
+                    self.suiteargs.buildA.source_directory = source_dir
+                    exists = True  # this is saying the CMakeCache signal line exists, not the source dir
+                    break
+        self.verify_list_store.append(
+            ["Case 1 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
+        )
+        if not source_dir:
+            source_dir = '<not_found_in_cmake_cache>'
         exists = os.path.exists(source_dir)
         self.verify_list_store.append(
             ["Case 1 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
@@ -1562,11 +1456,6 @@ class PyApp(Gtk.Window):
         exists = os.path.exists(data_sets_dir)
         self.verify_list_store.append(
             ["Case 1 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
-        )
-        build_dir = self.suiteargs.buildA.build_directory
-        exists = os.path.exists(build_dir)
-        self.verify_list_store.append(
-            ["Case 1 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
         )
         products_dir = os.path.join(self.suiteargs.buildA.build_directory, 'Products')
         exists = os.path.exists(products_dir)
@@ -1588,7 +1477,31 @@ class PyApp(Gtk.Window):
         )
 
         # Check case 2
-        source_dir = self.suiteargs.buildB.source_directory
+        build_dir = self.suiteargs.buildB.build_directory
+        exists = os.path.exists(build_dir)
+        self.verify_list_store.append(
+            ["Case 2 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
+        )
+        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
+        exists = os.path.exists(cmake_cache_file)
+        self.verify_list_store.append(
+            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
+        )
+        source_dir = None
+        exists = False
+        with open(cmake_cache_file, 'r') as f_cache:
+            for this_line in f_cache.readlines():
+                if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
+                    tokens = this_line.strip().split('=')
+                    source_dir = tokens[1]
+                    self.suiteargs.buildB.source_directory = source_dir
+                    exists = True  # this is saying the CMakeCache signal line exists, not the source dir
+                    break
+        self.verify_list_store.append(
+            ["Case 1 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
+        )
+        if not source_dir:
+            source_dir = '<not_found_in_cmake_cache>'
         exists = os.path.exists(source_dir)
         self.verify_list_store.append(
             ["Case 2 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
@@ -1602,11 +1515,6 @@ class PyApp(Gtk.Window):
         exists = os.path.exists(data_sets_dir)
         self.verify_list_store.append(
             ["Case 2 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
-        )
-        build_dir = self.suiteargs.buildB.build_directory
-        exists = os.path.exists(build_dir)
-        self.verify_list_store.append(
-            ["Case 2 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
         )
         products_dir = os.path.join(self.suiteargs.buildB.build_directory, 'Products')
         exists = os.path.exists(products_dir)
@@ -1667,17 +1575,17 @@ class PyApp(Gtk.Window):
         current_config = self.suiteargs.force_run_type
         if current_config == ForceRunType.NONE:
             self.suite_dir_struct_info.set_markup(
-                "<b>Results:</b>\n  A 'Tests' directory will be created in each run directory.\n" +
+                "A 'Tests' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
         elif current_config == ForceRunType.DD:
             self.suite_dir_struct_info.set_markup(
-                "<b>Results:</b>\n  A 'Tests-DDOnly' directory will be created in each run directory.\n" +
+                "A 'Tests-DDOnly' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
         elif current_config == ForceRunType.ANNUAL:
             self.suite_dir_struct_info.set_markup(
-                "<b>Results:</b>\n  A 'Tests-Annual' directory will be created in each run directory.\n" +
+                "A 'Tests-Annual' directory will be created in each run directory.\n" +
                 "  Comparison results will be in run directory 1."
             )
         else:

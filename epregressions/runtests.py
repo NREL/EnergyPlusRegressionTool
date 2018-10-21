@@ -223,17 +223,19 @@ class TestSuiteRunner:
                 # if the file requires the FMUs data set file, bring it
                 #  into the test run directory, right now I think it's broken
                 if 'ExternalInterface:' in idf_text:
-                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
-                    source_dir = os.path.join('datasets', 'FMUs')
-                    src_files = os.listdir(source_dir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(source_dir, file_name)
-                        if os.path.isfile(full_file_name):
-                            shutil.copy(
-                                full_file_name,
-                                os.path.join(test_run_directory, 'datasets', 'FMUs')
-                            )
+                    self.my_print('Skipping an FMU based file as this is not set up to run yet')
+                    continue
+                    # os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                    # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
+                    # source_dir = os.path.join('datasets', 'FMUs')
+                    # src_files = os.listdir(source_dir)
+                    # for file_name in src_files:
+                    #     full_file_name = os.path.join(source_dir, file_name)
+                    #     if os.path.isfile(full_file_name):
+                    #         shutil.copy(
+                    #             full_file_name,
+                    #             os.path.join(test_run_directory, 'datasets', 'FMUs')
+                    #         )
 
                 # rewrite the idf with the (potentially) modified idf text
                 with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename), 'w') as f_i:
