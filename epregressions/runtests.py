@@ -314,7 +314,7 @@ class TestSuiteRunner:
             # Start worker processes
             for i in range(self.number_of_threads):
                 p = Process(target=self.threaded_worker, args=(task_queue, done_queue))
-                p.daemon = True
+                p.daemon = True  # this *is* "necessary" to allow cancelling the suite
                 p.start()
 
             # Get and print results
@@ -378,9 +378,12 @@ class TestSuiteRunner:
         out_file.writelines(list(cmp))
         return TextDifferences.DIFFS
 
-    def process_diffs_for_one_case(self, this_entry, case_result_dir_1, case_result_dir_2, out_dir=None):
-        if out_dir is None:
-            out_dir = case_result_dir_1
+    def process_diffs_for_one_case(self, this_entry):
+
+        case_result_dir_1 = os.path.join(self.build_directory_a, self.test_output_dir, this_entry.basename)
+        case_result_dir_2 = os.path.join(self.build_directory_b, self.test_output_dir, this_entry.basename)
+
+        out_dir = case_result_dir_1
 
         # we aren't using math_diff and table_diffs summary csv files, so use blanks
         path_to_math_diff_log = ""
@@ -614,9 +617,7 @@ class TestSuiteRunner:
 
         for this_entry in self.entries:
             try:
-                case_result_dir_1 = os.path.join(self.build_directory_a, self.test_output_dir, this_entry.basename)
-                case_result_dir_2 = os.path.join(self.build_directory_b, self.test_output_dir, this_entry.basename)
-                this_entry = self.process_diffs_for_one_case(this_entry, case_result_dir_1, case_result_dir_2)
+                this_entry = self.process_diffs_for_one_case(this_entry)
             except Exception as e:
                 self.my_print(
                     (
