@@ -4,10 +4,10 @@ from __future__ import unicode_literals
 
 import os
 import shutil
-# python's own diff library
-from difflib import *
-# add stuff to either make series calls, or multi-threading
-from multiprocessing import Process, Queue, freeze_support
+import sys
+
+from difflib import *  # python's own diff library
+from multiprocessing import Process, Queue, freeze_support  # add stuff to either make series calls, or multi-threading
 
 from epregressions import math_diff
 from epregressions import table_diff
@@ -765,53 +765,62 @@ class TestSuiteRunner:
         self.id_like_to_stop_now = True
 
 
-# if __name__ == "__main__":
-#
-#     # For ALL runs use BuildA
-#     base = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.1.0.009",
-#                                 executable_name="8.1.0.009_ifort_release",
-#                                 run_this_directory=True)
-#
-#     # If using ReverseDD, builB can just be None
-#     mod = SingleBuildDirectory(directory_path="/home/elee/EnergyPlus/Builds/Releases/8.2.0.001",
-#                                executable_name="8.2.0.001_ifort_release",
-#                                run_this_directory=True)
-#
-#     # Do a single test run...
-#     DoASingleTestRun = False
-#
-#     # Build the list of files to run here:
-#     entries = []
-#     with open('Scripts/files_to_run.txt') as f:  # need to ask for this name separately
-#         for entry in f:
-#             if entry.strip() == "":
-#                 continue
-#             if entry[0] == '!':
-#                 continue
-#             epw = ''
-#             tokens = entry.split(' ')
-#             basename = tokens[0].strip()
-#             if len(tokens) > 1:
-#                 epw = tokens[1].strip()
-#             else:
-#                 epw = None
-#             entries.append(TestEntry(basename, epw))
-#             if DoASingleTestRun:
-#                 break
-#
-#     # Build the run configuration
-#     RunConfig = TestRunConfiguration(run_mathdiff=True,
-#                                      do_composite_err=True,
-#                                      force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
-#                                      single_test_run=DoASingleTestRun,
-#                                      eplus_install_path='/home/elee/EnergyPlus/EnergyPlus-8-1-0',
-#                                      num_threads=3,
-#                                      report_freq=ReportingFreq.HOURLY,
-#                                      build_a=base,
-#                                      build_b=mod)
-#
-#     # instantiate the test suite
-#     Runner = TestSuiteRunner(RunConfig, entries)
-#
-#     # Run it
-#     Runner.run_test_suite()
+if __name__ == "__main__":
+
+    # For ALL runs use BuildA
+    base = SingleCaseInformation(
+        source_directory='/home/edwin/Projects/energyplus/repos/1eplus/',
+        build_directory='/home/edwin/Projects/energyplus/repos/1eplus/builds/develop/r/',
+        run_this_directory=True
+    )
+
+    # If using ReverseDD, builB can just be None
+    mod = SingleCaseInformation(
+        source_directory='/home/edwin/Projects/energyplus/repos/4eplus/',
+        build_directory='/home/edwin/Projects/energyplus/repos/4eplus/builds/outputjson/r/',
+        run_this_directory=True
+    )
+
+    # Do a single test run...
+    DoASingleTestRun = False
+
+    # Set the expected path for the files_to_run.txt file
+    run_list = os.path.join(script_dir, 'files_to_run.txt')
+    if not os.path.exists(run_list):
+        print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % run_list)
+        sys.exit(1)
+
+    # Build the list of files to run here:
+    entries = []
+    with open(run_list) as f:  # need to ask for this name separately
+        for entry in f:
+            if entry.strip() == "":
+                continue
+            if entry[0] == '!':
+                continue
+            epw = ''
+            tokens = entry.split(' ')
+            basename = tokens[0].strip()
+            if len(tokens) > 1:
+                epw = tokens[1].strip()
+            else:
+                epw = None
+            entries.append(TestEntry(basename, epw))
+            if DoASingleTestRun:
+                break
+
+    # Build the run configuration
+    RunConfig = TestRunConfiguration(run_mathdiff=True,
+                                     do_composite_err=True,
+                                     force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
+                                     single_test_run=DoASingleTestRun,
+                                     num_threads=3,
+                                     report_freq=ReportingFreq.HOURLY,
+                                     build_a=base,
+                                     build_b=mod)
+
+    # instantiate the test suite
+    Runner = TestSuiteRunner(RunConfig, entries)
+
+    # Run it
+    Runner.run_test_suite()

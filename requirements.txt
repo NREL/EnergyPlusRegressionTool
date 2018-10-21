@@ -1,6 +1,7 @@
 # Core pip-install-able dependencies here
 beautifulsoup4==4.6.3
 nose==1.3.7
+Sphinx==1.8.1
 
 # this GUI uses PyGtk
 # this is available in Python 3 as PyGObject, or gi

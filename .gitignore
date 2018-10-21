@@ -3,3 +3,5 @@
 tex_docs
 Pipfile
 *.lock
+epregressions/files_to_run.txt
+docs/_build
