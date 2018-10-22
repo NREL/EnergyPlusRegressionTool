@@ -766,7 +766,7 @@ class PyApp(Gtk.Window):
         tree_view_column.add_attribute(cell, 'text', 0)
         self.tree_view.append_column(tree_view_column)
 
-        self.tree_view.connect_object("event", self.handle_treeview_context_menu, self.last_run_context)
+        self.tree_view.connect_object("button-release-event", self.handle_tree_view_context_menu, self.last_run_context)
         self.tree_view.connect("row-activated", self.handle_tree_view_row_activated)
         self.tree_selection = self.tree_view.get_selection()
 
@@ -909,7 +909,7 @@ class PyApp(Gtk.Window):
         self.last_run_context = Gtk.Menu()
         self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
         self.last_run_context.append(self.last_run_context_copy)
-        self.last_run_context_copy.connect("activate", self.handle_resultslistcopy)
+        self.last_run_context_copy.connect("activate", self.handle_results_list_copy)
         self.last_run_context_copy.hide()
         self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
         self.last_run_context.append(self.last_run_context_nocopy)
@@ -1540,36 +1540,35 @@ class PyApp(Gtk.Window):
         else:
             return False
 
-    def handle_resultslistcopy(self, widget):
+    def handle_results_list_copy(self, widget):
         current_list = self.results_lists_to_copy[self.results_list_selected_entry_root_index]
         if current_list is not None:
-            string = ""
+            string = u""
             for item in current_list:
                 string += "%s\n" % item
-            clip = Gtk.Clipboard()
-            clip.set_text(string)
+            clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            clip.set_text(string, -1)
         else:
             pass
 
-    def handle_treeview_context_menu(self, widget, event):
+    def handle_tree_view_context_menu(self, widget, event):
         # EDWIN: I need to figure out what this was trying to do, we may not need it at all now
-        pass
-        # if event.type == Gtk.gdk.BUTTON_PRESS and event.button == 3:
-        #     x = int(event.x)
-        #     y = int(event.y)
-        #     time = event.time
-        #     path_info = self.tree_view.get_path_at_pos(x, y)
-        #     if path_info is not None:
-        #         this_path, col, cellx, celly = path_info
-        #         self.tree_view.grab_focus()
-        #         self.tree_view.set_cursor(this_path, col, 0)
-        #         widget.popup(None, None, None, event.button, time)
-        #         self.results_list_selected_entry_root_index = this_path[0]
-        #         self.last_run_context_copy.show()
-        #         self.last_run_context_nocopy.hide()
-        #     else:
-        #         self.last_run_context_copy.hide()
-        #         self.last_run_context_nocopy.show()
+        if event.button == 3:
+            x = int(event.x)
+            y = int(event.y)
+            time = event.time
+            path_info = self.tree_view.get_path_at_pos(x, y)
+            if path_info:
+                this_path, col, cellx, celly = path_info
+                self.tree_view.grab_focus()
+                self.tree_view.set_cursor(this_path, col, 0)
+                widget.popup(None, None, None, None, event.button, time)
+                self.results_list_selected_entry_root_index = this_path[0]
+                self.last_run_context_copy.show()
+                self.last_run_context_nocopy.hide()
+            else:
+                self.last_run_context_copy.hide()
+                self.last_run_context_nocopy.show()
 
     def gui_update_label_for_run_config(self):
         current_config = self.suiteargs.force_run_type
