@@ -3,8 +3,8 @@
 import datetime  # datetime allows us to generate timestamps for the log
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
+import webbrowser
 from datetime import datetime  # get datetime to do date/time calculations for timestamps, etc.
-import json
 
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import *
@@ -113,6 +113,7 @@ class PyApp(Gtk.Window):
         self.results_lists_to_copy = None
         self.case_1_build_dir_label = None
         self.case_2_build_dir_label = None
+        self.try_to_restore_files = None
 
         # set up default arguments for the idf list builder and the test suite engine
         # NOTE the GUI will set itself up according to these defaults, so do this before gui_build()
@@ -141,6 +142,10 @@ class PyApp(Gtk.Window):
 
         # build the idf selection
         self.build_button(None)
+
+        # after the IDF list has been built, try to restore the IDF selection from the IDFs in settings
+        if self.try_to_restore_files:
+            self.restore_file_selection(self.try_to_restore_files)
 
     def go_away(self, what_else_goes_in_gtk_main_quit):
         try:
@@ -224,8 +229,8 @@ class PyApp(Gtk.Window):
         # attach the FILE menu to the main menu bar
         mb.append(menu_item_file)
 
-        menu_item_help_pdf = Gtk.MenuItem("Show PDF Help File")
-        menu_item_help_pdf.connect("activate", self.show_help_pdf)
+        menu_item_help_pdf = Gtk.MenuItem("Open Online Documentation")
+        menu_item_help_pdf.connect("activate", self.open_documentation)
         menu_item_help_pdf.show()
 
         menu_item_help = Gtk.MenuItem("Help")
@@ -284,13 +289,8 @@ class PyApp(Gtk.Window):
             idf_select_data = project_tree['idfselection']
             if "masterfile" in idf_select_data:
                 self.file_list_builder_configuration.master_data_file = idf_select_data["masterfile"]
-            for idf_entry in self.idf_list_store:  # TODO: idf_list_store isn't available at this point during startup
-                idf_entry[IDFListViewColumnIndex.RUN] = False
             if 'selectedfiles' in idf_select_data:
-                for filename in idf_select_data['selectedfiles']:
-                    for idf_entry in self.idf_list_store:
-                        if idf_entry[IDFListViewColumnIndex.IDF] == filename:  # if it matches
-                            idf_entry[IDFListViewColumnIndex.RUN] = True
+                self.try_to_restore_files = idf_select_data['selectedfiles']
             if 'randomnumber' in idf_select_data:
                 self.file_list_num_files.set_value(int(idf_select_data['randomnumber']))
         if 'suiteoptions' in project_tree:
@@ -429,6 +429,14 @@ class PyApp(Gtk.Window):
         # since this is included in auto-save, return True to the timeout_add function
         # for normal (manual) saving, this will return to nothingness most likely
         return True
+
+    def restore_file_selection(self, file_list):
+        for idf_entry in self.idf_list_store:
+            idf_entry[IDFListViewColumnIndex.RUN] = False
+        for filename in self.try_to_restore_files:
+            for idf_entry in file_list:
+                if idf_entry[IDFListViewColumnIndex.IDF] == filename:  # if it matches
+                    idf_entry[IDFListViewColumnIndex.RUN] = True
 
     def gui_build_notebook_page_test_suite(self):
 
@@ -815,21 +823,21 @@ class PyApp(Gtk.Window):
         if platform == "linux":
             try:
                 subprocess.Popen(['xdg-open', dir_to_open])
-            except Exception as exc:
+            except Exception as this_exception:
                 print("Could not open file:")
-                print(exc)
+                print(this_exception)
         elif platform == "windows":
             try:
                 subprocess.Popen(['start', dir_to_open], shell=True)
-            except Exception as exc:
+            except Exception as this_exception:
                 print("Could not open file:")
-                print(exc)
+                print(this_exception)
         elif platform == "mac":
             try:
                 subprocess.Popen(['open', dir_to_open])
-            except Exception as exc:
+            except Exception as this_exception:
                 print("Could not open file:")
-                print(exc)
+                print(this_exception)
 
     def gui_build_notebook_page_log(self):
 
@@ -985,33 +993,19 @@ class PyApp(Gtk.Window):
     def warning_not_yet_built(self):
         self.warning_dialog("File selection and/or test suite operations can't be performed until master list is built")
 
-    def show_help_pdf(self, widget):
-        path_to_pdf = os.path.join(script_dir, "..", "Documentation", "ep-testsuite.pdf")
-        if not os.path.exists(path_to_pdf):
-            dialog = Gtk.MessageDialog(
-                self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
-                "Could not find help file; expected at:\n %s" % path_to_pdf
-            )
-            dialog.run()
-            dialog.destroy()
-            return
-
+    def open_documentation(self, widget):
+        url = 'https://energyplusregressiontool.readthedocs.io/en/latest/'
         try:
-            if platform == "mac":
-                subprocess.call(['open', path_to_pdf])
-            elif platform == "windows":
-                subprocess.call(['start', path_to_pdf])  # EDWIN: Verify this works
-            elif platform == "linux":
-                subprocess.call(['xdg-open', path_to_pdf])
-        except Exception as exc:
+            webbrowser.open_new_tab(url)
+        except Exception as this_exception:
             # error message
             dialog = Gtk.MessageDialog(
                 self, Gtk.DialogFlags.DESTROY_WITH_PARENT, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
-                "Could not open help file.  Try opening manually.  File is at:\n %s" % path_to_pdf
+                "Could not open browser file.  Try opening manually.  Documentation is at:\n %s" % url
             )
             dialog.run()
             dialog.destroy()
-            print(exc)
+            print(this_exception)
             return
 
     # IDF selection worker and handlers for buttons and checkboxes, etc.
@@ -1031,9 +1025,9 @@ class PyApp(Gtk.Window):
 
         self.status_bar.push(self.status_bar_context_id, "Building idf list")
 
-        this_builder = FileListBuilder(self.file_list_builder_configuration)
-        this_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
-        return_data = this_builder.build_verified_list(self.file_list_builder_configuration)
+        file_builder = FileListBuilder(self.file_list_builder_configuration)
+        file_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
+        return_data = file_builder.build_verified_list(self.file_list_builder_configuration)
         status, verified_idf_files, idf_files_missing_in_folder, idf_files_missing_from_csv_file = return_data
 
         # reset the progress bar either way
@@ -1441,7 +1435,6 @@ class PyApp(Gtk.Window):
         self.do_runtime_report = widget.get_active()
 
     def suite_option_handler_suite_validate(self, widget):
-        run_type = self.suiteargs.force_run_type
 
         self.add_log_entry("Verifying directory structure")
 
@@ -2057,9 +2050,9 @@ class PyApp(Gtk.Window):
                             if this_summary.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
                                 runtime2 = this_summary.run_time_seconds_case2
                         writer.writerow([this_entry.basename, runtime1, runtime2])
-            except Exception as exc:
+            except Exception as this_exception:
                 self.add_log_entry("Couldn't write runtime report file")
-                print(exc)
+                print(this_exception)
 
         # update the GUI
         self.btn_run_suite.set_label("Run Suite")
