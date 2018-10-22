@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
+import argparse
 import os
 import shutil
 import sys
@@ -767,25 +768,52 @@ class TestSuiteRunner:
 
 if __name__ == "__main__":
 
+    # parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="""
+    Run EnergyPlus tests using a specified configuration.  Can be executed in 2 ways:
+      1: Arguments can be passed from the command line in the usage here, or
+      2: An instance of the TestSuiteRunner class can be constructed, more useful for UIs or scripting"""
+    )
+    parser.add_argument('a_src', action="store", help='Path to case a\'s source repository root')
+    parser.add_argument('a_build', action="store", help='Path to case a\'s build directory')
+    parser.add_argument('b_src', action="store", help='Path to case b\'s source repository root')
+    parser.add_argument('b_build', action="store", help='Path to case b\'s build directory')
+    parser.add_argument('idf_list_file', action='store', help='Path to the file containing the list of IDFs to run')
+    parser.add_argument('-a', action="store_true", help='Use this flag to run case a files')
+    parser.add_argument('-b', action="store_true", help='Use this flag to run case b files')
+    parser.add_argument('-f', choices=['DD', 'Annual'], help='Force a specific run type', default=None)
+    parser.add_argument('-j', action="store", dest="j", type=int, default=1, help='Number of processors to use')
+    parser.add_argument('-t', action='store_true', default=False, help='Use this flag to run in test mode')
+
+    args = parser.parse_args()
+
+    run_type = ForceRunType.NONE
+    if args.f:
+        if args.f == 'DD':
+            run_type = ForceRunType.DD
+        elif args.f == 'Annual':
+            run_type = ForceRunType.ANNUAL
+
     # For ALL runs use BuildA
     base = SingleCaseInformation(
-        source_directory='/home/edwin/Projects/energyplus/repos/1eplus/',
-        build_directory='/home/edwin/Projects/energyplus/repos/1eplus/builds/develop/r/',
-        run_this_directory=True
+        source_directory=args.case_a_source_dir,
+        build_directory=args.case_a_build_dir,
+        run_this_directory=args.a
     )
 
     # If using ReverseDD, builB can just be None
     mod = SingleCaseInformation(
-        source_directory='/home/edwin/Projects/energyplus/repos/4eplus/',
-        build_directory='/home/edwin/Projects/energyplus/repos/4eplus/builds/outputjson/r/',
-        run_this_directory=True
+        source_directory=args.case_b_source_dir,
+        build_directory=args.case_b_build_dir,
+        run_this_directory=args.b
     )
 
     # Do a single test run...
-    DoASingleTestRun = False
+    DoASingleTestRun = args.test
 
     # Set the expected path for the files_to_run.txt file
-    run_list = os.path.join(script_dir, 'files_to_run.txt')
+    run_list = os.path.join(script_dir, args.idf_file_list)
     if not os.path.exists(run_list):
         print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % run_list)
         sys.exit(1)
@@ -812,9 +840,9 @@ if __name__ == "__main__":
     # Build the run configuration
     RunConfig = TestRunConfiguration(run_mathdiff=True,
                                      do_composite_err=True,
-                                     force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
+                                     force_run_type=run_type,
                                      single_test_run=DoASingleTestRun,
-                                     num_threads=3,
+                                     num_threads=args.j,
                                      report_freq=ReportingFreq.HOURLY,
                                      build_a=base,
                                      build_b=mod)

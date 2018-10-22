@@ -97,84 +97,48 @@ for the runtests script, described next.
 Running runtests.py
 -------------------
 
-Executing the file list builder script is simple, with only a few
-command line arguments acting as switches to select and down-select
-files based on their attributes in the master csv file. The calling
-signature for runtests is somewhat more structured in order to handle
-the more complex arguments required.
+Just like the file list builder script, runtests.py is set up to easily be executed
+from the command line.
 
 Calling Signature
 ~~~~~~~~~~~~~~~~~
 
-The runtests script can be executed from the command line easily. In
-Python, it is commonplace to define all classes and importable code
-first, followed by a section of code at the bottom that is only seen if
-the script is being executed directly from the command line. As such, to
-execute this script from the command line, it is easiest to just modify
-this section of the script. This section of the script, on my current
-machine is listed here:
+The runtests script can be executed from the command line easily. The
+usage of the script is available here:
 
 ::
 
-    base = SingleCaseInformation(
-        source_directory='/path/to/eplus/repo1/',
-        build_directory='/path/to/eplus/repo1/build/',
-        run_this_directory=True
-    )
+    $ ./epregressions/runtests.py --help
+    usage: runtests.py [-h] [-a] [-b] [-f {DD,Annual}] [-j J] [-t]
+                       a_src a_build b_src b_build idf_list_file
 
-    # If using ReverseDD, builB can just be None
-    mod = SingleCaseInformation(
-        source_directory='/path/to/eplus/repo1/',
-        build_directory='/path/to/eplus/repo1/build/',
-        run_this_directory=True
-    )
+    Run EnergyPlus tests using a specified configuration. Can be executed in 2
+    ways: 1: Arguments can be passed from the command line in the usage here, or
+    2: An instance of the TestSuiteRunner class can be constructed, more useful
+    for UIs or scripting
 
-    # Do a single test run...
-    DoASingleTestRun = False
+    positional arguments:
+      a_src           Path to case a's source repository root
+      a_build         Path to case a's build directory
+      b_src           Path to case b's source repository root
+      b_build         Path to case b's build directory
+      idf_list_file   Path to the file containing the list of IDFs to run
 
-    # Set the expected path for the files_to_run.txt file
-    run_list = os.path.join(script_dir, 'files_to_run.txt')
-    if not os.path.exists(run_list):
-        print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % run_list)
-        sys.exit(1)
-
-    # Build the list of files to run here:
-    entries = []
-    with open(run_list) as f:  # need to ask for this name separately
-        for entry in f:
-            if entry.strip() == "":
-                continue
-            if entry[0] == '!':
-                continue
-            epw = ''
-            tokens = entry.split(' ')
-            basename = tokens[0].strip()
-            if len(tokens) > 1:
-                epw = tokens[1].strip()
-            else:
-                epw = None
-            entries.append(TestEntry(basename, epw))
-            if DoASingleTestRun:
-                break
-
-    # Build the run configuration
-    RunConfig = TestRunConfiguration(run_mathdiff=True,
-                                     do_composite_err=True,
-                                     force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE, REVERSEDD
-                                     single_test_run=DoASingleTestRun,
-                                     num_threads=3,
-                                     report_freq=ReportingFreq.HOURLY,
-                                     build_a=base,
-                                     build_b=mod)
-
-    # instantiate the test suite
-    Runner = TestSuiteRunner(RunConfig, entries)
-
-    # Run it
-    Runner.run_test_suite()
+    optional arguments:
+      -h, --help      show this help message and exit
+      -a              Use this flag to run case a files
+      -b              Use this flag to run case b files
+      -f {DD,Annual}  Force a specific run type
+      -j J            Number of processors to use
+      -t              Use this flag to run in test mode
 
 
-Each section of this setup is described in the following sections:
+
+Simply pass in the five positional arguments, usually the ``-a`` and ``-b`` flags
+to run those cases, and then possibly the ``-j`` to define the number of
+threads to use, and that's it.  Off it goes running tests...
+
+For some deeper information, each section of this setup is described in the following sections.
 
 Setup Build Directories
 '''''''''''''''''''''''
