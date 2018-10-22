@@ -163,8 +163,15 @@ class PyApp(Gtk.Window):
         # set the window icon
         self.set_icon_from_file(os.path.join(script_dir, 'ep_icon.png'))
 
-        # build pre-GUI stuff here (context menus that will be referenced by GUI objects, for example)
-        self.build_pre_gui_stuff()
+        # build the last run context menu
+        self.last_run_context = Gtk.Menu()
+        self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
+        self.last_run_context.append(self.last_run_context_copy)
+        self.last_run_context_copy.connect("activate", self.handle_results_list_copy)
+        self.last_run_context_copy.hide()
+        self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
+        self.last_run_context.append(self.last_run_context_nocopy)
+        self.last_run_context_nocopy.show()
 
         # create a v-box to start laying out the geometry of the form
         this_v_box = Gtk.VBox(False, box_spacing)
@@ -853,14 +860,49 @@ class PyApp(Gtk.Window):
             self.log_scroll_notebook_page, True, True, box_spacing
         )
 
+        h_box_buttons = Gtk.HBox(True, box_spacing)
+        save_button = Gtk.Button("Save Log Messages")
+        save_button.connect("clicked", self.save_log)
+        alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
+        alignment.add(save_button)
+        h_box_buttons.pack_start(alignment, False, False, box_spacing)
         clear_button = Gtk.Button("Clear Log Messages")
         clear_button.connect("clicked", self.clear_log)
         alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(clear_button)
-
-        v_box.pack_start(alignment, False, False, box_spacing)
+        h_box_buttons.pack_start(alignment, False, False, box_spacing)
+        v_box.pack_start(h_box_buttons, False, False, box_spacing)
 
         return v_box
+
+    def save_log(self, widget):
+        output_string = '\n'.join(["%s: %s" % (x[0], x[1]) for x in self.log_store])
+        save_file = os.path.join(os.path.expanduser("~"), "log_messages.log")
+        dialog = Gtk.FileChooserDialog(
+            title="Select log messages save file name", action=Gtk.FileChooserAction.SAVE,
+            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        )
+        dialog.set_select_multiple(False)
+        if self.last_folder_path:
+            dialog.set_current_folder(self.last_folder_path)
+        a_filter = Gtk.FileFilter()
+        a_filter.set_name("Log Files")
+        a_filter.add_pattern("*.log")
+        dialog.add_filter(a_filter)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.last_folder_path = dialog.get_current_folder()
+            save_file = dialog.get_filename()
+            dialog.destroy()
+        else:
+            dialog.destroy()
+            return
+        try:
+            with open(save_file, 'w') as f_save:
+                f_save.write(output_string)
+        except Exception as write_exception:
+            self.warning_dialog('Problem writing save file, log not saved; error: %s' % str(write_exception))
+            return
 
     def clear_log(self, widget):
         self.log_store.clear()
@@ -903,17 +945,6 @@ class PyApp(Gtk.Window):
         aligner = Gtk.Alignment(xalign=1.0, yalign=1.0, xscale=1.0, yscale=0.0)
         aligner.add(self.status_bar)
         return aligner
-
-    def build_pre_gui_stuff(self):
-        # build the last run context menu
-        self.last_run_context = Gtk.Menu()
-        self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
-        self.last_run_context.append(self.last_run_context_copy)
-        self.last_run_context_copy.connect("activate", self.handle_results_list_copy)
-        self.last_run_context_copy.hide()
-        self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
-        self.last_run_context.append(self.last_run_context_nocopy)
-        self.last_run_context_nocopy.show()
 
     @staticmethod
     def add_frame(widget, for_separator=False):
