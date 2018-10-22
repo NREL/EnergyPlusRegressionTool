@@ -5,6 +5,7 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 from multiprocessing import current_process
 
 from epregressions.structures import *
@@ -12,11 +13,22 @@ from epregressions.structures import *
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
+platform = ''
+if "linux" in sys.platform:
+    platform = "linux"
+elif "darwin" in sys.platform:
+    platform = "mac"
+elif "win" in sys.platform:
+    platform = "windows"
+
 
 def execute_energyplus(source_directory, build_directory, entry_name, test_run_directory,
                        run_type, min_reporting_freq, this_parametric_file, weather_file_name):
     # setup a few paths
-    energyplus = os.path.join(build_directory, 'Products', 'energyplus')
+    if platform == 'windows':
+        energyplus = os.path.join(build_directory, 'Products', 'Debug', 'energyplus')
+    else:
+        energyplus = os.path.join(build_directory, 'Products', 'energyplus')
 
     # external tools also
     basement = os.path.join(build_directory, 'Products', 'Basement')

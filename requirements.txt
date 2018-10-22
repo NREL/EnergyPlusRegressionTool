@@ -8,10 +8,14 @@ Sphinx==1.8.1
 #   https://pygobject.readthedocs.io/en/latest/getting_started.html
 #  then set up a development environment from these instructions:
 #   https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
-# For Windows, download a valid Python version (up to 3.4, 32-or-64-bit), install it
+# For Windows, download and install a **valid** Python version from Python.org:
+#  **Valid Versions**: Up to 3.4, not newer, 32-or-64-bit)
+#   https://www.python.org/downloads/windows/
 #  Then grab the PyGI installer from here:
 #   https://sourceforge.net/projects/pygobjectwin32/
-#  During that install, select your Python 3.4 installation folder and it will add GObject to that Python
+#  During that install:
+#   select your Python 3.4 installation folder
+#   select the GTK+ entry in the first list
 # For Mac, not sure yet
 
 # Once PyGObject is available, install the rest of the dependencies here:

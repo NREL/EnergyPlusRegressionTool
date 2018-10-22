@@ -726,7 +726,7 @@ class PyApp(Gtk.Window):
         self.verify_tree_view.append_column(column)
         listview_window.add(self.verify_tree_view)
         v_box_right.pack2(listview_window)
-        v_box_right.set_position(500)
+        v_box_right.set_position(int(listview_window.get_size_request()[1] / 2))
 
         notebook_page_suite.pack1(self.add_shadow_frame(notebook_page_suite_options))
         notebook_page_suite.pack2(self.add_shadow_frame(v_box_right))
@@ -1494,9 +1494,16 @@ class PyApp(Gtk.Window):
             ["Case 1 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
         )
         exe_extension = ''
-        if platform == 'Windows':
+        if platform == 'windows':
             exe_extension = '.exe'
-        energy_plus_exe = os.path.join(self.suiteargs.buildA.build_directory, 'Products', 'energyplus' + exe_extension)
+        if platform == 'windows':  # TODO: Edwin Formalize this later
+            energy_plus_exe = os.path.join(
+                self.suiteargs.buildA.build_directory, 'Products', 'Debug', 'energyplus' + exe_extension
+            )
+        else:
+            energy_plus_exe = os.path.join(
+                self.suiteargs.buildA.build_directory, 'Products', 'energyplus' + exe_extension
+            )
         exists = os.path.exists(energy_plus_exe)
         self.verify_list_store.append(
             ["Case 1 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
@@ -1553,9 +1560,16 @@ class PyApp(Gtk.Window):
             ["Case 2 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
         )
         exe_extension = ''
-        if platform == 'Windows':
+        if platform == 'windows':
             exe_extension = '.exe'
-        energy_plus_exe = os.path.join(self.suiteargs.buildB.build_directory, 'Products', 'energyplus' + exe_extension)
+        if platform == 'windows':  # TODO: Edwin Formalize this later
+            energy_plus_exe = os.path.join(
+                self.suiteargs.buildB.build_directory, 'Products', 'Debug', 'energyplus' + exe_extension
+            )
+        else:
+            energy_plus_exe = os.path.join(
+                self.suiteargs.buildB.build_directory, 'Products', 'energyplus' + exe_extension
+            )
         exists = os.path.exists(energy_plus_exe)
         self.verify_list_store.append(
             ["Case 2 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
