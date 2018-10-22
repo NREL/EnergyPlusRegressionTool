@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import argparse
+import json
 import os
 import shutil
 import sys
@@ -797,40 +798,34 @@ if __name__ == "__main__":
 
     # For ALL runs use BuildA
     base = SingleCaseInformation(
-        source_directory=args.case_a_source_dir,
-        build_directory=args.case_a_build_dir,
+        source_directory=args.a_src,
+        build_directory=args.a_build,
         run_this_directory=args.a
     )
 
     # If using ReverseDD, builB can just be None
     mod = SingleCaseInformation(
-        source_directory=args.case_b_source_dir,
-        build_directory=args.case_b_build_dir,
+        source_directory=args.b_src,
+        build_directory=args.b_build,
         run_this_directory=args.b
     )
 
     # Do a single test run...
-    DoASingleTestRun = args.test
+    DoASingleTestRun = args.t
 
     # Set the expected path for the files_to_run.txt file
-    run_list = os.path.join(script_dir, args.idf_file_list)
-    if not os.path.exists(run_list):
+    if not os.path.exists(args.idf_list_file):
         print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % run_list)
         sys.exit(1)
 
     # Build the list of files to run here:
     entries = []
-    with open(run_list) as f:  # need to ask for this name separately
-        for entry in f:
-            if entry.strip() == "":
-                continue
-            if entry[0] == '!':
-                continue
-            epw = ''
-            tokens = entry.split(' ')
-            basename = tokens[0].strip()
-            if len(tokens) > 1:
-                epw = tokens[1].strip()
+    with open(args.idf_list_file) as f:  # need to ask for this name separately
+        json_object = json.loads(f.read())
+        for entry in json_object['files_to_run']:
+            basename = entry['file']
+            if 'epw' in entry:
+                epw = entry['epw']
             else:
                 epw = None
             entries.append(TestEntry(basename, epw))

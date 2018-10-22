@@ -4,6 +4,7 @@ from __future__ import print_function
 import argparse
 import csv
 import glob
+import json
 import os
 import random
 import sys
@@ -159,12 +160,17 @@ class FileListBuilder(object):
         # if we aren't running in the gui, we need to go ahead and down select and write to the output file
         if not _args.gui:
             with open(_args.output_file, 'w') as outfile:
+                files = []
                 for i in self.selected_input_file_set:
                     if i.has_weather_file:
-                        print("%s %s" % (i.filename, i.weatherfilename), file=outfile)
+                        object_to_add = {'file': i.filename, 'epw': i.weatherfilename}
+                        # print("%s %s" % (i.filename, i.weatherfilename), file=outfile)
                     else:
-                        print("%s" % i.filename, file=outfile)
-
+                        object_to_add = {'file': i.filename}
+                        # print("%s" % i.filename, file=outfile)
+                    files.append(object_to_add)
+                json_object = {'files_to_run': files}
+                outfile.write(json.dumps(json_object, indent=2))
         print("File list build complete")
 
     @staticmethod
@@ -257,7 +263,7 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
     # these were originally inputs, but that is really bulky
     # they are now hardwired and can be manipulated outside of the script if needed
     args.master_data_file = os.path.join(script_dir, "full_file_set_details.csv")
-    args.output_file = os.path.join(script_dir, "files_to_run.txt")
+    args.output_file = os.path.join(script_dir, "files_to_run.json")
 
     # backup the previous output file if one already exists and then delete it
     if os.path.isfile(args.output_file):
@@ -267,13 +273,15 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
                 os.remove(b_file)
             except Exception as exc:
                 print(
-                    "An error occurred when trying to remove the previous backup output file: %s; aborting..." % b_file)
+                    "An error occurred trying to remove the previous backup output file: %s; aborting..." % b_file
+                )
                 print("Error message: " % exc)
         try:
             os.rename(args.output_file, b_file)
         except Exception as exc:
             print(
-                "An error occurred when trying to backup the previous output file: %s; aborting..." % args.output_file)
+                "An error occurred trying to backup the previous output file: %s; aborting..." % args.output_file
+            )
             print("Error message: " % exc)
 
     if args.verify:
