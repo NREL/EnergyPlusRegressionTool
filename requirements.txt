@@ -3,10 +3,16 @@ beautifulsoup4==4.6.3
 nose==1.3.7
 Sphinx==1.8.1
 
-# this GUI uses PyGtk
-# this is available in Python 3 as PyGObject, or gi
-# the steps for getting it installed on your system are available here:
-#  https://pygobject.readthedocs.io/en/latest/getting_started.html
-# I use virtual environments, so I needed a little extra help
-# those instructions are *also* provided by them and worked flawlessly
-#  https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
+# this GUI uses PyGtk, relying on GTK3+
+# For Ubuntu, install GTK using the instructions here:
+#   https://pygobject.readthedocs.io/en/latest/getting_started.html
+#  then set up a development environment from these instructions:
+#   https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
+# For Windows, download a valid Python version (up to 3.4, 32-or-64-bit), install it
+#  Then grab the PyGI installer from here:
+#   https://sourceforge.net/projects/pygobjectwin32/
+#  During that install, select your Python 3.4 installation folder and it will add GObject to that Python
+# For Mac, not sure yet
+
+# Once PyGObject is available, install the rest of the dependencies here:
+#  pip install -r requirements.txt
