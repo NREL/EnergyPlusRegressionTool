@@ -1516,7 +1516,7 @@ class PyApp(Gtk.Window):
         cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
         exists = os.path.exists(cmake_cache_file)
         self.verify_list_store.append(
-            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
+            ["Case 2 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
         )
         source_dir = None
         exists = False
@@ -1529,7 +1529,7 @@ class PyApp(Gtk.Window):
                     exists = True  # this is saying the CMakeCache signal line exists, not the source dir
                     break
         self.verify_list_store.append(
-            ["Case 1 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
+            ["Case 2 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
         )
         if not source_dir:
             source_dir = '<not_found_in_cmake_cache>'
