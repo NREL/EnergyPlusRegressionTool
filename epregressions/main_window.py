@@ -2083,8 +2083,3 @@ class PyApp(Gtk.Window):
         self.status_bar.push(self.status_bar_context_id, "Cancelled")
         self.progress.set_fraction(1.0)
         self.add_log_entry("Test suite cancel complete")
-
-
-# once done doing any preliminary processing, actually run the application
-main_window = PyApp()
-Gtk.main()

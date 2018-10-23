@@ -7,3 +7,4 @@ epregressions/files_to_run.json
 epregressions/files_to_run.txt
 docs/_build
 venv
+.python-version

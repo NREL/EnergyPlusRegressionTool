@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+# this script simply appends the current directory to PATH
+# so that it can import epregressions library, then creates
+# an instance of the application window and runs the GTK loop
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
+
+from epregressions.main_window import PyApp
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+main_window = PyApp()
+Gtk.main()

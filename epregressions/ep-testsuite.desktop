@@ -1,7 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=EnergyPlus Test Suite
+Name=EnergyPlus Regression Tool
 Comment=An EnergyPlus test suite utility
-Exec=/home/elee/EnergyPlus/TestScripts/ep-testsuite/Scripts/MainWindow.py
-Icon=/home/elee/EnergyPlus/TestScripts/ep-testsuite/Scripts/ep_icon.png
+Exec={PATH_TO_PYTHON} {RUNNER_SCRIPT}
+Icon={ICON_PATH}
 Terminal=false
+StartupWMClass=eplus_regression_runner
