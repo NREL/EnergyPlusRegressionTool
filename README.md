@@ -40,10 +40,38 @@ For setting up a development environment to actually _work_ on this tool, see th
 If you are not interested in _developing_ this tool, and only looking to _use_ it for your EnergyPlus work, read on here.
 
 For this case, the dependencies for this tool are typically installed into the _system_ Python 3 installation, and this _system_ Python 3 is used to execute the program.
-Instructions for this are coming:
+Instructions for this are actually really simple.
+These are based on a fresh new installation of Ubuntu 18.04.
+If you are on a different distribution or version, or you are installing into a system that already has other dependencies installed, your mileage will vary.
 
-- Here
-- and here.
+So, starting with Ubuntu 18.04:
+
+- Follow the [PyGObject install instructions page](https://pygobject.readthedocs.io/en/latest/getting_started.html) and install the GObject dependencies:
+  - `sudo apt-get install python-gi python-gi-cairo python3-gi python3-gi-cairo gir1.2-gtk-3.0`
+  - Optionally test this: run `python3` and try to execute `import gi`.  It should just do it without error.  Press `ctrl-d` to exit.
+- Install a couple other dependencies that we'll use in the next steps:
+  - `sudo apt-get install git python3-pip`
+- Download the regression tool:
+  - `git clone https://github.com/Myoldmopar/EnergyPlusRegressionTool`
+  - `cd EnergyPlusRegressionTool`
+  - Optionally test this: run `python3 eplus_regression_runner`.  It should run the GUI.  Close it.
+- Install the program into your applications:
+  - `python3 epregressions/install_desktop`
+
+You should now be able to press the "Windows key" on your keyboard, start typing EnergyPl.., and it will find the tool and you can press enter, as shown here:
+
+![ActivitiesSearchImage](/images/activities_search.png?raw=true "ActivitiesSearchImage")
+
+You can then right click on the icon in the taskbar and save it as a favorite to reopen anytime.
+
+![ActivitiesSearchImage](/images/activities_search.png?raw=true "ActivitiesSearchImage")
+
+Then to get an update to the program, then only thing you have to do is update your clone:
+
+- `cd EnergyPlusRegressionTool`
+- `git pull`
+
+In the rare event that a dependency has changed, you may have to re-run the `pip` install command, but specific instructions will be offered if that happens.
 
 Development
 -----------
