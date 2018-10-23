@@ -659,10 +659,9 @@ class PyApp(Gtk.Window):
         self.btn_run_suite = Gtk.Button("Run Suite")
         self.btn_run_suite.connect("clicked", self.run_button)
         self.btn_run_suite.set_size_request(120, -1)
-        # green = self.btn_run_suite.get_colormap().alloc_color("green")  # EDWIN: Commented this out because no
-        # style = self.btn_run_suite.get_style().copy()
-        # style.bg[Gtk.STATE_NORMAL] = green
-        # self.btn_run_suite.set_style(style)
+        color = Gdk.color_parse('green')
+        rgba = Gdk.RGBA.from_color(color)
+        self.btn_run_suite.override_background_color(0, rgba)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.btn_run_suite)
         h_box_1.pack_start(alignment, True, True, box_spacing)
@@ -1340,6 +1339,9 @@ class PyApp(Gtk.Window):
 
         # Update the button
         self.btn_run_suite.set_label("Cancel Suite")
+        color = Gdk.color_parse('red')
+        rgba = Gdk.RGBA.from_color(color)
+        self.btn_run_suite.override_background_color(0, rgba)
         self.test_suite_is_running = True
 
     def suite_option_handler_base_build_dir(self, widget):
@@ -1695,6 +1697,10 @@ class PyApp(Gtk.Window):
         result = GObject.idle_add(self.all_done_callback_handler, results)
 
     def all_done_callback_handler(self, results):
+
+        color = Gdk.color_parse('green')
+        rgba = Gdk.RGBA.from_color(color)
+        self.btn_run_suite.override_background_color(0, rgba)
 
         total_num = 0
         total_num_ = []
@@ -2079,6 +2085,9 @@ class PyApp(Gtk.Window):
 
     def cancel_callback_handler(self):
         self.btn_run_suite.set_label("Run Suite")
+        color = Gdk.color_parse('green')
+        rgba = Gdk.RGBA.from_color(color)
+        self.btn_run_suite.override_background_color(0, rgba)
         self.test_suite_is_running = False
         self.status_bar.push(self.status_bar_context_id, "Cancelled")
         self.progress.set_fraction(1.0)
