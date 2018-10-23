@@ -78,14 +78,13 @@ def writecsv(mat, outfile=None, mode='w'):
     """
     if not ismatrice(mat):
         raise BadMatrice('The input is not a matrice')
-    utf_mat = to_utf8(mat)
     if outfile:
         writer = csv.writer(open(outfile, mode, newline=''))
-        writer.writerows(utf_mat)
+        writer.writerows(mat)
     else:
         f = StringIO()
         writer = csv.writer(f)
-        writer.writerows(utf_mat)
+        writer.writerows(mat)
         return f.getvalue()
 
 
@@ -102,19 +101,6 @@ def ismatrice(mat):
             if type(cell) not in (float, int, str):
                 return False
     return True
-
-
-def to_utf8(mat):
-    out_matrix = []
-    for row in mat:
-        this_row = []
-        for cell in row:
-            if type(cell) is str:
-                this_row.append(cell.encode('UTF-8'))
-            else:
-                this_row.append(cell)
-        out_matrix.append(this_row)
-    return out_matrix
 
 
 def transpose2d(mtx):
