@@ -64,7 +64,7 @@ You should now be able to press the "Windows key" on your keyboard, start typing
 
 You can then right click on the icon in the taskbar and save it as a favorite to reopen anytime.
 
-![ActivitiesSearchImage](/images/activities_search.png?raw=true "ActivitiesSearchImage")
+![AddToFavorites](/images/add_to_favorites.png?raw=true "AddToFavorites")
 
 Then to get an update to the program, then only thing you have to do is update your clone:
 
