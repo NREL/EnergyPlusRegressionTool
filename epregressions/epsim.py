@@ -226,16 +226,3 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
 
     finally:
         os.chdir(start_path)
-
-#
-# if __name__ == "__main__":
-#     build_directory = sys.argv[1]
-#     sim_run_directory = sys.argv[2]
-#     executable_name = sys.argv[3]
-#     force_run_type = sys.argv[4]
-#     parametric_file = sys.argv[5]
-#     weather_file = sys.argv[6]
-#     eplus_install_path = sys.argv[7]
-#
-#     execute_energyplus(build_directory, "entry_name", sim_run_directory, executable_name, force_run_type, "min_freq",
-#                        parametric_file, weather_file, eplus_install_path)
