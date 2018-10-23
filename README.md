@@ -33,8 +33,8 @@ And it is super easy to set up an EnergyPlus build development environment on Ub
 So if at all possible, use this platform, in a VM or whatever, to use this tool.
 I'll keep pushing on the tool on all these platforms, but my focus will always be on Ubuntu for the time being.
 
-Usage/Installation
-------------------
+Installation
+------------
 
 For setting up a development environment to actually _work_ on this tool, see the next section.
 If you are not interested in _developing_ this tool, and only looking to _use_ it for your EnergyPlus work, read on here.
