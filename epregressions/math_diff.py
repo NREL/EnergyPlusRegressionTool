@@ -111,7 +111,7 @@ def hdict2matrix(order, dict):
     """convert the header dictionary (as created by matrix2hdct) to a csv matrix held in tmat. 'order' is the order of the headers in the matrix. (order is needed because keys in a dict have no sort order)"""
     mat = []
     for key in order:
-        mat.append([key] + dict[key])
+        mat.append([key] + list(dict[key]))
     return mycsv.transpose2d(mat)
 
 
@@ -130,7 +130,7 @@ error_labels = (
 def make_summary_dict(tdict, hdict):
     """generate the summary dict"""
     sdict = {}
-    times = tdict[tdict.keys()[0]]
+    times = tdict[list(tdict.keys())[0]]
     for key in hdict.keys():
         sdict[key] = {}
     for key in hdict.keys():
@@ -175,7 +175,7 @@ def make_summary_dict(tdict, hdict):
             sdict[key]['nz_time_of_max'] = times[column.index(sdict[key]['nz_max'])]
             sdict[key]['nz_time_of_min'] = times[column.index(sdict[key]['nz_min'])]
 
-    sdict[tdict.keys()[0]] = [label + ':' for label in summary_labels]
+    sdict[list(tdict.keys())[0]] = [label + ':' for label in summary_labels]
     return sdict
 
 
@@ -384,12 +384,30 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     mycsv.writecsv(rel_diff_mat, rel_diff_file)
 
     # Write the error file header
-    mycsv.writecsv([[], ['Max absolute diff: %s, field: %s, time: %s, relative: %s' % (
-    str(max_max_abs_diff), str(key_of_max_max_abs_diff), str(time_of_max_max_abs_diff),
-    str(rel_diff_of_max_max_abs_diff))]], err_file, 'ab')
-    mycsv.writecsv([[], ['Max relative diff: %s, field: %s, time: %s, absolute: %s' % (
-    str(max_max_rel_diff), str(key_of_max_max_rel_diff), str(time_of_max_max_rel_diff),
-    str(abs_diff_of_max_max_rel_diff))]], err_file, 'ab')
+    mycsv.writecsv(
+        [
+            [],
+            [
+                'Max absolute diff: %s, field: %s, time: %s, relative: %s' % (
+                    str(max_max_abs_diff),
+                    str(key_of_max_max_abs_diff),
+                    str(time_of_max_max_abs_diff),
+                    str(rel_diff_of_max_max_abs_diff))
+            ]
+        ], err_file, 'a'
+    )
+    mycsv.writecsv(
+        [
+            [],
+            [
+                'Max relative diff: %s, field: %s, time: %s, absolute: %s' % (
+                    str(max_max_rel_diff),
+                    str(key_of_max_max_rel_diff),
+                    str(time_of_max_max_rel_diff),
+                    str(abs_diff_of_max_max_rel_diff))
+            ]
+        ], err_file, 'a'
+    )
 
     # Convert the error dictionary to a matrix and write to the error
     # file.  Need to convert it from a nested dictionary to a
@@ -398,23 +416,23 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     err_dict2[tkey] = [el + ':' for el in list(error_labels)]
 
     err_mat = hdict2matrix(tdhorder, err_dict2)
-    mycsv.writecsv([[], []] + err_mat, err_file, 'ab')
+    mycsv.writecsv([[], []] + err_mat, err_file, 'a')
 
     # Convert the summaries to matrices and write them out to the error file
     summary_mat1 = hdict2matrix(thorder, summary_dict12)
-    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile1,)], []] + summary_mat1, err_file, 'ab')
+    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile1,)], []] + summary_mat1, err_file, 'a')
     summary_mat2 = hdict2matrix(thorder, summary_dict22)
-    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile2,)], []] + summary_mat2, err_file, 'ab')
+    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile2,)], []] + summary_mat2, err_file, 'a')
 
     # Convert the absolute and relative differences of the summaries and write them to the error file
     abs_diff_summary_dict[tkey] = [sl + ':' for sl in list(summary_labels)]
     abs_diff_summary_mat = hdict2matrix(tdhorder, abs_diff_summary_dict)
     mycsv.writecsv([[], [], ['Absolute difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
-                    []] + abs_diff_summary_mat, err_file, 'ab')
+                    []] + abs_diff_summary_mat, err_file, 'a')
     rel_diff_summary_dict[tkey] = [sl + ':' for sl in list(summary_labels)]
     rel_diff_summary_mat = hdict2matrix(tdhorder, rel_diff_summary_dict)
     mycsv.writecsv([[], [], ['Relative difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
-                    []] + rel_diff_summary_mat, err_file, 'ab')
+                    []] + rel_diff_summary_mat, err_file, 'a')
 
     return (diff_type, num_records, count_of_big_diff, count_of_small_diff)
 
