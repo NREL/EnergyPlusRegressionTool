@@ -76,11 +76,12 @@ In the rare event that a dependency has changed, you may have to re-run the `pip
 Development
 -----------
 
-For the case of developing this tool, the instructions are fairly similar, but you will generally set up a separate Python environment to install the dependencies so you don't mess with the _system_ Python.
-Instructions for this are coming:
-
-- Here
-- and here.
+For the case of developing this tool, you should start by installing the dependencies listed in the installation section.
+Then you will generally set up a separate Python environment to install the dependencies so you don't mess with the _system_ Python.
+This gets a bit trickier than usual though because of the interplay between the system level dependencies installed with apt and the virtual environment isolation.
+The instructions over on GObject's website are perfect.
+I was skeptical because I have struggled with this in the past, but in this case, they work great.
+So follow the instructions here: https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
 
 Documentation
 -------------
