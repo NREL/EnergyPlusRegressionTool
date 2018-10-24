@@ -671,10 +671,9 @@ class PyApp(Gtk.Window):
 
         # PAGE: IDF LIST RESULTS
         listview_window = Gtk.ScrolledWindow()
-        listview_window.set_size_request(750, -1)
+        listview_window.set_size_request(600, -1)
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-
         self.idf_list_store = Gtk.ListStore(bool, str, str)
         self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --"])
         tree_view = Gtk.TreeView(self.idf_list_store)
@@ -698,14 +697,13 @@ class PyApp(Gtk.Window):
         column.set_sort_column_id(2)
         column.set_resizable(True)
         tree_view.append_column(column)
-
         listview_window.add(tree_view)
         aligner = Gtk.Alignment(xalign=0, yalign=0, xscale=1, yscale=1)
         aligner.add(listview_window)
         v_box_right.pack1(aligner)
 
         listview_window = Gtk.ScrolledWindow()
-        listview_window.set_size_request(-1, 475)
+        listview_window.set_size_request(600, -1)
         listview_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         # make the list store and the treeview
@@ -733,7 +731,7 @@ class PyApp(Gtk.Window):
         self.verify_tree_view.append_column(column)
         listview_window.add(self.verify_tree_view)
         v_box_right.pack2(listview_window)
-        v_box_right.set_position(int(listview_window.get_size_request()[1] / 2))
+        v_box_right.set_position(300)
 
         notebook_page_suite.pack1(self.add_shadow_frame(notebook_page_suite_options))
         notebook_page_suite.pack2(self.add_shadow_frame(v_box_right))
