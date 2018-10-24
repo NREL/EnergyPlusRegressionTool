@@ -61,8 +61,6 @@ class PyApp(Gtk.Window):
         self.run_type_combo_box = None
         self.report_frequency_combo_box = None
         self.suite_dir_struct_info = None
-        self.suite_option_handler_runtime_report_check = None
-        self.suite_option_runtime_file_label = None
         self.btn_run_suite = None
         self.verify_list_store = None
         self.verify_tree_view = None
@@ -104,8 +102,12 @@ class PyApp(Gtk.Window):
         self.file_list_builder_configuration = None
         self.current_progress_value = None
         self.progress_maximum_value = None
+
+        self.suite_option_handler_runtime_report_check = None
+        self.suite_option_runtime_file_label = None
         self.do_runtime_report = None  # EDWIN: Always do runtime report and formalize this
         self.runtime_report_file = None
+
         self.suiteargs = None
         self.runner = None
         self.work_thread = None
@@ -256,8 +258,11 @@ class PyApp(Gtk.Window):
             sure_dialog.destroy()
             if response == Gtk.ResponseType.NO:
                 return
-            dialog = Gtk.FileChooserDialog(title="Select settings file", buttons=(
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+            dialog = Gtk.FileChooserDialog(
+                title="Select settings file",
+                parent=self,
+                buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+            )
             dialog.set_select_multiple(False)
             if self.last_folder_path:
                 dialog.set_current_folder(self.last_folder_path)
@@ -373,7 +378,9 @@ class PyApp(Gtk.Window):
         save_file = os.path.join(os.path.expanduser("~"), ".saved-epsuite-settings")
         if from_menu:
             dialog = Gtk.FileChooserDialog(
-                title="Select settings file save name", action=Gtk.FileChooserAction.SAVE,
+                title="Select settings file save name",
+                parent=self,
+                action=Gtk.FileChooserAction.SAVE,
                 buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
             )
             dialog.set_select_multiple(False)
@@ -884,7 +891,9 @@ class PyApp(Gtk.Window):
         output_string = '\n'.join(["%s: %s" % (x[0], x[1]) for x in self.log_store])
         save_file = os.path.join(os.path.expanduser("~"), "log_messages.log")
         dialog = Gtk.FileChooserDialog(
-            title="Select log messages save file name", action=Gtk.FileChooserAction.SAVE,
+            title="Select log messages save file name",
+            parent=self,
+            action=Gtk.FileChooserAction.SAVE,
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         )
         dialog.set_select_multiple(False)
@@ -976,7 +985,8 @@ class PyApp(Gtk.Window):
 
     def warning_dialog(self, message, do_log_entry=True):
         dialog = Gtk.MessageDialog(
-            self, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+            self,
+            Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
             Gtk.MessageType.WARNING,
             Gtk.ButtonsType.OK,
             message
@@ -1105,6 +1115,7 @@ class PyApp(Gtk.Window):
         self.add_log_entry("User is entering idfs for selection using a folder of idfs")
         dialog = Gtk.FileChooserDialog(
             title="Select folder",
+            parent=self,
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         )
         dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
@@ -1345,6 +1356,7 @@ class PyApp(Gtk.Window):
     def suite_option_handler_base_build_dir(self, widget):
         dialog = Gtk.FileChooserDialog(
             title="Select build folder",
+            parent=self,
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         )
         dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
@@ -1361,6 +1373,7 @@ class PyApp(Gtk.Window):
     def suite_option_handler_mod_build_dir(self, widget):
         dialog = Gtk.FileChooserDialog(
             title="Select build folder",
+            parent=self,
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         )
         dialog.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
@@ -1410,16 +1423,17 @@ class PyApp(Gtk.Window):
     def suite_option_handler_runtime_file(self, widget):
         dialog = Gtk.FileChooserDialog(
             title="Select runtime file save name",
+            parent=self,
             action=Gtk.FileChooserAction.SAVE,
             buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         )
         dialog.set_select_multiple(False)
         if self.last_folder_path:
             dialog.set_current_folder(self.last_folder_path)
-        afilter = Gtk.FileFilter()
-        afilter.set_name("CSV Files")
-        afilter.add_pattern("*.csv")
-        dialog.add_filter(afilter)
+        file_filter = Gtk.FileFilter()
+        file_filter.set_name("CSV Files")
+        file_filter.add_pattern("*.csv")
+        dialog.add_filter(file_filter)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_current_folder()
@@ -1572,6 +1586,14 @@ class PyApp(Gtk.Window):
         self.verify_list_store.append(
             ["Case 2 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
         )
+
+        # runtime report check
+        if self.do_runtime_report:
+            report_directory = os.path.dirname(self.runtime_report_file)
+            exists = os.path.exists(report_directory)
+            self.verify_list_store.append(
+                ["Runtime report directory exists? ", report_directory, exists, self.get_row_color(exists)]
+            )
 
         if all([item[2] for item in self.verify_list_store]):
             return True
