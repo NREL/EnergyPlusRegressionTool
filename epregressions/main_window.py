@@ -588,7 +588,7 @@ class PyApp(Gtk.Window):
             self.suite_option_num_threads = Gtk.SpinButton()
             self.suite_option_num_threads.set_range(1, 8)
             self.suite_option_num_threads.set_increments(1, 4)
-            self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)  # EDWIN: Had to add a 1 here
+            self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
             self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
             num_threads_label = Gtk.Label("Number of threads to use for suite: ")
             num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
@@ -1605,7 +1605,6 @@ class PyApp(Gtk.Window):
             pass
 
     def handle_tree_view_context_menu(self, widget, event):
-        # EDWIN: I need to figure out what this was trying to do, we may not need it at all now
         if event.button == 3:
             x = int(event.x)
             y = int(event.y)
@@ -1646,7 +1645,7 @@ class PyApp(Gtk.Window):
     # Callbacks and callback handlers for GUI to interact with background operations
 
     def print_callback(self, msg):
-        result = GObject.idle_add(self.print_callback_handler, msg)  # EDWIN renamed to GObject, verify this
+        result = GObject.idle_add(self.print_callback_handler, msg)
 
     def print_callback_handler(self, msg):
         self.status_bar.push(self.status_bar_context_id, msg)
@@ -1750,9 +1749,12 @@ class PyApp(Gtk.Window):
         num_text_diffs_files = []
 
         for this_entry in results:
+            # always add the current entry because it was tested
             total_num += 1
             total_num_.append(["%s" % this_entry.basename])
             total_num_files.append(this_entry.basename)
+
+            # add the entry to the appropriate success/failure bins
             if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
                 num_success += 1
                 num_success_.append(["%s" % this_entry.basename])
@@ -1769,66 +1771,33 @@ class PyApp(Gtk.Window):
                 num_not_success_2 += 1
                 num_not_success_2_.append(["%s" % this_entry.basename])
                 num_not_success_2_files.append(this_entry.basename)
-            if this_entry.eso_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: eso" % this_entry.basename])
-                if this_entry.basename not in total_diff_files_files:
-                    total_diff_files_files.append(this_entry.basename)
-                if this_entry.eso_diffs.count_of_big_diff > 0:
-                    num_big_diffs += 1
-                    num_big_diffs_.append(["%s: %s" % (this_entry.basename, "eso")])
-                    if this_entry.basename not in num_big_diffs_files:
-                        num_big_diffs_files.append(this_entry.basename)
-                elif this_entry.eso_diffs.count_of_small_diff > 0:
-                    num_small_diffs += 1
-                    num_small_diffs_.append(["%s: %s" % (this_entry.basename, "eso")])
-                    if this_entry.basename not in num_small_diffs_files:
-                        num_small_diffs_files.append(this_entry.basename)
-            if this_entry.mtr_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: mtr" % this_entry.basename])
-                if this_entry.basename not in total_diff_files_files:
-                    total_diff_files_files.append(this_entry.basename)
-                if this_entry.mtr_diffs.count_of_big_diff > 0:
-                    num_big_diffs += 1
-                    num_big_diffs_.append(["%s: %s" % (this_entry.basename, "mtr")])
-                    if this_entry.basename not in num_big_diffs_files:
-                        num_big_diffs_files.append(this_entry.basename)
-                elif this_entry.mtr_diffs.count_of_small_diff > 0:
-                    num_small_diffs += 1
-                    num_small_diffs_.append(["%s: %s" % (this_entry.basename, "mtr")])
-                    if this_entry.basename not in num_small_diffs_files:
-                        num_small_diffs_files.append(this_entry.basename)
-            if this_entry.zsz_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: zsz" % this_entry.basename])
-                if this_entry.basename not in total_diff_files_files:
-                    total_diff_files_files.append(this_entry.basename)
-                if this_entry.zsz_diffs.count_of_big_diff > 0:
-                    num_big_diffs += 1
-                    num_big_diffs_.append(["%s: %s" % (this_entry.basename, "zsz")])
-                    if this_entry.basename not in num_big_diffs_files:
-                        num_big_diffs_files.append(this_entry.basename)
-                elif this_entry.zsz_diffs.count_of_small_diff > 0:
-                    num_small_diffs += 1
-                    num_small_diffs_.append(["%s: %s" % (this_entry.basename, "zsz")])
-                    if this_entry.basename not in num_small_diffs_files:
-                        num_small_diffs_files.append(this_entry.basename)
-            if this_entry.ssz_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: ssz" % this_entry.basename])
-                if this_entry.basename not in total_diff_files_files:
-                    total_diff_files_files.append(this_entry.basename)
-                if this_entry.ssz_diffs.count_of_big_diff > 0:
-                    num_big_diffs += 1
-                    num_big_diffs_.append(["%s: %s" % (this_entry.basename, "ssz")])
-                    if this_entry.basename not in num_big_diffs_files:
-                        num_big_diffs_files.append(this_entry.basename)
-                elif this_entry.ssz_diffs.count_of_small_diff > 0:
-                    num_small_diffs += 1
-                    num_small_diffs_.append(["%s: %s" % (this_entry.basename, "ssz")])
-                    if this_entry.basename not in num_small_diffs_files:
-                        num_small_diffs_files.append(this_entry.basename)
+
+            # check the math diffs for this entry
+            math_diff_hash = {
+                this_entry.eso_diffs: "eso",
+                this_entry.mtr_diffs: "mtr",
+                this_entry.zsz_diffs: "zsz",
+                this_entry.ssz_diffs: "ssz"
+            }
+            for diff in math_diff_hash:
+                file_type = math_diff_hash[diff]
+                if diff:
+                    total_diff_files += 1
+                    total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
+                    if this_entry.basename not in total_diff_files_files:
+                        total_diff_files_files.append(this_entry.basename)
+                    if diff.count_of_big_diff > 0:
+                        num_big_diffs += 1
+                        num_big_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
+                        if this_entry.basename not in num_big_diffs_files:
+                            num_big_diffs_files.append(this_entry.basename)
+                    elif diff.count_of_small_diff > 0:
+                        num_small_diffs += 1
+                        num_small_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
+                        if this_entry.basename not in num_small_diffs_files:
+                            num_small_diffs_files.append(this_entry.basename)
+
+            # get tabular diffs
             if this_entry.table_diffs:
                 total_diff_files += 1
                 total_diff_files_.append(["%s: table" % this_entry.basename])
@@ -1844,116 +1813,33 @@ class PyApp(Gtk.Window):
                     num_table_small_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_table_small_diffs_files.append(this_entry.basename)
-            if this_entry.aud_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: audit" % this_entry.basename])
-                if this_entry.aud_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "audit")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.bnd_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: bnd" % this_entry.basename])
-                if this_entry.bnd_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "bnd")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.dxf_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: dxf" % this_entry.basename])
-                if this_entry.dxf_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "dxf")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.eio_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: eio" % this_entry.basename])
-                if this_entry.eio_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "eio")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.mdd_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: mdd" % this_entry.basename])
-                if this_entry.mdd_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "mdd")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.mtd_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: mtd" % this_entry.basename])
-                if this_entry.mtd_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "mtd")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.rdd_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: rdd" % this_entry.basename])
-                if this_entry.rdd_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "rdd")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.shd_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: shd" % this_entry.basename])
-                if this_entry.shd_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "shd")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.err_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: err" % this_entry.basename])
-                if this_entry.err_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "err")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.dlin_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: delightin" % this_entry.basename])
-                if this_entry.dlin_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "delightin")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
-            if this_entry.dlout_diffs:
-                total_diff_files += 1
-                total_diff_files_.append(["%s: delightout" % this_entry.basename])
-                if this_entry.dlout_diffs.diff_type != TextDifferences.EQUAL:
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    num_text_diffs += 1
-                    num_text_diffs_.append(["%s: %s" % (this_entry.basename, "delightout")])
-                    if this_entry.basename not in num_text_diffs_files:
-                        num_text_diffs_files.append(this_entry.basename)
+
+            # check the textual diffs
+            text_diff_hash = {
+                this_entry.aud_diffs: "audit",
+                this_entry.bnd_diffs: "bnd",
+                this_entry.dxf_diffs: "dxf",
+                this_entry.eio_diffs: "eio",
+                this_entry.mdd_diffs: "mdd",
+                this_entry.mtd_diffs: "mtd",
+                this_entry.rdd_diffs: "rdd",
+                this_entry.shd_diffs: "shd",
+                this_entry.err_diffs: "err",
+                this_entry.dlin_diffs: "delightin",
+                this_entry.dlout_diffs: "delightout",
+            }
+            for diff in text_diff_hash:
+                file_type = text_diff_hash[diff]
+                if diff:
+                    total_diff_files += 1
+                    total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
+                    if diff.diff_type != TextDifferences.EQUAL:
+                        if this_entry.basename not in total_diff_files_files:
+                            total_diff_files_files.append(this_entry.basename)  # should just use a set()
+                        num_text_diffs += 1
+                        num_text_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
+                        if this_entry.basename not in num_text_diffs_files:
+                            num_text_diffs_files.append(this_entry.basename)
 
         self.results_lists_to_copy = []
 
