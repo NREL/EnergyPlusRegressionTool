@@ -1714,61 +1714,45 @@ class PyApp(Gtk.Window):
         rgba = Gdk.RGBA.from_color(color)
         self.btn_run_suite.override_background_color(0, rgba)
 
-        total_num = 0
         total_num_ = []
         total_num_files = []
-        total_diff_files = 0
         total_diff_files_ = []
         total_diff_files_files = []
-        num_big_diffs = 0
         num_big_diffs_ = []
         num_big_diffs_files = []
-        num_small_diffs = 0
         num_small_diffs_ = []
         num_small_diffs_files = []
-        num_success = 0
         num_success_ = []
         num_success_files = []
-        num_not_success = 0
         num_not_success_ = []
         num_not_success_files = []
-        num_success_2 = 0
         num_success_2_ = []
         num_success_2_files = []
-        num_not_success_2 = 0
         num_not_success_2_ = []
         num_not_success_2_files = []
-        num_table_big_diffs = 0
         num_table_big_diffs_ = []
         num_table_big_diffs_files = []
-        num_table_small_diffs = 0
         num_table_small_diffs_ = []
         num_table_small_diffs_files = []
-        num_text_diffs = 0
         num_text_diffs_ = []
         num_text_diffs_files = []
 
         for this_entry in results:
             # always add the current entry because it was tested
-            total_num += 1
             total_num_.append(["%s" % this_entry.basename])
             total_num_files.append(this_entry.basename)
 
             # add the entry to the appropriate success/failure bins
             if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-                num_success += 1
                 num_success_.append(["%s" % this_entry.basename])
                 num_success_files.append(this_entry.basename)
             else:
-                num_not_success += 1
                 num_not_success_.append(["%s" % this_entry.basename])
                 num_not_success_files.append(this_entry.basename)
             if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-                num_success_2 += 1
                 num_success_2_.append(["%s" % this_entry.basename])
                 num_success_2_files.append(this_entry.basename)
             else:
-                num_not_success_2 += 1
                 num_not_success_2_.append(["%s" % this_entry.basename])
                 num_not_success_2_files.append(this_entry.basename)
 
@@ -1782,34 +1766,28 @@ class PyApp(Gtk.Window):
             for diff in math_diff_hash:
                 file_type = math_diff_hash[diff]
                 if diff:
-                    total_diff_files += 1
                     total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
                     if this_entry.basename not in total_diff_files_files:
                         total_diff_files_files.append(this_entry.basename)
                     if diff.count_of_big_diff > 0:
-                        num_big_diffs += 1
                         num_big_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
                         if this_entry.basename not in num_big_diffs_files:
                             num_big_diffs_files.append(this_entry.basename)
                     elif diff.count_of_small_diff > 0:
-                        num_small_diffs += 1
                         num_small_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
                         if this_entry.basename not in num_small_diffs_files:
                             num_small_diffs_files.append(this_entry.basename)
 
             # get tabular diffs
             if this_entry.table_diffs:
-                total_diff_files += 1
                 total_diff_files_.append(["%s: table" % this_entry.basename])
                 if this_entry.basename not in total_diff_files_files:
                     total_diff_files_files.append(this_entry.basename)
                 if this_entry.table_diffs.bigdiff_count > 0:
-                    num_table_big_diffs += 1
                     num_table_big_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
                     if this_entry.basename not in num_big_diffs_files:
                         num_table_big_diffs_files.append(this_entry.basename)
                 elif this_entry.table_diffs.smalldiff_count > 0:
-                    num_table_small_diffs += 1
                     num_table_small_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
                     if this_entry.basename not in num_small_diffs_files:
                         num_table_small_diffs_files.append(this_entry.basename)
@@ -1831,12 +1809,10 @@ class PyApp(Gtk.Window):
             for diff in text_diff_hash:
                 file_type = text_diff_hash[diff]
                 if diff:
-                    total_diff_files += 1
                     total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
                     if diff.diff_type != TextDifferences.EQUAL:
                         if this_entry.basename not in total_diff_files_files:
                             total_diff_files_files.append(this_entry.basename)  # should just use a set()
-                        num_text_diffs += 1
                         num_text_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
                         if this_entry.basename not in num_text_diffs_files:
                             num_text_diffs_files.append(this_entry.basename)
@@ -1859,7 +1835,7 @@ class PyApp(Gtk.Window):
 
         for tree_root in root_and_files:
             basename_list, files_with_types = root_and_files[tree_root]
-            this_file_list_count = len(basename_list)
+            this_file_list_count = len(files_with_types)
             if self.results_child[tree_root]:
                 self.results_list_store.remove(self.results_child[tree_root])
             self.results_child[tree_root] = self.results_list_store.append(
