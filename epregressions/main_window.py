@@ -1957,126 +1957,33 @@ class PyApp(Gtk.Window):
 
         self.results_lists_to_copy = []
 
-        if self.results_child[ResultsTreeRoots.NumRun]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.NumRun])
-        self.results_child[ResultsTreeRoots.NumRun] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.NumRun], [str(total_num)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.NumRun])
-        self.tree_view.expand_row(this_path, False)
-        for result in total_num_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.NumRun], result)
-        self.results_lists_to_copy.append(total_num_files)
+        root_and_files = {
+            ResultsTreeRoots.NumRun: (total_num_files, total_num_),
+            ResultsTreeRoots.Success1: (num_success_files, num_success_),
+            ResultsTreeRoots.NotSuccess1: (num_not_success_files, num_not_success_),
+            ResultsTreeRoots.Success2: (num_success_2_files, num_success_2_),
+            ResultsTreeRoots.NotSuccess2: (num_not_success_2_files, num_not_success_2_),
+            ResultsTreeRoots.FilesCompared: (total_diff_files_files, total_diff_files_),
+            ResultsTreeRoots.BigMath: (num_big_diffs_files, num_big_diffs_),
+            ResultsTreeRoots.SmallMath: (num_small_diffs_files, num_small_diffs_),
+            ResultsTreeRoots.BigTable: (num_table_big_diffs_files, num_table_big_diffs_),
+            ResultsTreeRoots.SmallTable: (num_table_small_diffs_files, num_table_small_diffs_),
+            ResultsTreeRoots.Textual: (num_text_diffs_files, num_text_diffs_)
+        }
 
-        if self.results_child[ResultsTreeRoots.Success1]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.Success1])
-        self.results_child[ResultsTreeRoots.Success1] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.Success1], [str(num_success)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.Success1])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_success_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.Success1], result)
-        self.results_lists_to_copy.append(num_success_files)
-
-        if self.results_child[ResultsTreeRoots.NotSuccess1]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.NotSuccess1])
-        self.results_child[ResultsTreeRoots.NotSuccess1] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.NotSuccess1], [str(num_not_success)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.NotSuccess1])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_not_success_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.NotSuccess1], result)
-        self.results_lists_to_copy.append(num_not_success_files)
-
-        if self.results_child[ResultsTreeRoots.Success2]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.Success2])
-        self.results_child[ResultsTreeRoots.Success2] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.Success2], [str(num_success_2)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.Success2])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_success_2_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.Success2], result)
-        self.results_lists_to_copy.append(num_success_2_files)
-
-        if self.results_child[ResultsTreeRoots.NotSuccess2]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.NotSuccess2])
-        self.results_child[ResultsTreeRoots.NotSuccess2] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.NotSuccess2], [str(num_not_success_2)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.NotSuccess2])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_not_success_2_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.NotSuccess2], result)
-        self.results_lists_to_copy.append(num_not_success_2_files)
-
-        if self.results_child[ResultsTreeRoots.FilesCompared]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.FilesCompared])
-        self.results_child[ResultsTreeRoots.FilesCompared] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.FilesCompared], [str(total_diff_files)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.FilesCompared])
-        self.tree_view.expand_row(this_path, False)
-        for result in total_diff_files_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.FilesCompared], result)
-        self.results_lists_to_copy.append(total_diff_files_files)
-
-        if self.results_child[ResultsTreeRoots.BigMath]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.BigMath])
-        self.results_child[ResultsTreeRoots.BigMath] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.BigMath], [str(num_big_diffs)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.BigMath])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_big_diffs_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.BigMath], result)
-        self.results_lists_to_copy.append(num_big_diffs_files)
-
-        if self.results_child[ResultsTreeRoots.SmallMath]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.SmallMath])
-        self.results_child[ResultsTreeRoots.SmallMath] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.SmallMath], [str(num_small_diffs)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.SmallMath])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_small_diffs_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.SmallMath], result)
-        self.results_lists_to_copy.append(num_small_diffs_files)
-
-        if self.results_child[ResultsTreeRoots.BigTable]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.BigTable])
-        self.results_child[ResultsTreeRoots.BigTable] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.BigTable], [str(num_table_big_diffs)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.BigTable])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_table_big_diffs_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.BigTable], result)
-        self.results_lists_to_copy.append(num_table_big_diffs_files)
-
-        if self.results_child[ResultsTreeRoots.SmallTable]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.SmallTable])
-        self.results_child[ResultsTreeRoots.SmallTable] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.SmallTable], [str(num_table_small_diffs)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.SmallTable])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_table_small_diffs_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.SmallTable], result)
-        self.results_lists_to_copy.append(num_table_small_diffs_files)
-
-        if self.results_child[ResultsTreeRoots.Textual]:
-            self.results_list_store.remove(self.results_child[ResultsTreeRoots.Textual])
-        self.results_child[ResultsTreeRoots.Textual] = self.results_list_store.append(
-            self.results_parent[ResultsTreeRoots.Textual], [str(num_text_diffs)]
-        )
-        this_path = self.results_list_store.get_path(self.results_parent[ResultsTreeRoots.Textual])
-        self.tree_view.expand_row(this_path, False)
-        for result in num_text_diffs_:
-            self.results_list_store.append(self.results_child[ResultsTreeRoots.Textual], result)
-        self.results_lists_to_copy.append(num_text_diffs_files)
+        for tree_root in root_and_files:
+            basename_list, files_with_types = root_and_files[tree_root]
+            this_file_list_count = len(basename_list)
+            if self.results_child[tree_root]:
+                self.results_list_store.remove(self.results_child[tree_root])
+            self.results_child[tree_root] = self.results_list_store.append(
+                self.results_parent[tree_root], [str(this_file_list_count)]
+            )
+            this_path = self.results_list_store.get_path(self.results_parent[tree_root])
+            self.tree_view.expand_row(this_path, False)
+            for result in files_with_types:
+                self.results_list_store.append(self.results_child[tree_root], result)
+            self.results_lists_to_copy.append(basename_list)
 
         if self.do_runtime_report:
             try:
