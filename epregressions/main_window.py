@@ -72,12 +72,12 @@ class ResultsTreeRoots:
 
 
 # noinspection PyUnusedLocal
-class PyApp(Gtk.Window):
+class RegressionGUI(Gtk.Window):
 
     def __init__(self):
 
         # initialize the parent class
-        super(PyApp, self).__init__()
+        super(RegressionGUI, self).__init__()
 
         # connect signals for the GUI
         self.connect("destroy", self.go_away)
@@ -103,7 +103,6 @@ class PyApp(Gtk.Window):
         self.last_run_heading = None
         self.log_scroll_notebook_page = None
         self.log_store = None
-        self.notebook = None
         self.progress = None
         self.status_bar = None
         self.status_bar_context_id = None
@@ -160,7 +159,7 @@ class PyApp(Gtk.Window):
         if self.try_to_restore_files:
             self.restore_file_selection(self.try_to_restore_files)
 
-    def go_away(self, what_else_goes_in_gtk_main_quit):
+    def go_away(self, widget):
         try:
             self.save_settings(None)
         except Exception as this_exception:
@@ -355,7 +354,7 @@ class PyApp(Gtk.Window):
         if self.suiteargs.report_freq:
             if self.suiteargs.report_freq == ReportingFreq.DETAILED:
                 self.report_frequency_combo_box.set_active(0)
-            elif self.suiteargs.report_freq == ReportingFreq.TIMESTEP:
+            elif self.suiteargs.report_freq == ReportingFreq.TIME_STEP:
                 self.report_frequency_combo_box.set_active(1)
             elif self.suiteargs.report_freq == ReportingFreq.HOURLY:
                 self.report_frequency_combo_box.set_active(2)
@@ -363,7 +362,7 @@ class PyApp(Gtk.Window):
                 self.report_frequency_combo_box.set_active(3)
             elif self.suiteargs.report_freq == ReportingFreq.MONTHLY:
                 self.report_frequency_combo_box.set_active(4)
-            elif self.suiteargs.report_freq == ReportingFreq.RUNPERIOD:
+            elif self.suiteargs.report_freq == ReportingFreq.RUN_PERIOD:
                 self.report_frequency_combo_box.set_active(5)
             elif self.suiteargs.report_freq == ReportingFreq.ENVIRONMENT:
                 self.report_frequency_combo_box.set_active(6)
@@ -533,12 +532,12 @@ class PyApp(Gtk.Window):
 
         h_box_select_1 = Gtk.HBox(False, box_spacing)
         button = Gtk.Button("Select All")
-        button.connect("clicked", self.idf_selection_all, "select")
+        button.connect("clicked", self.idf_selection_all, True)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
         button = Gtk.Button("Deselect All")
-        button.connect("clicked", self.idf_selection_all, "deselect")
+        button.connect("clicked", self.idf_selection_all, False)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
@@ -553,7 +552,7 @@ class PyApp(Gtk.Window):
         alignment.add(self.file_list_num_files)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
         button = Gtk.Button("Select N Random Files")
-        button.connect("clicked", self.idf_selection_random, "select")
+        button.connect("clicked", self.idf_selection_random)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
@@ -619,11 +618,11 @@ class PyApp(Gtk.Window):
         h_box_1.pack_start(alignment, False, False, box_spacing)
         self.report_frequency_combo_box = Gtk.ComboBoxText()
         self.report_frequency_combo_box.append_text(ReportingFreq.DETAILED)
-        self.report_frequency_combo_box.append_text(ReportingFreq.TIMESTEP)
+        self.report_frequency_combo_box.append_text(ReportingFreq.TIME_STEP)
         self.report_frequency_combo_box.append_text(ReportingFreq.HOURLY)
         self.report_frequency_combo_box.append_text(ReportingFreq.DAILY)
         self.report_frequency_combo_box.append_text(ReportingFreq.MONTHLY)
-        self.report_frequency_combo_box.append_text(ReportingFreq.RUNPERIOD)
+        self.report_frequency_combo_box.append_text(ReportingFreq.RUN_PERIOD)
         self.report_frequency_combo_box.append_text(ReportingFreq.ENVIRONMENT)
         self.report_frequency_combo_box.append_text(ReportingFreq.ANNUAL)
         self.report_frequency_combo_box.connect("changed", self.suite_option_handler_report_frequency)
@@ -936,11 +935,11 @@ class PyApp(Gtk.Window):
             return False
 
     def gui_build_notebook(self):
-        self.notebook = Gtk.Notebook()
-        self.notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
-        self.notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
-        self.notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
-        return self.notebook
+        notebook = Gtk.Notebook()
+        notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
+        notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
+        notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
+        return notebook
 
     def gui_build_messaging(self):
         self.progress = Gtk.ProgressBar()
@@ -1073,18 +1072,15 @@ class PyApp(Gtk.Window):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def idf_selection_all(self, widget, calltype):
+    def idf_selection_all(self, widget, selection):
         if not self.idf_files_have_been_built:
             self.warning_not_yet_built()
             return
-        selection = False
-        if calltype == "select":
-            selection = True
         for this_file in self.idf_list_store:
             this_file[0] = selection
         self.update_status_with_num_selected()
 
-    def idf_selection_random(self, widget, calltype):
+    def idf_selection_random(self, widget):
         if not self.idf_files_have_been_built:
             self.warning_not_yet_built()
             return
@@ -1276,7 +1272,7 @@ class PyApp(Gtk.Window):
             num_threads_to_run = 1
         else:
             num_threads_to_run = 4
-        self.suiteargs = TestRunConfiguration(run_mathdiff=True,
+        self.suiteargs = TestRunConfiguration(run_math_diff=True,
                                               do_composite_err=True,
                                               force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE
                                               single_test_run=False,
@@ -1714,138 +1710,36 @@ class PyApp(Gtk.Window):
         rgba = Gdk.RGBA.from_color(color)
         self.btn_run_suite.override_background_color(0, rgba)
 
-        total_num_ = []
-        total_num_files = []
-        total_diff_files_ = []
-        total_diff_files_files = []
-        num_big_diffs_ = []
-        num_big_diffs_files = []
-        num_small_diffs_ = []
-        num_small_diffs_files = []
-        num_success_ = []
-        num_success_files = []
-        num_not_success_ = []
-        num_not_success_files = []
-        num_success_2_ = []
-        num_success_2_files = []
-        num_not_success_2_ = []
-        num_not_success_2_files = []
-        num_table_big_diffs_ = []
-        num_table_big_diffs_files = []
-        num_table_small_diffs_ = []
-        num_table_small_diffs_files = []
-        num_text_diffs_ = []
-        num_text_diffs_files = []
-
-        for this_entry in results:
-            # always add the current entry because it was tested
-            total_num_.append(["%s" % this_entry.basename])
-            total_num_files.append(this_entry.basename)
-
-            # add the entry to the appropriate success/failure bins
-            if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-                num_success_.append(["%s" % this_entry.basename])
-                num_success_files.append(this_entry.basename)
-            else:
-                num_not_success_.append(["%s" % this_entry.basename])
-                num_not_success_files.append(this_entry.basename)
-            if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-                num_success_2_.append(["%s" % this_entry.basename])
-                num_success_2_files.append(this_entry.basename)
-            else:
-                num_not_success_2_.append(["%s" % this_entry.basename])
-                num_not_success_2_files.append(this_entry.basename)
-
-            # check the math diffs for this entry
-            math_diff_hash = {
-                this_entry.eso_diffs: "eso",
-                this_entry.mtr_diffs: "mtr",
-                this_entry.zsz_diffs: "zsz",
-                this_entry.ssz_diffs: "ssz"
-            }
-            for diff in math_diff_hash:
-                file_type = math_diff_hash[diff]
-                if diff:
-                    total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
-                    if this_entry.basename not in total_diff_files_files:
-                        total_diff_files_files.append(this_entry.basename)
-                    if diff.count_of_big_diff > 0:
-                        num_big_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
-                        if this_entry.basename not in num_big_diffs_files:
-                            num_big_diffs_files.append(this_entry.basename)
-                    elif diff.count_of_small_diff > 0:
-                        num_small_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
-                        if this_entry.basename not in num_small_diffs_files:
-                            num_small_diffs_files.append(this_entry.basename)
-
-            # get tabular diffs
-            if this_entry.table_diffs:
-                total_diff_files_.append(["%s: table" % this_entry.basename])
-                if this_entry.basename not in total_diff_files_files:
-                    total_diff_files_files.append(this_entry.basename)
-                if this_entry.table_diffs.bigdiff_count > 0:
-                    num_table_big_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
-                    if this_entry.basename not in num_big_diffs_files:
-                        num_table_big_diffs_files.append(this_entry.basename)
-                elif this_entry.table_diffs.smalldiff_count > 0:
-                    num_table_small_diffs_.append(["%s: %s" % (this_entry.basename, "table")])
-                    if this_entry.basename not in num_small_diffs_files:
-                        num_table_small_diffs_files.append(this_entry.basename)
-
-            # check the textual diffs
-            text_diff_hash = {
-                this_entry.aud_diffs: "audit",
-                this_entry.bnd_diffs: "bnd",
-                this_entry.dxf_diffs: "dxf",
-                this_entry.eio_diffs: "eio",
-                this_entry.mdd_diffs: "mdd",
-                this_entry.mtd_diffs: "mtd",
-                this_entry.rdd_diffs: "rdd",
-                this_entry.shd_diffs: "shd",
-                this_entry.err_diffs: "err",
-                this_entry.dlin_diffs: "delightin",
-                this_entry.dlout_diffs: "delightout",
-            }
-            for diff in text_diff_hash:
-                file_type = text_diff_hash[diff]
-                if diff:
-                    total_diff_files_.append(["%s: %s" % (this_entry.basename, file_type)])
-                    if diff.diff_type != TextDifferences.EQUAL:
-                        if this_entry.basename not in total_diff_files_files:
-                            total_diff_files_files.append(this_entry.basename)  # should just use a set()
-                        num_text_diffs_.append(["%s: %s" % (this_entry.basename, file_type)])
-                        if this_entry.basename not in num_text_diffs_files:
-                            num_text_diffs_files.append(this_entry.basename)
-
         self.results_lists_to_copy = []
 
         root_and_files = {
-            ResultsTreeRoots.NumRun: (total_num_files, total_num_),
-            ResultsTreeRoots.Success1: (num_success_files, num_success_),
-            ResultsTreeRoots.NotSuccess1: (num_not_success_files, num_not_success_),
-            ResultsTreeRoots.Success2: (num_success_2_files, num_success_2_),
-            ResultsTreeRoots.NotSuccess2: (num_not_success_2_files, num_not_success_2_),
-            ResultsTreeRoots.FilesCompared: (total_diff_files_files, total_diff_files_),
-            ResultsTreeRoots.BigMath: (num_big_diffs_files, num_big_diffs_),
-            ResultsTreeRoots.SmallMath: (num_small_diffs_files, num_small_diffs_),
-            ResultsTreeRoots.BigTable: (num_table_big_diffs_files, num_table_big_diffs_),
-            ResultsTreeRoots.SmallTable: (num_table_small_diffs_files, num_table_small_diffs_),
-            ResultsTreeRoots.Textual: (num_text_diffs_files, num_text_diffs_)
+            ResultsTreeRoots.NumRun: results.all_files,
+            ResultsTreeRoots.Success1: results.success_case_a,
+            ResultsTreeRoots.NotSuccess1: results.failure_case_a,
+            ResultsTreeRoots.Success2: results.success_case_b,
+            ResultsTreeRoots.NotSuccess2: results.failure_case_b,
+            ResultsTreeRoots.FilesCompared: results.total_files_compared,
+            ResultsTreeRoots.BigMath: results.big_math_diffs,
+            ResultsTreeRoots.SmallMath: results.small_math_diffs,
+            ResultsTreeRoots.BigTable: results.big_table_diffs,
+            ResultsTreeRoots.SmallTable: results.small_table_diffs,
+            ResultsTreeRoots.Textual: results.text_diffs
         }
 
         for tree_root in root_and_files:
-            basename_list, files_with_types = root_and_files[tree_root]
-            this_file_list_count = len(files_with_types)
+            file_lists = root_and_files[tree_root]
+            this_file_list_count = len(file_lists.descriptions)
             if self.results_child[tree_root]:
                 self.results_list_store.remove(self.results_child[tree_root])
             self.results_child[tree_root] = self.results_list_store.append(
-                self.results_parent[tree_root], [str(this_file_list_count)]
+                self.results_parent[tree_root],
+                [str(this_file_list_count)]
             )
             this_path = self.results_list_store.get_path(self.results_parent[tree_root])
             self.tree_view.expand_row(this_path, False)
-            for result in files_with_types:
-                self.results_list_store.append(self.results_child[tree_root], result)
-            self.results_lists_to_copy.append(basename_list)
+            for result in file_lists.descriptions:
+                self.results_list_store.append(self.results_child[tree_root], [result])
+            self.results_lists_to_copy.append(file_lists.base_names)
 
         if self.do_runtime_report:
             try:
@@ -1853,7 +1747,7 @@ class PyApp(Gtk.Window):
                 with open(self.runtime_report_file, "w") as csvfile:
                     writer = csv.writer(csvfile)
                     writer.writerow(["Case", "Runtime [s]", "Runtime [s]"])
-                    for this_entry in results:
+                    for this_entry in results.entries_by_file:
                         runtime1 = -1
                         runtime2 = -1
                         if this_entry.summary_result:

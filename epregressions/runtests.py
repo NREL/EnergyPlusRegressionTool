@@ -120,14 +120,14 @@ class TestSuiteRunner:
                 return
         self.my_simulationscomplete()
 
-        self.diff_logs_for_build()
+        response = self.diff_logs_for_build()
 
         self.my_print("Test suite complete for directories:")
         self.my_print("\t%s" % self.build_directory_a)
         self.my_print("\t%s" % self.build_directory_b)
         self.my_print("Test suite complete")
 
-        self.my_alldone(self.entries)
+        self.my_alldone(response)
 
     @staticmethod
     def prepare_dir_structure(b_a, b_b, d_test):
@@ -567,12 +567,12 @@ class TestSuiteRunner:
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.delightin'),
                 join(case_result_dir_2, 'eplusout.delightin'),
-                join(out_dir, 'eplusout.delightin.diff'))), TextDifferences.DLIN)
+                join(out_dir, 'eplusout.delightin.diff'))), TextDifferences.DL_IN)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightout'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.delightout'),
                 join(case_result_dir_2, 'eplusout.delightout'),
-                join(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DLOUT)
+                join(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DL_OUT)
 
         # return the updated entry
         return this_entry
@@ -617,9 +617,11 @@ class TestSuiteRunner:
     # diff_logs_for_build creates diff logs between simulations in two build directories
     def diff_logs_for_build(self):
 
+        completed_structure = CompletedStructure()
         for this_entry in self.entries:
             try:
                 this_entry = self.process_diffs_for_one_case(this_entry)
+                completed_structure.add_test_entry(this_entry)
             except Exception as e:
                 self.my_print(
                     (
@@ -630,68 +632,7 @@ class TestSuiteRunner:
                 self.my_print("Message: %s" % e)
             finally:
                 self.my_diffcompleted(this_entry.basename)
-
-    def print_summary_of_entries(self):
-        # for entry in self.entries:
-        # self.my_print("Providing summary for: %s" % entry.basename)
-
-        # if entry.has_summary_result:
-        # self.my_print(" File HAS a summary result:")
-        # self.my_print("  Simulation Completed: %s" % EndErrSummary.s_status(entry.summary_result.simulation_status))
-        # self.my_print("  Simulation took %s seconds" % entry.summary_result.run_time_seconds)
-        # else:
-        # self.my_print(" File DOES NOT HAVE a summary result.")
-
-        # if entry.has_eso_diffs:
-        # self.my_print(" File HAS eso diff summary:")
-        # self.my_print("  Diff type: %s" % (entry.eso_diffs.diff_type))
-        # self.my_print("  Big diffs? %s" % (entry.eso_diffs.count_of_big_diff > 0))
-        # self.my_print("  Small diffs? %s" % (entry.eso_diffs.count_of_small_diff > 0))
-        # self.my_print("  # Records: %s" % (entry.eso_diffs.num_records))
-        # else:
-        # self.my_print(" File DOES NOT HAVE eso diff summary.")
-
-        # if entry.has_mtr_diffs:
-        # self.my_print(" File HAS mtr diff summary:")
-        # self.my_print("  Diff type: %s" % (entry.mtr_diffs.diff_type))
-        # self.my_print("  Big diffs? %s" % (entry.mtr_diffs.count_of_big_diff > 0))
-        # self.my_print("  Small diffs? %s" % (entry.mtr_diffs.count_of_small_diff > 0))
-        # self.my_print("  # Records: %s" % (entry.mtr_diffs.num_records))
-        # else:
-        # self.my_print(" File DOES NOT HAVE mtr diff summary.")
-
-        # if entry.has_zsz_diffs:
-        # self.my_print(" File HAS zsz diff summary:")
-        # self.my_print("  Diff type: %s" % (entry.zsz_diffs.diff_type))
-        # self.my_print("  Big diffs? %s" % (entry.zsz_diffs.count_of_big_diff > 0))
-        # self.my_print("  Small diffs? %s" % (entry.zsz_diffs.count_of_small_diff > 0))
-        # self.my_print("  # Records: %s" % (entry.zsz_diffs.num_records))
-        # else:
-        # self.my_print(" File DOES NOT HAVE zsz diff summary.")
-
-        # if entry.has_ssz_diffs:
-        # self.my_print(" File HAS ssz diff summary:")
-        # self.my_print("  Diff type: %s" % (entry.ssz_diffs.diff_type))
-        # self.my_print("  Big diffs? %s" % (entry.ssz_diffs.count_of_big_diff > 0))
-        # self.my_print("  Small diffs? %s" % (entry.ssz_diffs.count_of_small_diff > 0))
-        # self.my_print("  # Records: %s" % (entry.ssz_diffs.num_records))
-        # else:
-        # self.my_print(" File DOES NOT HAVE ssz diff summary.")
-
-        # if entry.has_table_diffs:
-        # self.my_print(" File HAS table diff summary:")
-        # self.my_print("  Message: %s" % (entry.table_diffs.msg))
-        # self.my_print("  Table count: %s" % (entry.table_diffs.table_count))
-        # self.my_print("  Big diffs?: %s" % (entry.table_diffs.bigdiff_count > 0))
-        # self.my_print("  Small diffs: %s" % (entry.table_diffs.smalldiff_count > 0))
-        # self.my_print("  Equal count: %s" % (entry.table_diffs.equal_count))
-        # self.my_print("  String diff count: %s" % (entry.table_diffs.stringdiff_count))
-        # self.my_print("  Size error: %s" % (entry.table_diffs.sizeerr_count))
-        # self.my_print("  In 2 not 1: %s" % (entry.table_diffs.notin1_count))
-        # self.my_print("  In 1 not 2: %s" % (entry.table_diffs.notin2_count))
-        # else:
-        # self.my_print(" File DOES NOT HAVE table diff summary.")
-        pass
+        return completed_structure
 
     def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
                       enderrcompleted_callback, diffcompleted_callback, alldone_callback, cancel_callback):
@@ -833,7 +774,7 @@ if __name__ == "__main__":
                 break
 
     # Build the run configuration
-    RunConfig = TestRunConfiguration(run_mathdiff=True,
+    RunConfig = TestRunConfiguration(run_math_diff=True,
                                      do_composite_err=True,
                                      force_run_type=run_type,
                                      single_test_run=DoASingleTestRun,

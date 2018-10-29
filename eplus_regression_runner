@@ -8,10 +8,10 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 
-from epregressions.main_window import PyApp
+from epregressions.main_window import RegressionGUI
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-main_window = PyApp()
+main_window = RegressionGUI()
 Gtk.main()

@@ -156,23 +156,23 @@ def get_table_heading(table):
 def hdict2soup(soup, heading, num, hdict, tdict, horder):
     """Create soup table (including anchor and heading) from header dictionary and error dictionary"""
     # Append table anchor
-    atag = Tag(soup, 'a', [('name', '%s%s' % ('tablehead', num,))])
+    atag = Tag(soup, name='a', attrs=[('name', '%s%s' % ('tablehead', num,))])
     soup.body.append(atag)
 
     # Append table heading
-    htag = Tag(soup, 'b')
+    htag = Tag(soup, name='b')
     htag.append(heading)
     soup.body.append(htag)
 
     # Append table
-    tabletag = Tag(soup, 'table', [('border', '1')])
+    tabletag = Tag(soup, name='table', attrs=[('border', '1')])
     soup.body.append(tabletag)
 
     # Append column headings
-    trtag = Tag(soup, 'tr')
+    trtag = Tag(soup, name='tr')
     tabletag.append(trtag)
     for h in horder:
-        tdtag = Tag(soup, 'th')
+        tdtag = Tag(soup, name='th')
         if h != 'DummyPlaceholder':
             tdtag.append(str(h))
         else:
@@ -180,10 +180,10 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
         trtag.append(tdtag)
 
     # Append column thresholds
-    trtag = Tag(soup, 'tr')
+    trtag = Tag(soup, name='tr')
     tabletag.append(trtag)
     for h in horder:
-        tdtag = Tag(soup, 'td')
+        tdtag = Tag(soup, name='td')
         trtag.append(tdtag)
         if h in tdict:
             (abs_thresh, rel_thresh) = tdict[h]
@@ -191,10 +191,10 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
         else:
             tdtag.append('Absolute threshold')
 
-    trtag = Tag(soup, 'tr')
+    trtag = Tag(soup, name='tr')
     tabletag.append(trtag)
     for h in horder:
-        tdtag = Tag(soup, 'td')
+        tdtag = Tag(soup, name='td')
         trtag.append(tdtag)
         if h in tdict:
             (abs_thresh, rel_thresh) = tdict[h]
@@ -204,16 +204,16 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
 
     # Append table rows
     for i in range(0, len(hdict[horder[0]])):
-        trtag = Tag(soup, 'tr')
+        trtag = Tag(soup, name='tr')
         tabletag.append(trtag)
         for h in horder:
             if h == 'DummyPlaceholder' or h == 'Subcategory':
-                tdtag = Tag(soup, 'td')
-                tdtag.append((hdict[h][i]).encode('utf-8'))
+                tdtag = Tag(soup, name='td')
+                tdtag.append((str(hdict[h][i])))
                 trtag.append(tdtag)
             else:
                 (diff, which) = hdict[h][i]
-                tdtag = Tag(soup, 'td', [('class', which)])
+                tdtag = Tag(soup, name='td', attrs=[('class', which)])
                 tdtag.append(str(diff))
                 trtag.append(tdtag)
 
@@ -255,45 +255,45 @@ def table2hdict_horder(table):
 def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_file, rel_diff_file,
                        small_diff, big_diff, equal, string_diff, size_error, not_in_1, not_in_2):
     # Create entry in error table
-    trtag = Tag(err_soup, 'tr')
+    trtag = Tag(err_soup, name='tr')
     tabletag.append(trtag)
 
-    tdtag_name = Tag(err_soup, 'td')
+    tdtag_name = Tag(err_soup, name='td')
     trtag.append(tdtag_name)
     tdtag_name.append(uheading)
 
-    tdtag_abs_link = Tag(err_soup, 'td')
+    tdtag_abs_link = Tag(err_soup, name='td')
     trtag.append(tdtag_abs_link)
 
-    tdtag_rel_link = Tag(err_soup, 'td')
+    tdtag_rel_link = Tag(err_soup, name='td')
     trtag.append(tdtag_rel_link)
 
     if small_diff > 0 or big_diff > 0 or string_diff > 0:
-        atag = Tag(err_soup, 'a', [('href', '%s#tablehead%s' % (abs_diff_file, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (abs_diff_file, count_of_tables))])
         atag.append('abs file')
         tdtag_abs_link.append(atag)
 
-        atag = Tag(err_soup, 'a', [('href', '%s#tablehead%s' % (rel_diff_file, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (rel_diff_file, count_of_tables))])
         atag.append('rel file')
         tdtag_rel_link.append(atag)
 
-    tdtag_big_diff = Tag(err_soup, 'td', [('class', 'big')] if big_diff > 0 else [])
+    tdtag_big_diff = Tag(err_soup, name='td', attrs=[('class', 'big')] if big_diff > 0 else [])
     trtag.append(tdtag_big_diff)
     tdtag_big_diff.append(str(big_diff))
 
-    tdtag_small_diff = Tag(err_soup, 'td', [('class', 'small')] if small_diff > 0 else [])
+    tdtag_small_diff = Tag(err_soup, name='td', attrs=[('class', 'small')] if small_diff > 0 else [])
     trtag.append(tdtag_small_diff)
     tdtag_small_diff.append(str(small_diff))
 
-    tdtag_equal = Tag(err_soup, 'td', [])
+    tdtag_equal = Tag(err_soup, name='td', attrs=[])
     trtag.append(tdtag_equal)
     tdtag_equal.append(str(equal))
 
-    tdtag_string_diff = Tag(err_soup, 'td', [('class', 'stringdiff')] if string_diff > 0 else [])
+    tdtag_string_diff = Tag(err_soup, name='td', attrs=[('class', 'stringdiff')] if string_diff > 0 else [])
     trtag.append(tdtag_string_diff)
     tdtag_string_diff.append(str(string_diff))
 
-    tdtag_table_size_error = Tag(err_soup, 'td', [
+    tdtag_table_size_error = Tag(err_soup, name='td', attrs=[
         ('class', 'table_size_error')] if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else [])
     trtag.append(tdtag_table_size_error)
     tdtag_table_size_error.append(
@@ -348,8 +348,12 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     tables1 = soup1('table')
     tables2 = soup2('table')
 
-    uheadings1 = map(get_table_unique_heading, tables1)
-    uheadings2 = map(get_table_unique_heading, tables2)
+    uheadings1 = []
+    uheadings2 = []
+    for table in tables1:
+        uheadings1.append(get_table_unique_heading(table))
+    for table in tables2:
+        uheadings2.append(get_table_unique_heading(table))
 
     uhset1 = set(uheadings1)
     uhset2 = set(uheadings2)
@@ -379,7 +383,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         table_not_in_1 = 0
         table_not_in_2 = 0
 
-        uheading1 = list(uheadings1)[i1]
+        uheading1 = uheadings1[i1]
 
         # Table missing in second input file
         if not uheading1 in uhset_match:
@@ -391,7 +395,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
             continue
 
         table1 = tables1[i1]
-        table2 = tables2[list(uheadings2).index(uheading1)]
+        table2 = tables2[uheadings2.index(uheading1)]
 
         # Table size error
         if (len(table1('tr')) != len(table2('tr')) or len(table1('td')) != len(table2('td'))):
@@ -418,7 +422,9 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                 (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
 
                 h_thresh_dict[h] = (abs_thresh, rel_thresh)
-                diff_dict[h] = map(lambda x, y: thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y), hdict1[h], hdict2[h])
+                diff_dict[h] = []
+                for x, y in zip(hdict1[h], hdict2[h]):
+                    diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
 
                 # Statistics local to this table
                 table_small_diff += sum(1 for (abs, rel, diff) in diff_dict[h] if diff == 'small')
@@ -444,15 +450,15 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         for h in horder1:
             if h not in horder2:
                 continue
-            abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else list(map(lambda x_y_z: (x_y_z[0], x_y_z[2]), diff_dict[h]))  # EDWIN: Had to automate py 2-3 to convert lambda tuple parameter expansion
-        hdict2soup(abs_diff_soup, uheading1, count_of_tables, abs_diff_dict, h_thresh_dict, horder1)
+            abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [(x_y_z[0],x_y_z[2]) for x_y_z in diff_dict[h]]
+        hdict2soup(abs_diff_soup, uheading1, count_of_tables, abs_diff_dict.copy(), h_thresh_dict, horder1)
 
         rel_diff_dict = {}
         for h in horder1:
             if h not in horder2:
                 continue
-            rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else list(map(lambda x_y_z: (x_y_z[1], x_y_z[2]), diff_dict[h]))  # EDWIN: Same here
-        hdict2soup(rel_diff_soup, uheading1, count_of_tables, rel_diff_dict, h_thresh_dict, horder1)
+            rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [(x_y_z[1],x_y_z[2]) for x_y_z in diff_dict[h]]
+        hdict2soup(rel_diff_soup, uheading1, count_of_tables, rel_diff_dict.copy(), h_thresh_dict, horder1)
 
         count_of_tables_diff += 1
 
