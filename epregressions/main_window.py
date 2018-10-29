@@ -113,11 +113,6 @@ class RegressionGUI(Gtk.Window):
         self.current_progress_value = None
         self.progress_maximum_value = None
 
-        self.suite_option_handler_runtime_report_check = None
-        self.suite_option_runtime_file_label = None
-        self.do_runtime_report = None  # EDWIN: Always do runtime report and formalize this
-        self.runtime_report_file = None
-
         self.suiteargs = None
         self.runner = None
         self.work_thread = None
@@ -630,26 +625,6 @@ class RegressionGUI(Gtk.Window):
         alignment.add(self.report_frequency_combo_box)
         h_box_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
-
-        this_h_box = Gtk.HBox(False, box_spacing)
-        self.suite_option_handler_runtime_report_check = Gtk.CheckButton("Create Runtime Summary?", use_underline=False)
-        self.suite_option_handler_runtime_report_check.set_active(True)
-        self.suite_option_handler_runtime_report_check.connect("toggled", self.suite_option_handler_runtime_check)
-        alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
-        alignment.add(self.suite_option_handler_runtime_report_check)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        button1 = Gtk.Button("Choose Runtime File...")
-        button1.connect("clicked", self.suite_option_handler_runtime_file)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(button1)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        self.suite_option_runtime_file_label = Gtk.Label(self.runtime_report_file)
-        alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
-        alignment.add(self.suite_option_runtime_file_label)
-        this_h_box.pack_start(alignment, False, False, box_spacing)
-        notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
-
-        notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
         heading = Gtk.Label(None)
         heading.set_markup("<b>Ready to Run:</b>")
@@ -1241,12 +1216,6 @@ class RegressionGUI(Gtk.Window):
 
     def init_suite_args(self):
 
-        self.do_runtime_report = True
-        if platform == "windows":
-            self.runtime_report_file = "C:\\temp\\runtimes.csv"
-        else:
-            self.runtime_report_file = "/tmp/run_times.csv"
-
         if platform == "windows":
             suiteargs_base = SingleCaseInformation(source_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1",
                                                    build_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build",
@@ -1409,34 +1378,6 @@ class RegressionGUI(Gtk.Window):
         else:
             return "red"  # Gtk.gdk.Color(220, 20, 60)
 
-    def suite_option_handler_runtime_file(self, widget):
-        dialog = Gtk.FileChooserDialog(
-            title="Select runtime file save name",
-            parent=self,
-            action=Gtk.FileChooserAction.SAVE,
-            buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        )
-        dialog.set_select_multiple(False)
-        if self.last_folder_path:
-            dialog.set_current_folder(self.last_folder_path)
-        file_filter = Gtk.FileFilter()
-        file_filter.set_name("CSV Files")
-        file_filter.add_pattern("*.csv")
-        dialog.add_filter(file_filter)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.last_folder_path = dialog.get_current_folder()
-            self.runtime_report_file = dialog.get_filename()
-            self.suite_option_runtime_file_label.set_label(self.runtime_report_file)
-            dialog.destroy()
-        else:
-            dialog.destroy()
-            # reset the flag
-            return
-
-    def suite_option_handler_runtime_check(self, widget):
-        self.do_runtime_report = widget.get_active()
-
     def suite_option_handler_suite_validate(self, widget):
 
         self.add_log_entry("Verifying directory structure")
@@ -1575,14 +1516,6 @@ class RegressionGUI(Gtk.Window):
         self.verify_list_store.append(
             ["Case 2 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
         )
-
-        # runtime report check
-        if self.do_runtime_report:
-            report_directory = os.path.dirname(self.runtime_report_file)
-            exists = os.path.exists(report_directory)
-            self.verify_list_store.append(
-                ["Runtime report directory exists? ", report_directory, exists, self.get_row_color(exists)]
-            )
 
         if all([item[2] for item in self.verify_list_store]):
             return True
@@ -1740,26 +1673,6 @@ class RegressionGUI(Gtk.Window):
             for result in file_lists.descriptions:
                 self.results_list_store.append(self.results_child[tree_root], [result])
             self.results_lists_to_copy.append(file_lists.base_names)
-
-        if self.do_runtime_report:
-            try:
-                import csv
-                with open(self.runtime_report_file, "w") as csvfile:
-                    writer = csv.writer(csvfile)
-                    writer.writerow(["Case", "Runtime [s]", "Runtime [s]"])
-                    for this_entry in results.entries_by_file:
-                        runtime1 = -1
-                        runtime2 = -1
-                        if this_entry.summary_result:
-                            this_summary = this_entry.summary_result
-                            if this_summary.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-                                runtime1 = this_summary.run_time_seconds_case1
-                            if this_summary.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-                                runtime2 = this_summary.run_time_seconds_case2
-                        writer.writerow([this_entry.basename, runtime1, runtime2])
-            except Exception as this_exception:
-                self.add_log_entry("Couldn't write runtime report file")
-                print(this_exception)
 
         # update the GUI
         self.btn_run_suite.set_label("Run Suite")

@@ -122,6 +122,22 @@ class TestSuiteRunner:
 
         response = self.diff_logs_for_build()
 
+        try:
+            self.my_print('Writing runtime summary file')
+            csv_file_path = os.path.join(self.build_directory_a, self.test_output_dir, 'run_times.csv')
+            response.to_runtime_summary(csv_file_path)
+            self.my_print('Runtime summary written successfully')
+        except Exception as this_exception:
+            self.my_print('Could not write runtime summary file: ' + str(this_exception))
+
+        try:
+            self.my_print('Writing simulation results summary file')
+            json_file_path = os.path.join(self.build_directory_a, self.test_output_dir, 'test_results.json')
+            response.to_json_summary(json_file_path)
+            self.my_print('Results summary written successfully')
+        except Exception as this_exception:
+            self.my_print('Could not write results summary file: ' + str(this_exception))
+
         self.my_print("Test suite complete for directories:")
         self.my_print("\t%s" % self.build_directory_a)
         self.my_print("\t%s" % self.build_directory_b)
@@ -617,7 +633,9 @@ class TestSuiteRunner:
     # diff_logs_for_build creates diff logs between simulations in two build directories
     def diff_logs_for_build(self):
 
-        completed_structure = CompletedStructure()
+        completed_structure = CompletedStructure(
+            self.source_directory_a, self.build_directory_a, self.source_directory_b, self.build_directory_b
+        )
         for this_entry in self.entries:
             try:
                 this_entry = self.process_diffs_for_one_case(this_entry)

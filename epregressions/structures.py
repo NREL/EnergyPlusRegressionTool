@@ -1,3 +1,7 @@
+import csv
+import json
+
+
 class ForceRunType:
     DD = "A"
     ANNUAL = "B"
@@ -45,7 +49,11 @@ class ResultsLists:
 
 
 class CompletedStructure:
-    def __init__(self):
+    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir):
+        self.case_a_source_dir = case_a_source_dir
+        self.case_a_build_dir = case_a_build_dir
+        self.case_b_source_dir = case_b_source_dir
+        self.case_b_build_dir = case_b_build_dir
         # results by file
         self.entries_by_file = []
         # results by type
@@ -134,6 +142,52 @@ class CompletedStructure:
                     self.text_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
                     self.text_diffs.base_names.add(this_entry.basename)
 
+    def to_runtime_summary(self, csv_file_path):
+        try:
+            with open(csv_file_path, "w") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(["Case", "Runtime [s]", "Runtime [s]"])
+                for this_entry in self.entries_by_file:
+                    runtime1 = -1
+                    runtime2 = -1
+                    if this_entry.summary_result:
+                        if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
+                            runtime1 = this_entry.summary_result.run_time_seconds_case1
+                        if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
+                            runtime2 = this_entry.summary_result.run_time_seconds_case2
+                    writer.writerow([this_entry.basename, runtime1, runtime2])
+        except Exception as this_exception:
+            print(this_exception)
+
+    def to_json_summary(self, json_file_path):
+        output_data = {
+            'directories': {
+                'case_a_source': self.case_a_source_dir,
+                'case_a_build': self.case_a_build_dir,
+                'case_b_source': self.case_b_source_dir,
+                'case_b_build': self.case_b_build_dir
+            },
+            'runs': {
+                'all_files': [x for x in self.all_files.base_names],
+                'success_case_a': [x for x in self.success_case_a.base_names],
+                'failure_case_a': [x for x in self.failure_case_a.base_names],
+                'success_case_b': [x for x in self.success_case_b.base_names],
+                'failure_case_b': [x for x in self.failure_case_b.base_names],
+                'all_files_compared': [x for x in self.total_files_compared.descriptions]
+            },
+            'diffs': {
+                'big_math': [x for x in self.big_math_diffs.descriptions],
+                'small_math': [x for x in self.small_math_diffs.descriptions],
+                'big_table': [x for x in self.big_table_diffs.descriptions],
+                'small_table': [x for x in self.small_table_diffs.descriptions],
+                'textual': [x for x in self.text_diffs.descriptions],
+            },
+            'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
+        }
+        output_string = json.dumps(output_data, indent=2)
+        with open(json_file_path, 'w') as json_file:
+            json_file.write(output_string)
+
 
 class TextDifferences:
     # file types
@@ -155,6 +209,20 @@ class TextDifferences:
     def __init__(self, diff_type):
         self.diff_type = diff_type
 
+    @staticmethod
+    def diff_type_to_string(diff_type):
+        if diff_type == TextDifferences.EQUAL:
+            return 'equal'
+        elif diff_type == TextDifferences.DIFFS:
+            return 'different'
+        else:
+            raise Exception('Invalid argument passed in')
+
+    def to_dict(self):
+        response = dict()
+        response['diff_type'] = self.diff_type_to_string(self.diff_type)
+        return response
+
 
 class MathDifferences:
     ESO = 1
@@ -167,6 +235,14 @@ class MathDifferences:
         self.num_records = args_from_math_diff[1]
         self.count_of_big_diff = args_from_math_diff[2]
         self.count_of_small_diff = args_from_math_diff[3]
+
+    def to_dict(self):
+        response = dict()
+        response['diff_type'] = self.diff_type
+        response['num_records'] = self.num_records
+        response['count_of_big_diff'] = self.count_of_big_diff
+        response['count_of_small_diff'] = self.count_of_small_diff
+        return response
 
 
 class TableDifferences:
@@ -181,6 +257,19 @@ class TableDifferences:
         self.not_in_1_count = args_from_table_diff[7]
         self.not_in_2_count = args_from_table_diff[8]
 
+    def to_dict(self):
+        response = dict()
+        response['msg'] = self.msg
+        response['table_count'] = self.table_count
+        response['big_diff_count'] = self.big_diff_count
+        response['small_diff_count'] = self.small_diff_count
+        response['equal_count'] = self.equal_count
+        response['string_diff_count'] = self.string_diff_count
+        response['size_err_count'] = self.size_err_count
+        response['not_in_1_count'] = self.not_in_1_count
+        response['not_in_2_count'] = self.not_in_2_count
+        return response
+
 
 class EndErrSummary:
     STATUS_UNKNOWN = 1
@@ -193,6 +282,29 @@ class EndErrSummary:
         self.run_time_seconds_case1 = runtime_seconds_case1
         self.simulation_status_case2 = status_case2
         self.run_time_seconds_case2 = runtime_seconds_case2
+
+    @staticmethod
+    def status_to_string(status):
+        if status == EndErrSummary.STATUS_UNKNOWN:
+            return 'unknown'
+        elif status == EndErrSummary.STATUS_SUCCESS:
+            return 'success'
+        elif status == EndErrSummary.STATUS_FATAL:
+            return 'fatal'
+        elif status == EndErrSummary.STATUS_MISSING:
+            return 'missing'
+        else:
+            raise Exception('Invalid argument passed in')
+
+    def to_dict(self):
+        response = dict()
+        response['simulation_status_case1'] = self.status_to_string(self.simulation_status_case1)
+        if self.simulation_status_case1 == self.STATUS_SUCCESS:
+            response['run_time_seconds_case1'] = self.run_time_seconds_case1
+        response['simulation_status_case2'] = self.status_to_string(self.simulation_status_case2)
+        if self.simulation_status_case2 == self.STATUS_SUCCESS:
+            response['run_time_seconds_case2'] = self.run_time_seconds_case2
+        return response
 
 
 class TestEntry:
@@ -217,15 +329,9 @@ class TestEntry:
         self.shd_diffs = None
         self.dl_in_diffs = None
         self.dl_out_diffs = None
-        self.runtime_case1 = None
-        self.runtime_case2 = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
-
-    def add_runtime_result(self, runtime_in_seconds_case1, runtime_in_seconds_case2):
-        self.runtime_case1 = runtime_in_seconds_case1
-        self.runtime_case2 = runtime_in_seconds_case2
 
     def add_math_differences(self, diffs, diff_type):
         if diff_type == MathDifferences.ESO:
@@ -263,6 +369,48 @@ class TestEntry:
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
+
+    def to_dict(self):
+        response = dict()
+        response['basename'] = self.basename
+        response['epw'] = self.epw
+        response['summary'] = self.summary_result.to_dict()
+        success_1 = self.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS
+        success_2 = self.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS
+        if success_1 and success_2:
+            if self.table_diffs:
+                response['table_diffs'] = self.table_diffs.to_dict()
+            if self.eso_diffs:
+                response['eso_diffs'] = self.eso_diffs.to_dict()
+            if self.mtr_diffs:
+                response['mtr_diffs'] = self.mtr_diffs.to_dict()
+            if self.zsz_diffs:
+                response['zsz_diffs'] = self.zsz_diffs.to_dict()
+            if self.ssz_diffs:
+                response['ssz_diffs'] = self.ssz_diffs.to_dict()
+            if self.aud_diffs:
+                response['aud_diffs'] = self.aud_diffs.to_dict()
+            if self.bnd_diffs:
+                response['bnd_diffs'] = self.bnd_diffs.to_dict()
+            if self.dxf_diffs:
+                response['dxf_diffs'] = self.dxf_diffs.to_dict()
+            if self.eio_diffs:
+                response['eio_diffs'] = self.eio_diffs.to_dict()
+            if self.err_diffs:
+                response['err_diffs'] = self.err_diffs.to_dict()
+            if self.mdd_diffs:
+                response['mdd_diffs'] = self.mdd_diffs.to_dict()
+            if self.mtd_diffs:
+                response['mtd_diffs'] = self.mtd_diffs.to_dict()
+            if self.rdd_diffs:
+                response['rdd_diffs'] = self.rdd_diffs.to_dict()
+            if self.shd_diffs:
+                response['shd_diffs'] = self.shd_diffs.to_dict()
+            if self.dl_in_diffs:
+                response['dl_in_diffs'] = self.dl_in_diffs.to_dict()
+            if self.dl_out_diffs:
+                response['dl_out_diffs'] = self.dl_out_diffs.to_dict()
+        return response
 
 
 class TestCaseCompleted:
