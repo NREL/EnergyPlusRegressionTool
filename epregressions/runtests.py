@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import argparse
-import json
+from datetime import datetime
 import os
 import shutil
 import sys
@@ -78,10 +78,11 @@ class TestSuiteRunner:
             self.test_output_dir = "Tests-DDOnly"
         elif self.force_run_type == ForceRunType.NONE:
             self.test_output_dir = "Tests"
+        i = datetime.now()
+        self.test_output_dir += i.strftime('_%Y%m%d_%H%M%S')
 
         # Filename specification, not path specific
         self.ep_in_filename = "in.idf"
-        self.time_log_filename = "runtimes.csv"
 
         # For files that don't have a specified weather file, use Chicago
         self.default_weather_filename = "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
@@ -145,14 +146,14 @@ class TestSuiteRunner:
 
         self.my_alldone(response)
 
-    @staticmethod
-    def prepare_dir_structure(b_a, b_b, d_test):
+    def prepare_dir_structure(self, b_a, b_b, d_test):
 
         # make tests directory as needed
         for build in [b_a, b_b]:
             if build:
                 if not os.path.exists(os.path.join(build, d_test)):
                     os.mkdir(os.path.join(build, d_test))
+        self.my_print('Created test directories at <build-dir>/%s' % d_test)
 
     def run_build(self, source_dir, test_files_dir, weather_dir, data_sets_dir, build_dir):
 
@@ -634,7 +635,9 @@ class TestSuiteRunner:
     def diff_logs_for_build(self):
 
         completed_structure = CompletedStructure(
-            self.source_directory_a, self.build_directory_a, self.source_directory_b, self.build_directory_b
+            self.source_directory_a, self.build_directory_a,
+            self.source_directory_b, self.build_directory_b,
+            os.path.join(self.build_directory_a, self.test_output_dir)
         )
         for this_entry in self.entries:
             try:

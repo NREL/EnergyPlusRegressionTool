@@ -49,11 +49,12 @@ class ResultsLists:
 
 
 class CompletedStructure:
-    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir):
+    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir, results_dir):
         self.case_a_source_dir = case_a_source_dir
         self.case_a_build_dir = case_a_build_dir
         self.case_b_source_dir = case_b_source_dir
         self.case_b_build_dir = case_b_build_dir
+        self.results_dir = results_dir
         # results by file
         self.entries_by_file = []
         # results by type

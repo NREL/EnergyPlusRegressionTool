@@ -112,6 +112,7 @@ class RegressionGUI(Gtk.Window):
         self.file_list_builder_configuration = None
         self.current_progress_value = None
         self.progress_maximum_value = None
+        self.last_results_test_dir = None
 
         self.suiteargs = None
         self.runner = None
@@ -785,12 +786,7 @@ class RegressionGUI(Gtk.Window):
         if ":" in case_name:
             colon_index = case_name.index(":")
             case_name = case_name[:colon_index]
-        test_dir = "Tests"
-        if self.suiteargs.force_run_type == ForceRunType.DD:
-            test_dir = "Tests-DDOnly"
-        elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
-            test_dir = "Tests-Annual"
-        dir_to_open = os.path.join(self.suiteargs.buildA.build_directory, test_dir, case_name)
+        dir_to_open = os.path.join(self.last_results_test_dir, case_name)
         if platform == "linux":
             try:
                 subprocess.Popen(['xdg-open', dir_to_open])
@@ -1679,6 +1675,7 @@ class RegressionGUI(Gtk.Window):
         self.test_suite_is_running = False
         self.status_bar.push(self.status_bar_context_id, "ALL DONE")
         self.progress.set_fraction(1.0)
+        self.last_results_test_dir = results.results_dir
 
     def cancel_callback(self):
         GObject.idle_add(self.cancel_callback_handler)
