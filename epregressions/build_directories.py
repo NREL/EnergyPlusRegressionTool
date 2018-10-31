@@ -1,6 +1,6 @@
 import os
 
-from epregressions.platform import platform
+from epregressions.platform import exe_extension
 
 
 class BaseBuildDirectoryStructure:
@@ -50,46 +50,43 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
         build_dir = self.build_directory
         exists = os.path.exists(build_dir)
         results.append(
-            ["Case 1 Build Directory Exists? ", build_dir, exists]
+            ["Case %s Build Directory Exists? ", build_dir, exists]
         )
         cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
         exists = os.path.exists(cmake_cache_file)
         results.append(
-            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists]
+            ["Case %s Build CMake Cache? ", cmake_cache_file, exists]
         )
         exists = os.path.exists(self.source_directory)
         results.append(
-            ["Case 1 Source Directory Exists? ", self.source_directory, exists]
+            ["Case %s Source Directory Exists? ", self.source_directory, exists]
         )
         test_files_dir = os.path.join(self.source_directory, 'testfiles')
         exists = os.path.exists(test_files_dir)
         results.append(
-            ["Case 1 Test Files Directory Exists? ", test_files_dir, exists]
+            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
         )
         data_sets_dir = os.path.join(self.source_directory, 'datasets')
         exists = os.path.exists(data_sets_dir)
         results.append(
-            ["Case 1 Data Sets Directory Exists? ", data_sets_dir, exists]
+            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
         )
         products_dir = os.path.join(self.build_directory, 'Products')
         exists = os.path.exists(products_dir)
         results.append(
-            ["Case 1 Products Directory Exists? ", products_dir, exists]
+            ["Case %s Products Directory Exists? ", products_dir, exists]
         )
-        exe_extension = ''
-        if platform == 'windows':
-            exe_extension = '.exe'
         energy_plus_exe = os.path.join(
             self.build_directory, 'Products', 'energyplus' + exe_extension
         )
         exists = os.path.exists(energy_plus_exe)
         results.append(
-            ["Case 1 EnergyPlus Binary Exists? ", energy_plus_exe, exists]
+            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
         )
         basement_exe = os.path.join(self.build_directory, 'Products', 'Basement' + exe_extension)
         exists = os.path.exists(basement_exe)
         results.append(
-            ["Case 1 Basement (Fortran) Binary Exists? ", basement_exe, exists]
+            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
         )
         return results
 
@@ -117,7 +114,7 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
 
 class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
     """
-    A Visual Studio based build directory class -- TODO: needs to be wrapped up with proper Debug/Release folders
+    A Visual Studio based build directory class
     This captures a release build by default, but you can set it to debug with set_build_mode(debug=True)
     """
 
@@ -158,42 +155,42 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         build_dir = self.build_directory
         exists = os.path.exists(build_dir)
         results.append(
-            ["Case 1 Build Directory Exists? ", build_dir, exists]
+            ["Case %s Build Directory Exists? ", build_dir, exists]
         )
         cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
         exists = os.path.exists(cmake_cache_file)
         results.append(
-            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists]
+            ["Case %s Build CMake Cache? ", cmake_cache_file, exists]
         )
         source_dir = self.source_directory
         exists = os.path.exists(source_dir)
         results.append(
-            ["Case 1 Source Directory Exists? ", source_dir, exists]
+            ["Case %s Source Directory Exists? ", source_dir, exists]
         )
         test_files_dir = os.path.join(self.source_directory, 'testfiles')
         exists = os.path.exists(test_files_dir)
         results.append(
-            ["Case 1 Test Files Directory Exists? ", test_files_dir, exists]
+            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
         )
         data_sets_dir = os.path.join(self.source_directory, 'datasets')
         exists = os.path.exists(data_sets_dir)
         results.append(
-            ["Case 1 Data Sets Directory Exists? ", data_sets_dir, exists]
+            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
         )
         products_dir = os.path.join(self.build_directory, 'Products')
         exists = os.path.exists(products_dir)
         results.append(
-            ["Case 1 Products Directory Exists? ", products_dir, exists]
+            ["Case %s Products Directory Exists? ", products_dir, exists]
         )
-        energy_plus_exe = os.path.join(self.build_directory, 'Products', 'energyplus.exe')
+        energy_plus_exe = os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe')
         exists = os.path.exists(energy_plus_exe)
         results.append(
-            ["Case 1 EnergyPlus Binary Exists? ", energy_plus_exe, exists]
+            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
         )
         basement_exe = os.path.join(self.build_directory, 'Products', 'Basement.exe')
         exists = os.path.exists(basement_exe)
         results.append(
-            ["Case 1 Basement (Fortran) Binary Exists? ", basement_exe, exists]
+            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
         )
         return results
 
@@ -203,7 +200,7 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         return {
             'build_dir': self.build_directory,
             'source_dir': self.source_directory,
-            'energyplus': os.path.join(self.build_directory, 'Products', 'energyplus'),
+            'energyplus': os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe'),
             'basement': os.path.join(self.build_directory, 'Products', 'Basement'),
             'idd_path': os.path.join(self.build_directory, 'Products', 'Energy+.idd'),
             'slab': os.path.join(self.build_directory, 'Products', 'Slab'),
@@ -216,4 +213,86 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
             'test_files_dir': os.path.join(self.source_directory, 'testfiles'),
             'weather_dir': os.path.join(self.source_directory, 'weather'),
             'data_sets_dir': os.path.join(self.source_directory, 'datasets')
+        }
+
+
+class EPlusInstallDirectory(BaseBuildDirectoryStructure):
+
+    def __init__(self):
+        super().__init__()
+        self.source_directory = None
+
+    def set_build_directory(self, build_directory):
+        """
+        This method takes a build directory, and updates any dependent member variables, in this case the source dir.
+        This method *does* allow an invalid build_directory, as could happen during program initialization
+
+        :param build_directory:
+        :return:
+        """
+        self.build_directory = build_directory
+        if not os.path.exists(self.build_directory):
+            self.source_directory = 'unknown - invalid build directory?'
+            return
+        # For an E+ install, the source directory is kinda just the root repo
+        self.source_directory = build_directory
+
+    def verify(self):
+        results = []
+        if not self.build_directory:
+            raise Exception('Build directory has not been set with set_build_directory()')
+        build_dir = self.build_directory
+        exists = os.path.exists(build_dir)
+        results.append(
+            ["Case %s Build Directory Exists? ", build_dir, exists]
+        )
+        exists = os.path.exists(self.source_directory)
+        results.append(
+            ["Case %s Source Directory Exists? ", self.source_directory, exists]
+        )
+        test_files_dir = os.path.join(self.source_directory, 'ExampleFiles')
+        exists = os.path.exists(test_files_dir)
+        results.append(
+            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
+        )
+        data_sets_dir = os.path.join(self.source_directory, 'DataSets')
+        exists = os.path.exists(data_sets_dir)
+        results.append(
+            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
+        )
+        energy_plus_exe = os.path.join(
+            self.build_directory, 'energyplus' + exe_extension
+        )
+        exists = os.path.exists(energy_plus_exe)
+        results.append(
+            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
+        )
+        basement_exe = os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension)
+        exists = os.path.exists(basement_exe)
+        results.append(
+            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
+        )
+        return results
+
+    def get_build_tree(self):
+        if not self.build_directory:
+            raise Exception('Build directory has not been set with set_build_directory()')
+        return {
+            'build_dir': self.build_directory,
+            'source_dir': self.source_directory,
+            'energyplus': os.path.join(self.build_directory, 'energyplus' + exe_extension),
+            'basement': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension),
+            'idd_path': os.path.join(self.build_directory, 'Energy+.idd'),
+            'slab': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Slab' + exe_extension),
+            'basementidd': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd'),
+            'slabidd': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd'),
+            'expandobjects': os.path.join(self.build_directory, 'ExpandObjects' + exe_extension),
+            'epmacro': os.path.join(self.build_directory, 'EPMacro' + exe_extension),
+            'readvars': os.path.join(self.build_directory, 'PostProcess', 'ReadVarsESO'),
+            'parametric': os.path.join(
+                self.build_directory, 'PreProcess', 'ParametricPreprocessor', 'ParametricPreprocessor' + exe_extension
+            ),
+            'test_files_dir': os.path.join(self.source_directory, 'ExampleFiles'),
+            'weather_dir': os.path.join(self.source_directory, 'WeatherData'),
+            'data_sets_dir': os.path.join(self.source_directory, 'DataSets')
         }

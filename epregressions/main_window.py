@@ -1386,13 +1386,23 @@ class RegressionGUI(Gtk.Window):
 
         results = self.suiteargs.buildA.verify()
         for result in results:
-            result.append(get_row_color(result[2]))
-            self.verify_list_store.append(result)
+            this_result_set = [
+                result[0] % "1",
+                result[1],
+                result[2],
+                get_row_color(result[2])
+            ]
+            self.verify_list_store.append(this_result_set)
 
         results = self.suiteargs.buildB.verify()
         for result in results:
-            result.append(get_row_color(result[2]))
-            self.verify_list_store.append(result)
+            this_result_set = [
+                result[0] % "2",
+                result[1],
+                result[2],
+                get_row_color(result[2])
+            ]
+            self.verify_list_store.append(this_result_set)
 
         if all([item[2] for item in self.verify_list_store]):
             return True
