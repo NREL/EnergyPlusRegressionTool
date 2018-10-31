@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 
 import argparse
 from datetime import datetime
+import json
+import os
 import shutil
 import sys
 
@@ -14,8 +16,21 @@ from epregressions import math_diff
 from epregressions import table_diff
 from epregressions import thresh_dict as td
 from epregressions import epsim
-# import the files related to this script
-from epregressions.structures import *
+from epregressions.structures import (
+    ForceRunType,
+    TestCaseCompleted,
+    TextDifferences,
+    EndErrSummary,
+    MathDifferences,
+    TableDifferences,
+    CompletedStructure,
+    TestRunConfiguration,
+    ReportingFreq,
+    TestEntry
+)
+from epregressions.build_directories import (
+    CMakeCacheMakeFileBuildDirectory
+)
 
 
 # get the current file path for convenience
@@ -759,12 +774,12 @@ if __name__ == "__main__":
             run_type = ForceRunType.ANNUAL
 
     # For ALL runs use BuildA
-    base = SingleCaseCMakeCache()
+    base = CMakeCacheMakeFileBuildDirectory()
     base.set_run_flag(True)
     base.set_build_directory(args.a_build)
 
     # If using ReverseDD, builB can just be None
-    mod = SingleCaseCMakeCache()
+    mod = CMakeCacheMakeFileBuildDirectory()
     mod.set_run_flag(True)
     mod.set_build_directory(args.b_build)
 

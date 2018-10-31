@@ -19,9 +19,12 @@ from epregressions.runtests import TestSuiteRunner
 from epregressions.structures import (
     ForceRunType,
     ReportingFreq,
-    SingleCaseCMakeCache,
     TestEntry,
     TestRunConfiguration,
+)
+from epregressions.build_directories import (
+    CMakeCacheMakeFileBuildDirectory,
+    CMakeCacheVisualStudioBuildDirectory
 )
 
 # graphics stuff
@@ -1218,20 +1221,20 @@ class RegressionGUI(Gtk.Window):
     def init_suite_args(self):
 
         if platform == "windows":
-            suiteargs_base = SingleCaseCMakeCache()
+            suiteargs_base = CMakeCacheVisualStudioBuildDirectory()
             suiteargs_base.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build")
             suiteargs_base.set_run_flag(True)
         else:
-            suiteargs_base = SingleCaseCMakeCache()
+            suiteargs_base = CMakeCacheMakeFileBuildDirectory()
             suiteargs_base.set_build_directory("/home/user/EnergyPlus/repo1/build/")
             suiteargs_base.set_run_flag(True)
 
         if platform == "windows":
-            suiteargs_mod = SingleCaseCMakeCache()
+            suiteargs_mod = CMakeCacheVisualStudioBuildDirectory()
             suiteargs_mod.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build")
             suiteargs_mod.set_run_flag(True)
         else:
-            suiteargs_mod = SingleCaseCMakeCache()
+            suiteargs_mod = CMakeCacheMakeFileBuildDirectory()
             suiteargs_mod.set_build_directory("/home/user/EnergyPlus/repo2/build/")
             suiteargs_mod.set_run_flag(True)
 
