@@ -22,10 +22,8 @@ from epregressions.structures import (
     TestEntry,
     TestRunConfiguration,
 )
-from epregressions.build_directories import (
-    CMakeCacheMakeFileBuildDirectory,
-    CMakeCacheVisualStudioBuildDirectory
-)
+from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
+from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
 
 # graphics stuff
 import gi

@@ -12,10 +12,8 @@ import sys
 from difflib import *  # python's own diff library
 from multiprocessing import Process, Queue, freeze_support  # add stuff to either make series calls, or multi-threading
 
-from epregressions import math_diff
-from epregressions import table_diff
-from epregressions import thresh_dict as td
-from epregressions import epsim
+from epregressions.diffs import math_diff, table_diff, thresh_dict as td
+from epregressions import energyplus
 from epregressions.structures import (
     ForceRunType,
     TestCaseCompleted,
@@ -27,9 +25,6 @@ from epregressions.structures import (
     TestRunConfiguration,
     ReportingFreq,
     TestEntry
-)
-from epregressions.build_directories import (
-    CMakeCacheMakeFileBuildDirectory
 )
 
 
@@ -71,7 +66,7 @@ class TestSuiteRunner:
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
-        self.thresh_dict_file = os.path.join(script_dir, "math_diff.config")
+        self.thresh_dict_file = os.path.join(script_dir, 'diffs', "math_diff.config")
         self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
         self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
 
@@ -313,7 +308,7 @@ class TestSuiteRunner:
 
             energy_plus_runs.append(
                 (
-                    epsim.execute_energyplus,
+                    energyplus.execute_energyplus,
                     (
                         build_tree,
                         this_entry.basename,
@@ -334,7 +329,7 @@ class TestSuiteRunner:
                     tmp_array.append(val)
                 if self.id_like_to_stop_now:
                     return  # self.my_cancelled() is called in parent function
-                ret = epsim.execute_energyplus(*tmp_array)
+                ret = energyplus.execute_energyplus(*tmp_array)
                 self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
         else:
             # Submit tasks
@@ -745,6 +740,7 @@ class TestSuiteRunner:
 
 
 if __name__ == "__main__":
+    from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 
     # parse command line arguments
     parser = argparse.ArgumentParser(

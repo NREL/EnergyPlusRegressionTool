@@ -58,8 +58,7 @@ import getopt
 import os
 import sys
 
-from epregressions import thresh_dict
-from epregressions import mycsv
+from epregressions.diffs import mycsv
 
 help_message = __doc__
 

@@ -61,11 +61,11 @@ So, starting with Ubuntu 18.04:
 
 You should now be able to press the "Windows key" on your keyboard, start typing EnergyPl.., and it will find the tool and you can press enter, as shown here:
 
-![ActivitiesSearchImage](/images/activities_search.png?raw=true "ActivitiesSearchImage")
+![ActivitiesSearchImage](/media/activities_search.png?raw=true "ActivitiesSearchImage")
 
 You can then right click on the icon in the taskbar and save it as a favorite to reopen anytime.
 
-![AddToFavorites](/images/add_to_favorites.png?raw=true "AddToFavorites")
+![AddToFavorites](/media/add_to_favorites.png?raw=true "AddToFavorites")
 
 Then to get an update to the program, then only thing you have to do is update your clone:
 

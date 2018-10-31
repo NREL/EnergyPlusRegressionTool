@@ -41,8 +41,7 @@ import getopt
 import os.path
 
 from bs4 import BeautifulSoup, NavigableString, Tag
-from epregressions import html_data
-from epregressions import thresh_dict
+from epregressions.diffs import html_data
 
 help_message = __doc__
 
