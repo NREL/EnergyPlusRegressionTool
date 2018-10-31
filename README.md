@@ -51,9 +51,10 @@ So, starting with Ubuntu 18.04:
   - Optionally test this: run `python3` and try to execute `import gi`.  It should just do it without error.  Press `ctrl-d` to exit.
 - Install a couple other dependencies that we'll use in the next steps:
   - `sudo apt-get install git python3-pip`
-- Download the regression tool:
+- Download the regression tool and install python dependencies:
   - `git clone https://github.com/Myoldmopar/EnergyPlusRegressionTool`
   - `cd EnergyPlusRegressionTool`
+  - `pip3 install -r requirements.txt`
   - Optionally test this: run `python3 eplus_regression_runner`.  It should run the GUI.  Close it.
 - Install the program into your applications:
   - `python3 epregressions/install_desktop`
