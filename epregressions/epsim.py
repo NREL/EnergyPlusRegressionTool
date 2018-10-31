@@ -5,41 +5,28 @@ import glob
 import os
 import shutil
 import subprocess
-import sys
 from multiprocessing import current_process
 
-from epregressions.structures import *
+from epregressions.structures import ForceRunType
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
-platform = ''
-if "linux" in sys.platform:
-    platform = "linux"
-elif "darwin" in sys.platform:
-    platform = "mac"
-elif "win" in sys.platform:
-    platform = "windows"
 
-
-def execute_energyplus(source_directory, build_directory, entry_name, test_run_directory,
+def execute_energyplus(build_tree, entry_name, test_run_directory,
                        run_type, min_reporting_freq, this_parametric_file, weather_file_name):
-    # setup a few paths
-    if platform == 'windows':
-        energyplus = os.path.join(build_directory, 'Products', 'Debug', 'energyplus')
-    else:
-        energyplus = os.path.join(build_directory, 'Products', 'energyplus')
 
-    # external tools also
-    basement = os.path.join(build_directory, 'Products', 'Basement')
-    idd_path = os.path.join(build_directory, 'Products', 'Energy+.idd')  # TODO: Shouldn't need the IDD anymore
-    slab = os.path.join(build_directory, 'Products', 'Slab')
-    basementidd = os.path.join(build_directory, 'Products', 'BasementGHT.idd')
-    slabidd = os.path.join(build_directory, 'Products', 'SlabGHT.idd')
-    expandobjects = os.path.join(build_directory, 'Products', 'ExpandObjects')
-    epmacro = os.path.join(source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro')
-    readvars = os.path.join(build_directory, 'Products', 'ReadVarsESO')
-    parametric = os.path.join(build_directory, 'Products', 'ParametricPreprocessor')
+    # setup a few paths
+    energyplus = build_tree['energyplus']
+    basement = build_tree['basement']
+    idd_path = build_tree['idd_path']
+    slab = build_tree['slab']
+    basementidd = build_tree['basementidd']
+    slabidd = build_tree['slabidd']
+    expandobjects = build_tree['expandobjects']
+    epmacro = build_tree['epmacro']
+    readvars = build_tree['readvars']
+    parametric = build_tree['parametric']
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
@@ -86,7 +73,7 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                return [build_directory, entry_name, False, current_process().name]
+                return [build_tree['build_dir'], entry_name, False, current_process().name]
 
         # Run ExpandObjects and process as necessary
         expand_objects_run = subprocess.Popen(expandobjects, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -165,64 +152,13 @@ def execute_energyplus(source_directory, build_directory, entry_name, test_run_d
         mtr_run = subprocess.Popen([readvars, 'test.mvi'], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mtr_run.communicate()
 
-        # # Handle outputs (eplusout.csv and eplusmtr.csv) for reverse DD cases
-        # if run_type == ForceRunType.REVERSEDD:
-        #     # find out how many DD's there are
-        #     num_design_days = 0
-        #     with open("in.idf") as f:
-        #         for line in f:
-        #             if "SizingPeriod:DesignDay," in line:
-        #                 num_design_days += 1
-        #
-        #     # read all lines from csv
-        #     csv_contents = []
-        #     with open("eplusout.csv") as f:
-        #         for line in f:
-        #             csv_contents.append(line)
-        #     meter_exists = os.path.exists("eplusmtr.csv")
-        #     mtr_contents = []
-        #     if meter_exists:
-        #         with open("eplusmtr.csv") as f:
-        #             for line in f:
-        #                 mtr_contents.append(line)
-        #
-        #     # now find out how many lines of data there are in each file and each environment
-        #     csv_data_rows = len(csv_contents) - 1
-        #     csv_data_rows_per_envrn = csv_data_rows / num_design_days
-        #     if meter_exists:
-        #         mtr_data_rows = len(mtr_contents) - 1
-        #         mtr_data_rows_per_envrn = mtr_data_rows / num_design_days
-        #
-        #     # write the files back out in the appropriate order
-        #     shutil.copy("eplusout.csv", "eplusout-before_revDD_swapback.csv")
-        #     with open("eplusout.csv", "w") as f:
-        #         f.write("%s" % csv_contents[0])
-        #         for row_num in range(csv_data_rows_per_envrn + 1, 2 * csv_data_rows_per_envrn + 1):
-        #             f.write("%s" % csv_contents[row_num])
-        #         for row_num in range(1, csv_data_rows_per_envrn + 1):
-        #             f.write("%s" % csv_contents[row_num])
-        #         if num_design_days > 2:
-        #             for row_num in range(2 * csv_data_rows_per_envrn + 1, csv_data_rows + 1):
-        #                 f.write("%s" % csv_contents[row_num])
-        #     if meter_exists:
-        #         shutil.copy("eplusmtr.csv", "eplusmtr-before_revDD_swapback.csv")
-        #         with open("eplusmtr.csv", "w") as f:
-        #             f.write("%s" % mtr_contents[0])
-        #             for row_num in range(mtr_data_rows_per_envrn + 1, 2 * mtr_data_rows_per_envrn + 1):
-        #                 f.write("%s" % mtr_contents[row_num])
-        #             for row_num in range(1, mtr_data_rows_per_envrn + 1):
-        #                 f.write("%s" % mtr_contents[row_num])
-        #             if num_design_days > 2:
-        #                 for row_num in range(2 * mtr_data_rows_per_envrn + 1, mtr_data_rows + 1):
-        #                     f.write("%s" % mtr_contents[row_num])
-
         os.remove('Energy+.idd')
-        return [build_directory, entry_name, True, False, current_process().name]
+        return [build_tree['build_dir'], entry_name, True, False, current_process().name]
 
     except Exception as e:
         f = open("aa_testSuite_error.txt", 'w')
         print(e, file=f)
-        return [build_directory, entry_name, False, False, current_process().name]
+        return [build_tree['build_dir'], entry_name, False, False, current_process().name]
 
     finally:
         os.chdir(start_path)

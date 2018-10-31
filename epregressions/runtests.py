@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import argparse
 from datetime import datetime
-import os
 import shutil
 import sys
 
@@ -50,19 +49,10 @@ class TestSuiteRunner:
         self.entries = these_entries
 
         # Main test configuration here
-        self.source_directory_a = run_config.buildA.source_directory
-        self.build_directory_a = run_config.buildA.build_directory
+        self.build_tree_a = run_config.buildA.get_build_tree()
         self.run_case_a = run_config.buildA.run
-        self.data_sets_dir_a = os.path.join(run_config.buildA.source_directory, 'datasets')
-        self.weather_dir_a = os.path.join(run_config.buildA.source_directory, 'weather')
-        self.test_files_a = os.path.join(run_config.buildA.source_directory, 'testfiles')
-
-        self.source_directory_b = run_config.buildB.source_directory
-        self.build_directory_b = run_config.buildB.build_directory
+        self.build_tree_b = run_config.buildB.get_build_tree()
         self.run_case_b = run_config.buildB.run
-        self.data_sets_dir_b = os.path.join(run_config.buildB.source_directory, 'datasets')
-        self.weather_dir_b = os.path.join(run_config.buildB.source_directory, 'weather')
-        self.test_files_b = os.path.join(run_config.buildB.source_directory, 'testfiles')
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
@@ -97,7 +87,7 @@ class TestSuiteRunner:
         self.id_like_to_stop_now = False
 
         # do some preparation
-        self.prepare_dir_structure(self.build_directory_a, self.build_directory_b, self.test_output_dir)
+        self.prepare_dir_structure(self.build_tree_a, self.build_tree_b, self.test_output_dir)
 
         if self.id_like_to_stop_now:
             self.my_cancelled()
@@ -108,14 +98,12 @@ class TestSuiteRunner:
 
         # run the energyplus script
         if self.run_case_a:
-            self.run_build(self.source_directory_a, self.test_files_a, self.weather_dir_a,
-                           self.data_sets_dir_a, self.build_directory_a)
+            self.run_build(self.build_tree_a)
             if self.id_like_to_stop_now:
                 self.my_cancelled()
                 return
         if self.run_case_b:
-            self.run_build(self.source_directory_b, self.test_files_b, self.weather_dir_b,
-                           self.data_sets_dir_b, self.build_directory_b)
+            self.run_build(self.build_tree_b)
             if self.id_like_to_stop_now:
                 self.my_cancelled()
                 return
@@ -125,7 +113,7 @@ class TestSuiteRunner:
 
         try:
             self.my_print('Writing runtime summary file')
-            csv_file_path = os.path.join(self.build_directory_a, self.test_output_dir, 'run_times.csv')
+            csv_file_path = os.path.join(self.build_tree_a['build_dir'], self.test_output_dir, 'run_times.csv')
             response.to_runtime_summary(csv_file_path)
             self.my_print('Runtime summary written successfully')
         except Exception as this_exception:
@@ -133,15 +121,15 @@ class TestSuiteRunner:
 
         try:
             self.my_print('Writing simulation results summary file')
-            json_file_path = os.path.join(self.build_directory_a, self.test_output_dir, 'test_results.json')
+            json_file_path = os.path.join(self.build_tree_a['build_dir'], self.test_output_dir, 'test_results.json')
             response.to_json_summary(json_file_path)
             self.my_print('Results summary written successfully')
         except Exception as this_exception:
             self.my_print('Could not write results summary file: ' + str(this_exception))
 
         self.my_print("Test suite complete for directories:")
-        self.my_print("\t%s" % self.build_directory_a)
-        self.my_print("\t%s" % self.build_directory_b)
+        self.my_print("\t%s" % self.build_tree_a['build_dir'])
+        self.my_print("\t%s" % self.build_tree_a['build_dir'])
         self.my_print("Test suite complete")
 
         self.my_alldone(response)
@@ -149,13 +137,15 @@ class TestSuiteRunner:
     def prepare_dir_structure(self, b_a, b_b, d_test):
 
         # make tests directory as needed
-        for build in [b_a, b_b]:
-            if build:
-                if not os.path.exists(os.path.join(build, d_test)):
-                    os.mkdir(os.path.join(build, d_test))
+        if b_a:
+            if not os.path.exists(os.path.join(b_a['build_dir'], d_test)):
+                os.mkdir(os.path.join(b_a['build_dir'], d_test))
+        if b_b:
+            if not os.path.exists(os.path.join(b_b['build_dir'], d_test)):
+                os.mkdir(os.path.join(b_b['build_dir'], d_test))
         self.my_print('Created test directories at <build-dir>/%s' % d_test)
 
-    def run_build(self, source_dir, test_files_dir, weather_dir, data_sets_dir, build_dir):
+    def run_build(self, build_tree):
 
         this_test_dir = self.test_output_dir
         local_run_type = self.force_run_type
@@ -171,13 +161,13 @@ class TestSuiteRunner:
         for this_entry in self.entries:
 
             # first remove the previous test directory for this file and rename it
-            test_run_directory = os.path.join(build_dir, this_test_dir, this_entry.basename)
+            test_run_directory = os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename)
             if os.path.exists(test_run_directory):
                 shutil.rmtree(test_run_directory)
             os.mkdir(test_run_directory)
 
             # establish the absolute path to the idf or imf, and append .idf or .imf as necessary
-            idf_base = os.path.join(test_files_dir, this_entry.basename)
+            idf_base = os.path.join(build_tree['test_files_dir'], this_entry.basename)
             idf_base = idf_base.strip()
             idf_path = ''
             imf_path = ''
@@ -204,7 +194,7 @@ class TestSuiteRunner:
                 # if the file requires the window 5 data set file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:
                     os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    shutil.copy(os.path.join(data_sets_dir, 'Window5DataFile.dat'),
+                    shutil.copy(os.path.join(build_tree['data_sets_dir'], 'Window5DataFile.dat'),
                                 os.path.join(test_run_directory, 'datasets'))
                     idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
 
@@ -213,7 +203,7 @@ class TestSuiteRunner:
                 if 'DataSets\TDV' in idf_text:
                     os.mkdir(os.path.join(test_run_directory, 'datasets'))
                     os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
-                    tdv_dir = os.path.join(data_sets_dir, 'TDV')
+                    tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
                     src_files = os.listdir(tdv_dir)
                     for file_name in src_files:
                         full_file_name = os.path.join(tdv_dir, file_name)
@@ -229,7 +219,7 @@ class TestSuiteRunner:
 
                 if 'HybridZoneModel_TemperatureData.csv' in idf_text:
                     shutil.copy(
-                        os.path.join(test_files_dir, 'HybridZoneModel_TemperatureData.csv'),
+                        os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
                         os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
                     )
 
@@ -257,18 +247,25 @@ class TestSuiteRunner:
                     #         )
 
                 # rewrite the idf with the (potentially) modified idf text
-                with open(os.path.join(build_dir, this_test_dir, this_entry.basename, self.ep_in_filename), 'w') as f_i:
+                with open(os.path.join(
+                    build_tree['build_dir'], this_test_dir, this_entry.basename,
+                    self.ep_in_filename
+                ), 'w') as f_i:
                     f_i.write("%s\n" % idf_text)
 
             elif os.path.exists(imf_path):
 
-                shutil.copy(imf_path, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.imf'))
+                shutil.copy(
+                    imf_path, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.imf')
+                )
                 # find the rest of the imf files and copy them into the test directory
-                source_files = os.listdir(test_files_dir)
+                source_files = os.listdir(build_tree['test_files_dir'])
                 for file_name in source_files:
                     if file_name[-4:] == '.imf':
-                        full_file_name = os.path.join(test_files_dir, file_name)
-                        shutil.copy(full_file_name, os.path.join(build_dir, this_test_dir, this_entry.basename))
+                        full_file_name = os.path.join(build_tree['test_files_dir'], file_name)
+                        shutil.copy(
+                            full_file_name, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename)
+                        )
 
             else:
 
@@ -279,17 +276,17 @@ class TestSuiteRunner:
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
                 continue
 
-            rvi = os.path.join(test_files_dir, this_entry.basename) + '.rvi'
+            rvi = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.rvi'
             if os.path.exists(rvi):
-                shutil.copy(rvi, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.rvi'))
+                shutil.copy(rvi, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.rvi'))
 
-            mvi = os.path.join(test_files_dir, this_entry.basename) + '.mvi'
+            mvi = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.mvi'
             if os.path.exists(mvi):
-                shutil.copy(mvi, os.path.join(build_dir, this_test_dir, this_entry.basename, 'in.mvi'))
+                shutil.copy(mvi, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.mvi'))
 
-            epw_path = os.path.join(source_dir, 'weather', self.default_weather_filename)
+            epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
             if this_entry.epw:
-                epw_path = os.path.join(weather_dir, this_entry.epw + '.epw')
+                epw_path = os.path.join(build_tree['weather_dir'], this_entry.epw + '.epw')
                 epw_exists = os.path.exists(epw_path)
                 if not epw_exists:
                     self.my_print(
@@ -297,14 +294,13 @@ class TestSuiteRunner:
                             this_entry.basename, epw_path
                         )
                     )
-                    epw_path = os.path.join(source_dir, 'weather', self.default_weather_filename)
+                    epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
 
             energy_plus_runs.append(
                 (
                     epsim.execute_energyplus,
                     (
-                        source_dir,
-                        build_dir,
+                        build_tree,
                         this_entry.basename,
                         test_run_directory,
                         local_run_type,
@@ -346,11 +342,11 @@ class TestSuiteRunner:
                 task_queue.put('STOP')
 
     def threaded_worker(self, input_data, output):
-        for func, args in iter(input_data.get, 'STOP'):
+        for func, these_args in iter(input_data.get, 'STOP'):
             if self.id_like_to_stop_now:
                 print("I'd like to stop now.")
                 return
-            return_val = func(*args)
+            return_val = func(*these_args)
             output.put(return_val)  # something needs to be put into the output queue for everything to work
 
     @staticmethod
@@ -399,8 +395,12 @@ class TestSuiteRunner:
 
     def process_diffs_for_one_case(self, this_entry):
 
-        case_result_dir_1 = os.path.join(self.build_directory_a, self.test_output_dir, this_entry.basename)
-        case_result_dir_2 = os.path.join(self.build_directory_b, self.test_output_dir, this_entry.basename)
+        case_result_dir_1 = os.path.join(
+            self.build_tree_a['build_dir'], self.test_output_dir, this_entry.basename
+        )
+        case_result_dir_2 = os.path.join(
+            self.build_tree_b['build_dir'], self.test_output_dir, this_entry.basename
+        )
 
         out_dir = case_result_dir_1
 
@@ -635,9 +635,9 @@ class TestSuiteRunner:
     def diff_logs_for_build(self):
 
         completed_structure = CompletedStructure(
-            self.source_directory_a, self.build_directory_a,
-            self.source_directory_b, self.build_directory_b,
-            os.path.join(self.build_directory_a, self.test_output_dir)
+            self.build_tree_a['source_dir'], self.build_tree_a['build_dir'],
+            self.build_tree_b['source_dir'], self.build_tree_b['build_dir'],
+            os.path.join(self.build_tree_a['build_dir'], self.test_output_dir)
         )
         for this_entry in self.entries:
             try:
@@ -759,25 +759,21 @@ if __name__ == "__main__":
             run_type = ForceRunType.ANNUAL
 
     # For ALL runs use BuildA
-    base = SingleCaseInformation(
-        source_directory=args.a_src,
-        build_directory=args.a_build,
-        run_this_directory=args.a
-    )
+    base = SingleCaseCMakeCache()
+    base.set_run_flag(True)
+    base.set_build_directory(args.a_build)
 
     # If using ReverseDD, builB can just be None
-    mod = SingleCaseInformation(
-        source_directory=args.b_src,
-        build_directory=args.b_build,
-        run_this_directory=args.b
-    )
+    mod = SingleCaseCMakeCache()
+    mod.set_run_flag(True)
+    mod.set_build_directory(args.b_build)
 
     # Do a single test run...
     DoASingleTestRun = args.t
 
     # Set the expected path for the files_to_run.txt file
     if not os.path.exists(args.idf_list_file):
-        print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % run_list)
+        print("ERROR: Did not find files_to_run.txt at %s; run build_files_to_run first!" % args.idf_list_file)
         sys.exit(1)
 
     # Build the list of files to run here:

@@ -1,30 +1,35 @@
 #!/usr/bin/env python
 
-import datetime  # datetime allows us to generate timestamps for the log
+from datetime import datetime  # datetime allows us to generate timestamps for the log
+import glob
+import json
+import os
+import random
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
 import webbrowser
-from datetime import datetime  # get datetime to do date/time calculations for timestamps, etc.
 
 # import the supporting python modules for this script
-from epregressions.build_files_to_run import *
-from epregressions.runtests import *
-from epregressions.structures import SingleCaseInformation
+from epregressions.build_files_to_run import (
+    FileListArgsBuilderForGUI,
+    FileListBuilder,
+)
+from epregressions.platform import platform
+from epregressions.runtests import TestSuiteRunner
+from epregressions.structures import (
+    ForceRunType,
+    ReportingFreq,
+    SingleCaseCMakeCache,
+    TestEntry,
+    TestRunConfiguration,
+)
 
 # graphics stuff
 import gi
-
 gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gdk, Gtk, GObject
 
-platform = ''
-if "linux" in sys.platform:
-    platform = "linux"
-elif "darwin" in sys.platform:
-    platform = "mac"
-elif "win" in sys.platform:
-    platform = "windows"
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
@@ -308,12 +313,12 @@ class RegressionGUI(Gtk.Window):
             suite_data = project_tree['suiteoptions']
             if 'case_a' in suite_data:
                 case_a = suite_data['case_a']
-                self.suiteargs.buildA.run = case_a['selected']
-                self.suiteargs.buildA.build_directory = case_a['build_directory']
+                self.suiteargs.buildA.set_run_flag(case_a['selected'])
+                self.suiteargs.buildA.set_build_directory(case_a['build_directory'])
             if 'case_b' in suite_data:
                 case_b = suite_data['case_b']
-                self.suiteargs.buildB.run = case_b['selected']
-                self.suiteargs.buildB.build_directory = case_b["build_directory"]
+                self.suiteargs.buildB.set_run_flag(case_b['selected'])
+                self.suiteargs.buildB.set_build_directory(case_b["build_directory"])
             if 'runconfig' in suite_data:
                 run_config_option = suite_data['runconfig']
                 if run_config_option == "NONE":
@@ -1213,22 +1218,22 @@ class RegressionGUI(Gtk.Window):
     def init_suite_args(self):
 
         if platform == "windows":
-            suiteargs_base = SingleCaseInformation(source_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1",
-                                                   build_directory="C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build",
-                                                   run_this_directory=True)
+            suiteargs_base = SingleCaseCMakeCache()
+            suiteargs_base.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build")
+            suiteargs_base.set_run_flag(True)
         else:
-            suiteargs_base = SingleCaseInformation(source_directory="/home/user/EnergyPlus/repo1/",
-                                                   build_directory="/home/user/EnergyPlus/repo1/build/",
-                                                   run_this_directory=True)
+            suiteargs_base = SingleCaseCMakeCache()
+            suiteargs_base.set_build_directory("/home/user/EnergyPlus/repo1/build/")
+            suiteargs_base.set_run_flag(True)
 
         if platform == "windows":
-            suiteargs_mod = SingleCaseInformation(source_directory="C:\\ResearchProjects\\EnergyPlus\\Repo2",
-                                                  build_directory="C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build",
-                                                  run_this_directory=True)
+            suiteargs_mod = SingleCaseCMakeCache()
+            suiteargs_mod.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build")
+            suiteargs_mod.set_run_flag(True)
         else:
-            suiteargs_mod = SingleCaseInformation(source_directory="/home/user/EnergyPlus/repo2/",
-                                                  build_directory="/home/user/EnergyPlus/repo2/build/",
-                                                  run_this_directory=True)
+            suiteargs_mod = SingleCaseCMakeCache()
+            suiteargs_mod.set_build_directory("/home/user/EnergyPlus/repo2/build/")
+            suiteargs_mod.set_run_flag(True)
 
         # Build the run configuration and the number of threads; using 1 for
         #  windows causes the runtests script to not even use the multi-thread libraries
@@ -1320,7 +1325,7 @@ class RegressionGUI(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildA.build_directory = self.last_folder_path
+            self.suiteargs.buildA.set_build_directory(self.last_folder_path)
             self.case_1_build_dir_label.set_text(self.last_folder_path)
         dialog.destroy()
 
@@ -1337,15 +1342,15 @@ class RegressionGUI(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildB.build_directory = self.last_folder_path
+            self.suiteargs.buildB.set_build_directory(self.last_folder_path)
             self.case_2_build_dir_label.set_text(self.last_folder_path)
         dialog.destroy()
 
     def suite_option_handler_basedir_check(self, widget):
-        self.suiteargs.buildA.run = widget.get_active()
+        self.suiteargs.buildA.set_run_flag(widget.get_active())
 
     def suite_option_handler_mod_dir_check(self, widget):
-        self.suiteargs.buildB.run = widget.get_active()
+        self.suiteargs.buildB.set_run_flag(widget.get_active())
 
     def suite_option_handler_force_run_type(self, widget):
         text = widget.get_active_text()
@@ -1367,13 +1372,6 @@ class RegressionGUI(Gtk.Window):
     def suite_option_handler_num_threads(self, widget):
         self.suiteargs.num_threads = widget.get_value()
 
-    @staticmethod
-    def get_row_color(boolean):
-        if boolean:
-            return None  # Gtk.gdk.Color(127, 255, 0)
-        else:
-            return "red"  # Gtk.gdk.Color(220, 20, 60)
-
     def suite_option_handler_suite_validate(self, widget):
 
         self.add_log_entry("Verifying directory structure")
@@ -1381,137 +1379,17 @@ class RegressionGUI(Gtk.Window):
         # check for directory, then executable and IDD, then input files
         self.verify_list_store.clear()
 
-        # Check case 1
-        build_dir = self.suiteargs.buildA.build_directory
-        exists = os.path.exists(build_dir)
-        self.verify_list_store.append(
-            ["Case 1 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
-        )
-        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
-        exists = os.path.exists(cmake_cache_file)
-        self.verify_list_store.append(
-            ["Case 1 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
-        )
-        source_dir = None
-        exists = False
-        with open(cmake_cache_file, 'r') as f_cache:
-            for this_line in f_cache.readlines():
-                if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
-                    tokens = this_line.strip().split('=')
-                    source_dir = tokens[1]
-                    self.suiteargs.buildA.source_directory = source_dir
-                    exists = True  # this is saying the CMakeCache signal line exists, not the source dir
-                    break
-        self.verify_list_store.append(
-            ["Case 1 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
-        )
-        if not source_dir:
-            source_dir = '<not_found_in_cmake_cache>'
-        exists = os.path.exists(source_dir)
-        self.verify_list_store.append(
-            ["Case 1 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
-        )
-        test_files_dir = os.path.join(self.suiteargs.buildA.source_directory, 'testfiles')
-        exists = os.path.exists(test_files_dir)
-        self.verify_list_store.append(
-            ["Case 1 Test Files Directory Exists? ", test_files_dir, exists, self.get_row_color(exists)]
-        )
-        data_sets_dir = os.path.join(self.suiteargs.buildA.source_directory, 'datasets')
-        exists = os.path.exists(data_sets_dir)
-        self.verify_list_store.append(
-            ["Case 1 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
-        )
-        products_dir = os.path.join(self.suiteargs.buildA.build_directory, 'Products')
-        exists = os.path.exists(products_dir)
-        self.verify_list_store.append(
-            ["Case 1 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
-        )
-        exe_extension = ''
-        if platform == 'windows':
-            exe_extension = '.exe'
-        if platform == 'windows':  # TODO: Edwin Formalize this later
-            energy_plus_exe = os.path.join(
-                self.suiteargs.buildA.build_directory, 'Products', 'Debug', 'energyplus' + exe_extension
-            )
-        else:
-            energy_plus_exe = os.path.join(
-                self.suiteargs.buildA.build_directory, 'Products', 'energyplus' + exe_extension
-            )
-        exists = os.path.exists(energy_plus_exe)
-        self.verify_list_store.append(
-            ["Case 1 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
-        )
-        basement_exe = os.path.join(self.suiteargs.buildA.build_directory, 'Products', 'Basement' + exe_extension)
-        exists = os.path.exists(basement_exe)
-        self.verify_list_store.append(
-            ["Case 1 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
-        )
+        def get_row_color(b): return None if b else 'red'
 
-        # Check case 2
-        build_dir = self.suiteargs.buildB.build_directory
-        exists = os.path.exists(build_dir)
-        self.verify_list_store.append(
-            ["Case 2 Build Directory Exists? ", build_dir, exists, self.get_row_color(exists)]
-        )
-        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
-        exists = os.path.exists(cmake_cache_file)
-        self.verify_list_store.append(
-            ["Case 2 Build CMake Cache? ", cmake_cache_file, exists, self.get_row_color(exists)]
-        )
-        source_dir = None
-        exists = False
-        with open(cmake_cache_file, 'r') as f_cache:
-            for this_line in f_cache.readlines():
-                if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
-                    tokens = this_line.strip().split('=')
-                    source_dir = tokens[1]
-                    self.suiteargs.buildB.source_directory = source_dir
-                    exists = True  # this is saying the CMakeCache signal line exists, not the source dir
-                    break
-        self.verify_list_store.append(
-            ["Case 2 Cache Source Dir Line? ", 'CMAKE_HOME_DIRECTORY:INTERNAL', exists, self.get_row_color(exists)]
-        )
-        if not source_dir:
-            source_dir = '<not_found_in_cmake_cache>'
-        exists = os.path.exists(source_dir)
-        self.verify_list_store.append(
-            ["Case 2 Source Directory Exists? ", source_dir, exists, self.get_row_color(exists)]
-        )
-        test_files_dir = os.path.join(self.suiteargs.buildB.source_directory, 'testfiles')
-        exists = os.path.exists(test_files_dir)
-        self.verify_list_store.append(
-            ["Case 2 Test Files Directory Exists? ", test_files_dir, exists, self.get_row_color(exists)]
-        )
-        data_sets_dir = os.path.join(self.suiteargs.buildB.source_directory, 'datasets')
-        exists = os.path.exists(data_sets_dir)
-        self.verify_list_store.append(
-            ["Case 2 Data Sets Directory Exists? ", data_sets_dir, exists, self.get_row_color(exists)]
-        )
-        products_dir = os.path.join(self.suiteargs.buildB.build_directory, 'Products')
-        exists = os.path.exists(products_dir)
-        self.verify_list_store.append(
-            ["Case 2 Products Directory Exists? ", products_dir, exists, self.get_row_color(exists)]
-        )
-        exe_extension = ''
-        if platform == 'windows':
-            exe_extension = '.exe'
-        if platform == 'windows':  # TODO: Edwin Formalize this later
-            energy_plus_exe = os.path.join(
-                self.suiteargs.buildB.build_directory, 'Products', 'Debug', 'energyplus' + exe_extension
-            )
-        else:
-            energy_plus_exe = os.path.join(
-                self.suiteargs.buildB.build_directory, 'Products', 'energyplus' + exe_extension
-            )
-        exists = os.path.exists(energy_plus_exe)
-        self.verify_list_store.append(
-            ["Case 2 EnergyPlus Binary Exists? ", energy_plus_exe, exists, self.get_row_color(exists)]
-        )
-        basement_exe = os.path.join(self.suiteargs.buildB.build_directory, 'Products', 'Basement' + exe_extension)
-        exists = os.path.exists(basement_exe)
-        self.verify_list_store.append(
-            ["Case 2 Basement (Fortran) Binary Exists? ", basement_exe, exists, self.get_row_color(exists)]
-        )
+        results = self.suiteargs.buildA.verify()
+        for result in results:
+            result.append(get_row_color(result[2]))
+            self.verify_list_store.append(result)
+
+        results = self.suiteargs.buildB.verify()
+        for result in results:
+            result.append(get_row_color(result[2]))
+            self.verify_list_store.append(result)
 
         if all([item[2] for item in self.verify_list_store]):
             return True
