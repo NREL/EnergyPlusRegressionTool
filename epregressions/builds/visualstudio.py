@@ -6,7 +6,7 @@ from epregressions.builds.base import BaseBuildDirectoryStructure
 class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
     """
     A Visual Studio based build directory class
-    This captures a release build by default, but you can set it to debug with set_build_mode(debug=True)
+    This tries to use a "Release" folder, but if it does not exist it tries to fall back to a "Debug" folder
     """
 
     def __init__(self):
@@ -14,7 +14,7 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         self.source_directory = None
         self.build_mode = 'Release'
 
-    def set_build_mode(self, debug=False):
+    def set_build_mode(self, debug):
         self.build_mode = 'Debug' if debug else 'Release'
 
     def set_build_directory(self, build_directory):
@@ -73,6 +73,12 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         results.append(
             ["Case %s Products Directory Exists? ", products_dir, exists]
         )
+        build_mode_folder = 'Release'
+        release_folder_exists = os.path.join(self.build_directory, 'Products', build_mode_folder)
+        if release_folder_exists:
+            self.set_build_mode(debug=False)
+        else:
+            self.set_build_mode(debug=True)
         energy_plus_exe = os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe')
         exists = os.path.exists(energy_plus_exe)
         results.append(

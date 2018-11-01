@@ -1,3 +1,9 @@
+class KnownBuildTypes:
+    Makefile = "makefile"
+    VisualStudio = "visual_studio"
+    Installation = "install"
+
+
 class BaseBuildDirectoryStructure:
     def __init__(self):
         self.build_directory = None

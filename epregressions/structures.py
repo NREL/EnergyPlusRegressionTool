@@ -20,10 +20,7 @@ class ReportingFreq:
 
 
 class TestRunConfiguration:
-    def __init__(self, run_math_diff, do_composite_err, force_run_type, single_test_run, num_threads,
-                 report_freq, build_a, build_b=None):
-        self.MathDiff = run_math_diff
-        self.CompositeErr = do_composite_err
+    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
         self.num_threads = num_threads

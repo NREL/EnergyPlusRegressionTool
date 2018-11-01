@@ -22,8 +22,10 @@ from epregressions.structures import (
     TestEntry,
     TestRunConfiguration,
 )
+from epregressions.builds.base import KnownBuildTypes
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
+from epregressions.builds.install import EPlusInstallDirectory
 
 # graphics stuff
 import gi
@@ -120,7 +122,16 @@ class RegressionGUI(Gtk.Window):
         self.progress_maximum_value = None
         self.last_results_test_dir = None
 
-        self.suiteargs = None
+        self.case_1_type = None
+        self.case_1_dir = None
+        self.case_1_run = None
+        self.case_2_type = None
+        self.case_2_dir = None
+        self.case_2_run = None
+        self.num_threads_to_run = None
+        self.report_frequency = None
+        self.force_run_type = None
+
         self.runner = None
         self.work_thread = None
         self.results_list_selected_entry_root_index = None
@@ -180,7 +191,7 @@ class RegressionGUI(Gtk.Window):
         self.set_title("EnergyPlus Regressions")
 
         # set the window icon
-        self.set_icon_from_file(os.path.join(script_dir, 'ep_icon.png'))
+        self.set_icon_from_file(os.path.join(os.path.dirname(script_dir), 'media', 'ep_icon.png'))
 
         # build the last run context menu
         self.last_run_context = Gtk.Menu()
@@ -314,61 +325,63 @@ class RegressionGUI(Gtk.Window):
             suite_data = project_tree['suiteoptions']
             if 'case_a' in suite_data:
                 case_a = suite_data['case_a']
-                self.suiteargs.buildA.set_run_flag(case_a['selected'])
-                self.suiteargs.buildA.set_build_directory(case_a['build_directory'])
+                self.case_1_run = case_a['selected']
+                self.case_1_dir = case_a['build_directory']
+                self.case_1_type = case_a['build_type']
             if 'case_b' in suite_data:
                 case_b = suite_data['case_b']
-                self.suiteargs.buildB.set_run_flag(case_b['selected'])
-                self.suiteargs.buildB.set_build_directory(case_b["build_directory"])
+                self.case_2_run = case_b['selected']
+                self.case_2_dir = case_b["build_directory"]
+                self.case_2_type = case_b['build_type']
             if 'runconfig' in suite_data:
                 run_config_option = suite_data['runconfig']
                 if run_config_option == "NONE":
-                    self.suiteargs.force_run_type = ForceRunType.NONE
+                    self.force_run_type = ForceRunType.NONE
                 elif run_config_option == "DDONLY":
-                    self.suiteargs.force_run_type = ForceRunType.DD
+                    self.force_run_type = ForceRunType.DD
                 elif run_config_option == "ANNUAL":
-                    self.suiteargs.force_run_type = ForceRunType.ANNUAL
+                    self.force_run_type = ForceRunType.ANNUAL
             if 'reportfreq' in suite_data:
-                self.suiteargs.report_freq = suite_data['reportfreq']
+                self.report_frequency = suite_data['reportfreq']
             if 'numthreads' in suite_data:
-                self.suiteargs.num_threads = suite_data['numthreads']
+                self.num_threads_to_run = suite_data['numthreads']
         if from_menu:
             self.gui_fill_with_data()
 
     def gui_fill_with_data(self):
 
-        self.case_1_check.set_active(self.suiteargs.buildA.run)
-        if self.suiteargs.buildA.build_directory:
-            self.case_1_build_dir_label.set_text(self.suiteargs.buildA.build_directory)
+        self.case_1_check.set_active(self.case_1_run)
+        if self.case_1_dir:
+            self.case_1_build_dir_label.set_text(self.case_1_dir)
 
-        self.case_2_check.set_active(self.suiteargs.buildB.run)
-        if self.suiteargs.buildB.build_directory:
-            self.case_2_build_dir_label.set_text(self.suiteargs.buildB.build_directory)
+        self.case_2_check.set_active(self.case_2_run)
+        if self.case_2_dir:
+            self.case_2_build_dir_label.set_text(self.case_2_dir)
 
         # num threads here
-        if self.suiteargs.force_run_type:
-            if self.suiteargs.force_run_type == ForceRunType.NONE:
+        if self.force_run_type:
+            if self.force_run_type == ForceRunType.NONE:
                 self.run_type_combo_box.set_active(0)
-            elif self.suiteargs.force_run_type == ForceRunType.DD:
+            elif self.force_run_type == ForceRunType.DD:
                 self.run_type_combo_box.set_active(1)
-            elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
+            elif self.force_run_type == ForceRunType.ANNUAL:
                 self.run_type_combo_box.set_active(2)
-        if self.suiteargs.report_freq:
-            if self.suiteargs.report_freq == ReportingFreq.DETAILED:
+        if self.report_frequency:
+            if self.report_frequency == ReportingFreq.DETAILED:
                 self.report_frequency_combo_box.set_active(0)
-            elif self.suiteargs.report_freq == ReportingFreq.TIME_STEP:
+            elif self.report_frequency == ReportingFreq.TIME_STEP:
                 self.report_frequency_combo_box.set_active(1)
-            elif self.suiteargs.report_freq == ReportingFreq.HOURLY:
+            elif self.report_frequency == ReportingFreq.HOURLY:
                 self.report_frequency_combo_box.set_active(2)
-            elif self.suiteargs.report_freq == ReportingFreq.DAILY:
+            elif self.report_frequency == ReportingFreq.DAILY:
                 self.report_frequency_combo_box.set_active(3)
-            elif self.suiteargs.report_freq == ReportingFreq.MONTHLY:
+            elif self.report_frequency == ReportingFreq.MONTHLY:
                 self.report_frequency_combo_box.set_active(4)
-            elif self.suiteargs.report_freq == ReportingFreq.RUN_PERIOD:
+            elif self.report_frequency == ReportingFreq.RUN_PERIOD:
                 self.report_frequency_combo_box.set_active(5)
-            elif self.suiteargs.report_freq == ReportingFreq.ENVIRONMENT:
+            elif self.report_frequency == ReportingFreq.ENVIRONMENT:
                 self.report_frequency_combo_box.set_active(6)
-            elif self.suiteargs.report_freq == ReportingFreq.ANNUAL:
+            elif self.report_frequency == ReportingFreq.ANNUAL:
                 self.report_frequency_combo_box.set_active(7)
 
     def save_settings(self, widget, from_menu=False):
@@ -423,21 +436,23 @@ class RegressionGUI(Gtk.Window):
         output_object['idfselection']['randomnumber'] = self.file_list_num_files.get_value()
         output_object['suiteoptions'] = {}
         output_object['suiteoptions']['case_a'] = {
-            'selected': self.suiteargs.buildA.run,
-            'build_directory': self.suiteargs.buildA.build_directory
+            'build_type': self.case_1_type,
+            'selected': self.case_1_run,
+            'build_directory': self.case_1_dir
         }
         output_object['suiteoptions']['case_b'] = {
-            'selected': self.suiteargs.buildB.run,
-            'build_directory': self.suiteargs.buildB.build_directory
+            'build_type': self.case_2_type,
+            'selected': self.case_2_run,
+            'build_directory': self.case_2_dir
         }
-        if self.suiteargs.force_run_type == ForceRunType.NONE:
+        if self.force_run_type == ForceRunType.NONE:
             output_object['suiteoptions']['runconfig'] = "NONE"
-        elif self.suiteargs.force_run_type == ForceRunType.DD:
+        elif self.force_run_type == ForceRunType.DD:
             output_object['suiteoptions']['runconfig'] = "DDONLY"
-        elif self.suiteargs.force_run_type == ForceRunType.ANNUAL:
+        elif self.force_run_type == ForceRunType.ANNUAL:
             output_object['suiteoptions']['runconfig'] = "ANNUAL"
-        output_object['suiteoptions']['reportfreq'] = self.suiteargs.report_freq
-        output_object['suiteoptions']['numthreads'] = self.suiteargs.num_threads
+        output_object['suiteoptions']['reportfreq'] = self.report_frequency
+        output_object['suiteoptions']['numthreads'] = self.num_threads_to_run
 
         with open(save_file, 'w') as f_save:
             f_save.write(json.dumps(output_object, indent=2))
@@ -478,7 +493,6 @@ class RegressionGUI(Gtk.Window):
         alignment.add(this_label)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         self.case_1_check = Gtk.CheckButton("Run Case 1?", use_underline=False)
-        self.case_1_check.set_active(self.suiteargs.buildA.run)
         self.case_1_check.connect("toggled", self.suite_option_handler_basedir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_1_check)
@@ -503,7 +517,6 @@ class RegressionGUI(Gtk.Window):
         alignment.add(this_label)
         h_box_2.pack_start(alignment, False, False, box_spacing)
         self.case_2_check = Gtk.CheckButton("Run Case 2?", use_underline=False)
-        self.case_2_check.set_active(self.suiteargs.buildB.run)
         self.case_2_check.connect("toggled", self.suite_option_handler_mod_dir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_2_check)
@@ -1219,38 +1232,59 @@ class RegressionGUI(Gtk.Window):
     def init_suite_args(self):
 
         if platform == "windows":
-            suiteargs_base = CMakeCacheVisualStudioBuildDirectory()
-            suiteargs_base.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build")
-            suiteargs_base.set_run_flag(True)
+            self.case_1_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build"
+            self.case_1_run = True
+            self.case_1_type = KnownBuildTypes.VisualStudio
         else:
-            suiteargs_base = CMakeCacheMakeFileBuildDirectory()
-            suiteargs_base.set_build_directory("/home/user/EnergyPlus/repo1/build/")
-            suiteargs_base.set_run_flag(True)
-
+            self.case_1_dir = "/home/user/EnergyPlus/repo1/build/"
+            self.case_1_run = True
+            self.case_1_type = KnownBuildTypes.Makefile
         if platform == "windows":
-            suiteargs_mod = CMakeCacheVisualStudioBuildDirectory()
-            suiteargs_mod.set_build_directory("C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build")
-            suiteargs_mod.set_run_flag(True)
+            self.case_2_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build"
+            self.case_2_run = True
+            self.case_2_type = KnownBuildTypes.VisualStudio
         else:
-            suiteargs_mod = CMakeCacheMakeFileBuildDirectory()
-            suiteargs_mod.set_build_directory("/home/user/EnergyPlus/repo2/build/")
-            suiteargs_mod.set_run_flag(True)
+            self.case_2_dir = "/home/user/EnergyPlus/repo2/build/"
+            self.case_2_run = True
+            self.case_2_type = KnownBuildTypes.Makefile
 
         # Build the run configuration and the number of threads; using 1 for
         #  windows causes the runtests script to not even use the multi-thread libraries
-        num_threads_to_run = 1
-        if platform == "windows":
-            num_threads_to_run = 1
+        self.num_threads_to_run = 1
+        if platform != "windows":
+            self.num_threads_to_run = 4
+
+        self.force_run_type = ForceRunType.NONE
+        self.report_frequency = ReportingFreq.HOURLY
+
+    def create_build_instances(self, case_num):
+
+        if case_num == 1:
+            case_build_type = self.case_1_type
+            case_dir = self.case_1_dir
+            case_run = self.case_1_run
+        elif case_num == 2:
+            case_build_type = self.case_2_type
+            case_dir = self.case_2_dir
+            case_run = self.case_2_run
         else:
-            num_threads_to_run = 4
-        self.suiteargs = TestRunConfiguration(run_math_diff=True,
-                                              do_composite_err=True,
-                                              force_run_type=ForceRunType.NONE,  # ANNUAL, DD, NONE
-                                              single_test_run=False,
-                                              num_threads=num_threads_to_run,
-                                              report_freq=ReportingFreq.HOURLY,
-                                              build_a=suiteargs_base,
-                                              build_b=suiteargs_mod)
+            raise Exception('Bad case_num argument to create_build_instances - should be a 1 or a 2')
+
+        try:
+            if case_build_type == KnownBuildTypes.Makefile:
+                build_class = CMakeCacheMakeFileBuildDirectory
+            elif case_build_type == KnownBuildTypes.VisualStudio:
+                build_class = CMakeCacheVisualStudioBuildDirectory
+            elif case_build_type == KnownBuildTypes.Installation:
+                build_class = EPlusInstallDirectory
+            else:
+                raise Exception('Bad build type for case %s; it is: %s' % (case_num, case_build_type))
+            build = build_class()
+            build.set_build_directory(case_dir)
+            build.set_run_flag(case_run)
+            return build
+        except Exception as exception:
+            raise Exception('An error occurred in creating the build instance: %s' % str(exception))
 
     def run_button(self, widget):
 
@@ -1264,10 +1298,25 @@ class RegressionGUI(Gtk.Window):
             self.warning_not_yet_built()
             return
 
-        verified = self.suite_option_handler_suite_validate(None)
+        try:
+            build_a = self.create_build_instances(1)
+            build_b = self.create_build_instances(2)
+        except Exception as exception:
+            self.warning_dialog('A problem occurred setting up the builds: %s' % str(exception))
+            return
+
+        verified = self.suite_option_handler_suite_validate(None, build_a, build_b)
         if not verified:
             self.warning_dialog("Pre-run verification step failed, verify files exist and re-try")
             return
+
+        run_configuration = TestRunConfiguration(
+            force_run_type=self.force_run_type,
+            num_threads=self.num_threads_to_run,
+            report_freq=self.report_frequency,
+            build_a=build_a,
+            build_b=build_b
+        )
 
         # Now create a file list to pass in
         these_entries = []
@@ -1287,7 +1336,7 @@ class RegressionGUI(Gtk.Window):
             return
 
         # set up the test suite
-        self.runner = TestSuiteRunner(self.suiteargs, these_entries)
+        self.runner = TestSuiteRunner(run_configuration, these_entries)
         self.runner.add_callbacks(print_callback=self.print_callback,
                                   simstarting_callback=self.sim_starting_callback,
                                   casecompleted_callback=self.case_completed_callback,
@@ -1326,9 +1375,26 @@ class RegressionGUI(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildA.set_build_directory(self.last_folder_path)
             self.case_1_build_dir_label.set_text(self.last_folder_path)
-        dialog.destroy()
+            self.case_1_dir = self.last_folder_path
+            dialog.destroy()
+            d = Gtk.Dialog(self)
+            d.set_transient_for(self)
+            d.set_title('Select build type for this case 1 build folder')
+            d.add_button('CMake-Makefile', 100)
+            d.add_button('CMake-VisualStudio', 101)
+            d.add_button('EnergyPlus Install', 102)
+            d.add_button('Cancel', Gtk.ResponseType.CANCEL)
+            response = d.run()
+            d.destroy()
+            if response == Gtk.ResponseType.CANCEL:
+                return
+            elif response == 100:
+                self.case_1_type = KnownBuildTypes.Makefile
+            elif response == 101:
+                self.case_1_type = KnownBuildTypes.VisualStudio
+            elif response == 102:
+                self.case_1_type = KnownBuildTypes.Installation
 
     def suite_option_handler_mod_build_dir(self, widget):
         dialog = Gtk.FileChooserDialog(
@@ -1343,37 +1409,54 @@ class RegressionGUI(Gtk.Window):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
-            self.suiteargs.buildB.set_build_directory(self.last_folder_path)
             self.case_2_build_dir_label.set_text(self.last_folder_path)
-        dialog.destroy()
+            self.case_2_dir = self.last_folder_path
+            dialog.destroy()
+            d = Gtk.Dialog(self)
+            d.set_transient_for(self)
+            d.set_title('Select build type for this case 2 build folder')
+            d.add_button('CMake-Makefile', 100)
+            d.add_button('CMake-VisualStudio', 101)
+            d.add_button('EnergyPlus Install', 102)
+            d.add_button('Cancel', Gtk.ResponseType.CANCEL)
+            response = d.run()
+            d.destroy()
+            if response == Gtk.ResponseType.CANCEL:
+                return
+            elif response == 100:
+                self.case_2_type = KnownBuildTypes.Makefile
+            elif response == 101:
+                self.case_2_type = KnownBuildTypes.VisualStudio
+            elif response == 102:
+                self.case_2_type = KnownBuildTypes.Installation
 
     def suite_option_handler_basedir_check(self, widget):
-        self.suiteargs.buildA.set_run_flag(widget.get_active())
+        self.case_1_run = widget.get_active()
 
     def suite_option_handler_mod_dir_check(self, widget):
-        self.suiteargs.buildB.set_run_flag(widget.get_active())
+        self.case_2_run = widget.get_active()
 
     def suite_option_handler_force_run_type(self, widget):
         text = widget.get_active_text()
         if text == force_none:
-            self.suiteargs.force_run_type = ForceRunType.NONE
+            self.force_run_type = ForceRunType.NONE
         elif text == force_dd:
-            self.suiteargs.force_run_type = ForceRunType.DD
+            self.force_run_type = ForceRunType.DD
         elif text == force_annual:
-            self.suiteargs.force_run_type = ForceRunType.ANNUAL
+            self.force_run_type = ForceRunType.ANNUAL
         else:
             # error
             widget.set_active(0)
         self.gui_update_label_for_run_config()
 
     def suite_option_handler_report_frequency(self, widget):
-        self.suiteargs.report_freq = widget.get_active_text()
+        self.report_frequency = widget.get_active_text()
         self.gui_update_label_for_run_config()
 
     def suite_option_handler_num_threads(self, widget):
-        self.suiteargs.num_threads = widget.get_value()
+        self.num_threads_to_run = widget.get_value()
 
-    def suite_option_handler_suite_validate(self, widget):
+    def suite_option_handler_suite_validate(self, widget, build_a=None, build_b=None):
 
         self.add_log_entry("Verifying directory structure")
 
@@ -1382,7 +1465,15 @@ class RegressionGUI(Gtk.Window):
 
         def get_row_color(b): return None if b else 'red'
 
-        results = self.suiteargs.buildA.verify()
+        if not build_a:
+            try:
+                build_a = self.create_build_instances(1)
+            except Exception as exception:
+                self.verify_list_store.append(['Case 1 build directory', 'Status', False, get_row_color(False)])
+                print(exception)
+                return
+
+        results = build_a.verify()
         for result in results:
             this_result_set = [
                 result[0] % "1",
@@ -1392,7 +1483,15 @@ class RegressionGUI(Gtk.Window):
             ]
             self.verify_list_store.append(this_result_set)
 
-        results = self.suiteargs.buildB.verify()
+        if not build_b:
+            try:
+                build_b = self.create_build_instances(2)
+            except Exception as exception:
+                self.verify_list_store.append(['Case 1 build directory', 'Status', False, get_row_color(False)])
+                print(exception)
+                return
+
+        results = build_b.verify()
         for result in results:
             this_result_set = [
                 result[0] % "2",
@@ -1437,7 +1536,7 @@ class RegressionGUI(Gtk.Window):
                 self.last_run_context_nocopy.show()
 
     def gui_update_label_for_run_config(self):
-        current_config = self.suiteargs.force_run_type
+        current_config = self.force_run_type
         if current_config == ForceRunType.NONE:
             self.suite_dir_struct_info.set_markup(
                 "A 'Tests' directory will be created in each run directory.\n" +
@@ -1475,9 +1574,9 @@ class RegressionGUI(Gtk.Window):
         #   number_of_cases_per_build (buildA simulations)
         # + number_of_cases_per_build (buildB simulations)
         # + number_of_cases_per_build (buildA-buildB diffs)
-        if self.suiteargs.buildA.run:
+        if self.case_1_run:
             multiplier += 1
-        if self.suiteargs.buildB.run:
+        if self.case_2_run:
             multiplier += 1
         if True:  # there will always be a diff step
             multiplier += 1

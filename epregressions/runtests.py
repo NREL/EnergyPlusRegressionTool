@@ -802,9 +802,7 @@ if __name__ == "__main__":
                 break
 
     # Build the run configuration
-    RunConfig = TestRunConfiguration(run_math_diff=True,
-                                     do_composite_err=True,
-                                     force_run_type=run_type,
+    RunConfig = TestRunConfiguration(force_run_type=run_type,
                                      single_test_run=DoASingleTestRun,
                                      num_threads=args.j,
                                      report_freq=ReportingFreq.HOURLY,
