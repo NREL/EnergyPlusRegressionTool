@@ -66,13 +66,13 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             ["Case %s Products Directory Exists? ", products_dir, exists]
         )
         energy_plus_exe = os.path.join(
-            self.build_directory, 'Products', 'energyplus' + exe_extension
+            self.build_directory, 'Products', 'energyplus' + exe_extension()
         )
         exists = os.path.exists(energy_plus_exe)
         results.append(
             ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
         )
-        basement_exe = os.path.join(self.build_directory, 'Products', 'Basement' + exe_extension)
+        basement_exe = os.path.join(self.build_directory, 'Products', 'Basement' + exe_extension())
         exists = os.path.exists(basement_exe)
         results.append(
             ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
@@ -82,19 +82,20 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
     def get_build_tree(self):
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
+        this_exe_ext = exe_extension()
         return {
             'build_dir': self.build_directory,
             'source_dir': self.source_directory,
-            'energyplus': os.path.join(self.build_directory, 'Products', 'energyplus'),
-            'basement': os.path.join(self.build_directory, 'Products', 'Basement'),
+            'energyplus': os.path.join(self.build_directory, 'Products', 'energyplus' + this_exe_ext),
+            'basement': os.path.join(self.build_directory, 'Products', 'Basement' + this_exe_ext),
             'idd_path': os.path.join(self.build_directory, 'Products', 'Energy+.idd'),
-            'slab': os.path.join(self.build_directory, 'Products', 'Slab'),
+            'slab': os.path.join(self.build_directory, 'Products', 'Slab' + this_exe_ext),
             'basementidd': os.path.join(self.build_directory, 'Products', 'BasementGHT.idd'),
             'slabidd': os.path.join(self.build_directory, 'Products', 'SlabGHT.idd'),
-            'expandobjects': os.path.join(self.build_directory, 'Products', 'ExpandObjects'),
-            'epmacro': os.path.join(self.source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro'),
-            'readvars': os.path.join(self.build_directory, 'Products', 'ReadVarsESO'),
-            'parametric': os.path.join(self.build_directory, 'Products', 'ParametricPreprocessor'),
+            'expandobjects': os.path.join(self.build_directory, 'Products', 'ExpandObjects' + this_exe_ext),
+            'epmacro': os.path.join(self.source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro' + this_exe_ext),
+            'readvars': os.path.join(self.build_directory, 'Products', 'ReadVarsESO' + this_exe_ext),
+            'parametric': os.path.join(self.build_directory, 'Products', 'ParametricPreprocessor' + this_exe_ext),
             'test_files_dir': os.path.join(self.source_directory, 'testfiles'),
             'weather_dir': os.path.join(self.source_directory, 'weather'),
             'data_sets_dir': os.path.join(self.source_directory, 'datasets')

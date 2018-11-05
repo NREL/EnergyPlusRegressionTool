@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import argparse
@@ -9,7 +9,7 @@ import os
 import shutil
 import sys
 
-from difflib import *  # python's own diff library
+from difflib import unified_diff  # python's own diff library
 from multiprocessing import Process, Queue, freeze_support  # add stuff to either make series calls, or multi-threading
 
 from epregressions.diffs import math_diff, table_diff, thresh_dict as td
@@ -210,7 +210,7 @@ class TestSuiteRunner:
 
                 # if the file requires the TDV data set file, bring it
                 #  into the test run directory, right now I think it's broken
-                if 'DataSets\TDV' in idf_text:
+                if 'DataSets\\TDV' in idf_text:
                     os.mkdir(os.path.join(test_run_directory, 'datasets'))
                     os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
                     tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
@@ -656,8 +656,7 @@ class TestSuiteRunner:
             except Exception as e:
                 self.my_print(
                     (
-                        "Unexpected error occurred in processing diffs for %s," +
-                        " could indicate an E+ crash caused corrupted files"
+                        "Unexpected error processing diffs for %s, could indicate an E+ crash caused corrupted files"
                     ) % this_entry.basename
                 )
                 self.my_print("Message: %s" % e)
@@ -771,12 +770,12 @@ if __name__ == "__main__":
 
     # For ALL runs use BuildA
     base = CMakeCacheMakeFileBuildDirectory()
-    base.set_run_flag(True)
+    base.run = True
     base.set_build_directory(args.a_build)
 
     # If using ReverseDD, builB can just be None
     mod = CMakeCacheMakeFileBuildDirectory()
-    mod.set_run_flag(True)
+    mod.run = True
     mod.set_build_directory(args.b_build)
 
     # Do a single test run...

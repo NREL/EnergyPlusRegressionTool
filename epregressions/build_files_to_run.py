@@ -9,7 +9,7 @@ import os
 import random
 import sys
 
-# set up some things ahead of time    
+# set up some things ahead of time
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 slash = os.sep
@@ -230,12 +230,12 @@ class FileListBuilder(object):
 
 if __name__ == "__main__":
 
-    # parse command line arguments 
+    # parse command line arguments
     parser = argparse.ArgumentParser(
         description="""
 Create EnergyPlus test file inputs for a specific configuration.  Can be executed in 2 ways:
-  1: Arguments can be passed from the command line, such as `%s -r 3 -w' .. Most useful for scripting, or 
-  2: An argument class can be created using the FileListArgsBuilderForGUI class and 
+  1: Arguments can be passed from the command line, such as `%s -r 3 -w' .. Most useful for scripting, or
+  2: An argument class can be created using the FileListArgsBuilderForGUI class and
      passed into a FileListBuilder instance .. Most useful for UIs""" % sys.argv[0]
     )
     parser.add_argument(
@@ -255,8 +255,8 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
     parser.add_argument('-u', '--underscore', action='store_true', help='Include files that start with an underscore')
     parser.add_argument(
         '-v', '--verify', metavar='<path>', nargs=1,
-        help='Performs verification that files exist in a directory.  Excludes those that do not.' +
-             'Argument is a path to a test file directory containing idfs and imfs.'
+        help='''Performs verification that files exist in a directory.  Excludes those that do not.
+             Argument is a path to a test file directory containing idfs and imfs.'''
     )
     args = parser.parse_args()
 

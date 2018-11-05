@@ -14,7 +14,7 @@ from epregressions.build_files_to_run import (
     FileListArgsBuilderForGUI,
     FileListBuilder,
 )
-from epregressions.platform import platform
+from epregressions.platform import platform, Platforms
 from epregressions.runtests import TestSuiteRunner
 from epregressions.structures import (
     ForceRunType,
@@ -597,7 +597,7 @@ class RegressionGUI(Gtk.Window):
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
         # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
-        if platform != "windows":
+        if platform() != Platforms.Windows:
             num_threads_box = Gtk.HBox(False, box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
             self.suite_option_num_threads.set_range(1, 8)
@@ -792,7 +792,7 @@ class RegressionGUI(Gtk.Window):
         return v_box
 
     def handle_tree_view_row_activated(self, tv_widget, path_tuple, view_column):
-        # Get currently selected item        
+        # Get currently selected item
         (model, item_path) = self.tree_selection.get_selected()
         # If we aren't at the filename level, exit out
         if len(path_tuple) < 3:
@@ -806,19 +806,20 @@ class RegressionGUI(Gtk.Window):
             colon_index = case_name.index(":")
             case_name = case_name[:colon_index]
         dir_to_open = os.path.join(self.last_results_test_dir, case_name)
-        if platform == "linux":
+        this_platform = platform()
+        if this_platform == Platforms.Linux:
             try:
                 subprocess.Popen(['xdg-open', dir_to_open])
             except Exception as this_exception:
                 print("Could not open file:")
                 print(this_exception)
-        elif platform == "windows":
+        elif this_platform == Platforms.Windows:
             try:
                 subprocess.Popen(['start', dir_to_open], shell=True)
             except Exception as this_exception:
                 print("Could not open file:")
                 print(this_exception)
-        elif platform == "mac":
+        elif this_platform == Platforms.Mac:
             try:
                 subprocess.Popen(['open', dir_to_open])
             except Exception as this_exception:
@@ -946,7 +947,7 @@ class RegressionGUI(Gtk.Window):
     def add_frame(widget, for_separator=False):
         frame = Gtk.Frame()
         if for_separator:
-            color = Gdk.Color(76*256, 72*256, 69*256)
+            color = Gdk.Color(76 * 256, 72 * 256, 69 * 256)
         else:
             color = Gdk.Color(56283, 22359, 0)
         frame.modify_bg(Gtk.StateType.NORMAL, color)
@@ -1231,7 +1232,8 @@ class RegressionGUI(Gtk.Window):
 
     def init_suite_args(self):
 
-        if platform == "windows":
+        this_platform = platform()
+        if this_platform == Platforms.Windows:
             self.case_1_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build"
             self.case_1_run = True
             self.case_1_type = KnownBuildTypes.VisualStudio
@@ -1239,7 +1241,7 @@ class RegressionGUI(Gtk.Window):
             self.case_1_dir = "/home/user/EnergyPlus/repo1/build/"
             self.case_1_run = True
             self.case_1_type = KnownBuildTypes.Makefile
-        if platform == "windows":
+        if this_platform == Platforms.Windows:
             self.case_2_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build"
             self.case_2_run = True
             self.case_2_type = KnownBuildTypes.VisualStudio
@@ -1251,7 +1253,7 @@ class RegressionGUI(Gtk.Window):
         # Build the run configuration and the number of threads; using 1 for
         #  windows causes the runtests script to not even use the multi-thread libraries
         self.num_threads_to_run = 1
-        if platform != "windows":
+        if this_platform != Platforms.Windows:
             self.num_threads_to_run = 4
 
         self.force_run_type = ForceRunType.NONE
@@ -1281,7 +1283,7 @@ class RegressionGUI(Gtk.Window):
                 raise Exception('Bad build type for case %s; it is: %s' % (case_num, case_build_type))
             build = build_class()
             build.set_build_directory(case_dir)
-            build.set_run_flag(case_run)
+            build.run = case_run
             return build
         except Exception as exception:
             raise Exception('An error occurred in creating the build instance: %s' % str(exception))
@@ -1463,7 +1465,8 @@ class RegressionGUI(Gtk.Window):
         # check for directory, then executable and IDD, then input files
         self.verify_list_store.clear()
 
-        def get_row_color(b): return None if b else 'red'
+        def get_row_color(b):
+            return None if b else 'red'
 
         if not build_a:
             try:
@@ -1544,7 +1547,7 @@ class RegressionGUI(Gtk.Window):
             )
         elif current_config == ForceRunType.DD:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests-DDOnly' directory will be created in each run directory.\n" +
+                "A 'Tests-DDOnly' directory will be created in each run directory.\n" +  # TODO: Clean this out
                 "  Comparison results will be in run directory 1."
             )
         elif current_config == ForceRunType.ANNUAL:
@@ -1558,14 +1561,14 @@ class RegressionGUI(Gtk.Window):
     # Callbacks and callback handlers for GUI to interact with background operations
 
     def print_callback(self, msg):
-        result = GObject.idle_add(self.print_callback_handler, msg)
+        GObject.idle_add(self.print_callback_handler, msg)
 
     def print_callback_handler(self, msg):
         self.status_bar.push(self.status_bar_context_id, msg)
         self.add_log_entry(msg)
 
     def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):
-        result = GObject.idle_add(self.sim_starting_callback_handler, number_of_builds, number_of_cases_per_build)
+        GObject.idle_add(self.sim_starting_callback_handler, number_of_builds, number_of_cases_per_build)
 
     def sim_starting_callback_handler(self, number_of_builds, number_of_cases_per_build):
         self.current_progress_value = 0.0
@@ -1585,7 +1588,7 @@ class RegressionGUI(Gtk.Window):
         self.status_bar.push(self.status_bar_context_id, "Simulations running...")
 
     def case_completed_callback(self, test_case_completed_instance):
-        result = GObject.idle_add(self.case_completed_callback_handler, test_case_completed_instance)
+        GObject.idle_add(self.case_completed_callback_handler, test_case_completed_instance)
 
     def case_completed_callback_handler(self, test_case_completed_instance):
         self.current_progress_value += 1.0
@@ -1599,27 +1602,27 @@ class RegressionGUI(Gtk.Window):
                     test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
 
     def simulations_complete_callback(self):
-        result = GObject.idle_add(self.simulations_complete_callback_handler)
+        GObject.idle_add(self.simulations_complete_callback_handler)
 
     def simulations_complete_callback_handler(self):
         self.status_bar.push(self.status_bar_context_id, "Simulations done; Post-processing...")
 
     def end_err_completed_callback(self, build_name, case_name):
-        result = GObject.idle_add(self.end_err_completed_callback_handler, build_name, case_name)
+        GObject.idle_add(self.end_err_completed_callback_handler, build_name, case_name)
 
     def end_err_completed_callback_handler(self, build_name, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
     def diff_completed_callback(self, case_name):
-        result = GObject.idle_add(self.diff_completed_callback_handler, case_name)
+        GObject.idle_add(self.diff_completed_callback_handler, case_name)
 
     def diff_completed_callback_handler(self, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
     def all_done_callback(self, results):
-        result = GObject.idle_add(self.all_done_callback_handler, results)
+        GObject.idle_add(self.all_done_callback_handler, results)
 
     def all_done_callback_handler(self, results):
 

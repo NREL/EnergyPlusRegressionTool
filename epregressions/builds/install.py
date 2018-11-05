@@ -49,13 +49,13 @@ class EPlusInstallDirectory(BaseBuildDirectoryStructure):
             ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
         )
         energy_plus_exe = os.path.join(
-            self.build_directory, 'energyplus' + exe_extension
+            self.build_directory, 'energyplus' + exe_extension()
         )
         exists = os.path.exists(energy_plus_exe)
         results.append(
             ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
         )
-        basement_exe = os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension)
+        basement_exe = os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension())
         exists = os.path.exists(basement_exe)
         results.append(
             ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
@@ -65,20 +65,21 @@ class EPlusInstallDirectory(BaseBuildDirectoryStructure):
     def get_build_tree(self):
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
+        this_exe_ext = exe_extension()
         return {
             'build_dir': self.build_directory,
             'source_dir': self.source_directory,
-            'energyplus': os.path.join(self.build_directory, 'energyplus' + exe_extension),
-            'basement': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension),
+            'energyplus': os.path.join(self.build_directory, 'energyplus' + this_exe_ext),
+            'basement': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + this_exe_ext),
             'idd_path': os.path.join(self.build_directory, 'Energy+.idd'),
-            'slab': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Slab' + exe_extension),
+            'slab': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Slab' + this_exe_ext),
             'basementidd': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'BasementGHT.idd'),
             'slabidd': os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'SlabGHT.idd'),
-            'expandobjects': os.path.join(self.build_directory, 'ExpandObjects' + exe_extension),
-            'epmacro': os.path.join(self.build_directory, 'EPMacro' + exe_extension),
+            'expandobjects': os.path.join(self.build_directory, 'ExpandObjects' + this_exe_ext),
+            'epmacro': os.path.join(self.build_directory, 'EPMacro' + this_exe_ext),
             'readvars': os.path.join(self.build_directory, 'PostProcess', 'ReadVarsESO'),
             'parametric': os.path.join(
-                self.build_directory, 'PreProcess', 'ParametricPreprocessor', 'ParametricPreprocessor' + exe_extension
+                self.build_directory, 'PreProcess', 'ParametricPreprocessor', 'ParametricPreprocessor' + this_exe_ext
             ),
             'test_files_dir': os.path.join(self.source_directory, 'ExampleFiles'),
             'weather_dir': os.path.join(self.source_directory, 'WeatherData'),

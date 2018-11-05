@@ -1,0 +1,12 @@
+[flake8]
+ignore = D203
+exclude =
+    .git,
+    __pycache__,
+    epregressions/diffs/math_diff.py,
+    epregressions/diffs/table_diff.py,
+    old,
+    build,
+    dist
+max-complexity = 20
+max-line-length = 120

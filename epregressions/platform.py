@@ -1,13 +1,35 @@
 import sys
 
-platform = ''
-if "linux" in sys.platform:
-    platform = "linux"
-elif "darwin" in sys.platform:
-    platform = "mac"
-elif "win" in sys.platform:
-    platform = "windows"
 
-exe_extension = ''
-if platform == 'windows':
-    exe_extension = '.exe'
+class Platforms:
+    Linux = 1
+    Mac = 2
+    Windows = 3
+
+
+def platform(force_test_string=None):
+    if force_test_string:
+        platform_string = force_test_string
+    else:
+        platform_string = sys.platform
+
+    if "linux" in platform_string:
+        return Platforms.Linux
+    elif "darwin" in platform_string:
+        return Platforms.Mac
+    elif "win" in platform_string:
+        return Platforms.Windows
+    else:
+        raise Exception('Unsupported OS!, Platform string = \"%s\"' % platform_string)
+
+
+def exe_extension(force_test_platform=None):
+    if force_test_platform:
+        this_platform = force_test_platform
+    else:
+        this_platform = platform()
+
+    _exe_extension = ''
+    if this_platform == Platforms.Windows:
+        _exe_extension = '.exe'
+    return _exe_extension
