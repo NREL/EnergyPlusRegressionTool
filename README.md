@@ -99,7 +99,7 @@ You just need to make sure you have a valid version of Python and then install P
 - Change into that directory:
   - `cd EnergyPlusRegressionTool`
 - Install the dependencies for the Regression tool using Pip:
-  - `C:\Python34\pip3.exe install -r requirements.txt`
+  - `C:\Python34\Scripts\pip3.exe install -r requirements.txt`
 - Run the tool!
   - `C:\Python34\python.exe eplus_regression_runner`
 
