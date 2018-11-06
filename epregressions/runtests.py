@@ -139,7 +139,7 @@ class TestSuiteRunner:
 
         self.my_print("Test suite complete for directories:")
         self.my_print("\t%s" % self.build_tree_a['build_dir'])
-        self.my_print("\t%s" % self.build_tree_a['build_dir'])
+        self.my_print("\t%s" % self.build_tree_b['build_dir'])
         self.my_print("Test suite complete")
 
         self.my_alldone(response)

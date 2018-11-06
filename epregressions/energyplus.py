@@ -144,12 +144,18 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
         eplus_run.communicate()
 
         # Execute readvars
-        csv_run = subprocess.Popen(readvars, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if os.path.exists('in.rvi'):
+            csv_run = subprocess.Popen(readvars + ' in.rvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            csv_run = subprocess.Popen(readvars, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         csv_run.communicate()
-        with open('test.mvi', 'w') as f:
-            f.write("eplusout.mtr\n")
-            f.write("eplusmtr.csv\n")
-        mtr_run = subprocess.Popen([readvars, 'test.mvi'], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if os.path.exists('in.mvi'):
+            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            with open('in.mvi', 'w') as f:
+                f.write("eplusout.mtr\n")
+                f.write("eplusmtr.csv\n")
+            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         mtr_run.communicate()
 
         os.remove('Energy+.idd')

@@ -79,7 +79,7 @@ def writecsv(mat, outfile=None, mode='w'):
     if not ismatrice(mat):
         raise BadMatrice('The input is not a matrice')
     if outfile:
-        writer = csv.writer(open(outfile, mode, newline=''))
+        writer = csv.writer(open(outfile, mode))
         writer.writerows(mat)
     else:
         f = StringIO()
