@@ -130,4 +130,4 @@ Known issues
 ------------
 
 Known issues for this tool are found on the
-`issue list <https://github.com/Myoldmopar/EnergyPlusRegressionTool/issues>`_.
+`issue list <https://github.com/NREL/EnergyPlusRegressionTool/issues>`_.

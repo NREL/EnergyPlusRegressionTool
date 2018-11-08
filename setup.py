@@ -4,7 +4,7 @@ setup(
     name='EnergyPlusRegressionTool',
     version='0.1',
     packages=['epregressions'],
-    url='github.com/Myoldmopar/EnergyPlusRegressionTool',
+    url='github.com/NREL/EnergyPlusRegressionTool',
     license='',
     author='Edwin Lee',
     author_email='',

@@ -1,7 +1,7 @@
 # EnergyPlus Regressions
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/Myoldmopar/EnergyPlusRegressionTool.svg?branch=master)](https://travis-ci.org/Myoldmopar/EnergyPlusRegressionTool)
+[![Build Status](https://travis-ci.org/NREL/EnergyPlusRegressionTool.svg?branch=master)](https://travis-ci.org/NREL/EnergyPlusRegressionTool)
 
 ## Overview
 
@@ -56,7 +56,7 @@ So, starting with Ubuntu 18.04:
 - Install a couple other dependencies that we'll use in the next steps:
   - `sudo apt-get install git python3-pip`
 - Download the regression tool and install python dependencies:
-  - `git clone https://github.com/Myoldmopar/EnergyPlusRegressionTool`
+  - `git clone https://github.com/NREL/EnergyPlusRegressionTool`
   - `cd EnergyPlusRegressionTool`
   - `pip3 install -r requirements.txt`
   - Optionally test this: run `python3 eplus_regression_runner`.  It should run the GUI.  Close it.
@@ -95,7 +95,7 @@ You just need to make sure you have a valid version of Python and then install P
 - Next you need to get the regression tool.
   - The easiest way to do this is to get it using Git, which is also convenient because you'll be able to pull down updates using a Git Pull.
   - Find a place to clone it on your machine, and do it:
-  - `git clone https://github.com/Myoldmopar/EnergyPlusRegressionTool`
+  - `git clone https://github.com/NREL/EnergyPlusRegressionTool`
 - Change into that directory:
   - `cd EnergyPlusRegressionTool`
 - Install the dependencies for the Regression tool using Pip:
@@ -120,4 +120,4 @@ This documentation is written using RST with Sphinx, and published on [ReadTheDo
 ## Testing
 
 Very little automated testing has been done, but will be added, to ensure it runs properly.
-Meaningless as they are, the existing "unit tests" are run by [Travis](https://travis-ci.org/Myoldmopar/EnergyPlusRegressionTool).
+Meaningless as they are, the existing "unit tests" are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).
