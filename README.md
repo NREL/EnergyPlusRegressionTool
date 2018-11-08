@@ -11,7 +11,7 @@ Developers often propose changes to EnergyPlus for:
  - New feature development
  - Defect repair
  - Refactoring for structure or performance
- - Etc.
+ - etc.
 
 When a developer proposes these changes, they must be tested.
 The continuous integration system over on EnergyPlus handles this, and provides results, but there can be a long time delay waiting on those results, depending on how busy CI is at that moment.
