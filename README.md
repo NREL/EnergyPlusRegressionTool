@@ -119,5 +119,5 @@ This documentation is written using RST with Sphinx, and published on [ReadTheDo
 
 ## Testing
 
-Very little automated testing has been done, but will be added, to ensure it runs properly.
+Very little automated testing has been done, but it will be added, to ensure it runs properly.
 Meaningless as they are, the existing "unit tests" are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).
