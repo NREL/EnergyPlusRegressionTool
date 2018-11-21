@@ -22,11 +22,6 @@ class CsvFileEntry(object):
         self.weatherfilename = csv_row[1]
         self.has_weather_file = (self.weatherfilename != "")
         self.external_interface = (csv_row[2] == "Y")
-        self.ground_ht = (csv_row[3] == "Y")
-        self.external_dataset = (csv_row[4] == "Y")
-        self.parametric = (csv_row[5] == "Y")
-        self.macro = (csv_row[6] == "Y")
-        self.delight = (csv_row[7] == "Y")
         self.underscore = (self.filename[0] == '_')
 
 
@@ -36,12 +31,6 @@ class FileListArgsBuilderForGUI:
         # establish defaults
         self.all = False
         self.extinterface = False
-        self.groundht = False
-        self.dataset = None
-        self.delight = False
-        self.macro = True
-        self.parametric = False
-        self.random = 0
         self.weatherless = True
         self.underscore = True
         self.verify = None
@@ -59,8 +48,7 @@ class FileListBuilder(object):
 
         # if the 'all' argument is present, turn on all the rest
         if _args.all:
-            _args.extinterface, _args.groundht, _args.dataset, _args.delight = [True, True, True, True]
-            _args.macro, _args.parametric, _args.underscore, _args.weatherless = [True, True, True, True]
+            _args.extinterface, _args.underscore, _args.weatherless = [True, True, True]
 
         # initialize callbacks to None
         self.callback_func_print = None
@@ -188,18 +176,8 @@ class FileListBuilder(object):
         # now trim off any of the specialties if the switches are false (by default)
         if not _args.extinterface:  # only include those without external interface dependencies
             idf_list = [idf for idf in idf_list if not idf.external_interface]
-        if not _args.groundht:  # only include those without ground ht dependencies
-            idf_list = [idf for idf in idf_list if not idf.ground_ht]
-        if not _args.dataset:  # only include those without external dataset dependencies
-            idf_list = [idf for idf in idf_list if not idf.external_dataset]
-        if not _args.parametric:  # only include those without parametric preprocessor dependencies
-            idf_list = [idf for idf in idf_list if not idf.parametric]
         if not _args.weatherless:  # only include those that DO have weather files
             idf_list = [idf for idf in idf_list if idf.has_weather_file]
-        if not _args.macro:  # only include those without macro dependencies
-            idf_list = [idf for idf in idf_list if not idf.macro]
-        if not _args.delight:  # only include those without delight dependencies
-            idf_list = [idf for idf in idf_list if not idf.delight]
         if not _args.underscore:  # only include those that don't start with an underscore
             idf_list = [idf for idf in idf_list if not idf.underscore]
         # do random down selection as necessary:
@@ -243,11 +221,6 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
         help='Includes all files found in the master, overrides other flags, can still down select with -r'
     )
     parser.add_argument('-e', '--extinterface', action='store_true', help='Include external interface test files')
-    parser.add_argument('-g', '--groundht', action='store_true', help='Include ground heat transfer test files')
-    parser.add_argument('-d', '--dataset', action='store_true', help='Include external dataset test files')
-    parser.add_argument('-l', '--delight', action='store_true', help='Include DeLight test files')
-    parser.add_argument('-m', '--macro', action='store_true', help='Include files with macro definitions')
-    parser.add_argument('-p', '--parametric', action='store_true', help='Include parametric preprocessor test files')
     parser.add_argument('-r', '--random', nargs='?', default=0, type=int, metavar='N',
                         help='Get random selection of <N> files')
     parser.add_argument('-w', '--weatherless', action='store_true',
