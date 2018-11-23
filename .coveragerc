@@ -3,4 +3,5 @@ omit =
         /usr/*
         .tox/*
         */.pyenv/*
+        */virtualenv/*
         */virtualenvs/*
