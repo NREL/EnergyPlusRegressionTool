@@ -1,3 +1,4 @@
+Input_file_name_(no_extension),Weather_file_name_(no_extension),External_Interface?
 1ZoneDataCenterCRAC_wApproachTemp.idf,USA_CO_Denver-Stapleton_TMY,
 1ZoneDataCenterCRAC_wPumpedDXCoolingCoil.idf,USA_CO_Denver-Stapleton_TMY,
 1ZoneEvapCooler.idf,USA_CO_Denver-Stapleton_TMY,

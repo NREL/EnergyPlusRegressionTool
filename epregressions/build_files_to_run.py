@@ -31,6 +31,7 @@ class FileListArgsBuilderForGUI:
         # establish defaults
         self.all = False
         self.extinterface = False
+        self.random = 0
         self.weatherless = True
         self.underscore = True
         self.verify = None
