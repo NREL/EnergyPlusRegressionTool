@@ -2,6 +2,7 @@
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/NREL/EnergyPlusRegressionTool.svg?branch=master)](https://travis-ci.org/NREL/EnergyPlusRegressionTool)
+[![Coverage Status](https://coveralls.io/repos/github/NREL/EnergyPlusRegressionTool/badge.svg?branch=UpdateFileList)](https://coveralls.io/github/NREL/EnergyPlusRegressionTool?branch=UpdateFileList)
 
 ## Overview
 
@@ -119,5 +120,5 @@ This documentation is written using RST with Sphinx, and published on [ReadTheDo
 
 ## Testing
 
-Very little automated testing has been done, but will be added, to ensure it runs properly.
+Very little automated testing has been done, but it will be added, to ensure it runs properly.
 Meaningless as they are, the existing "unit tests" are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).

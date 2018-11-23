@@ -166,7 +166,7 @@ class RegressionGUI(Gtk.Window):
                             None)  # milliseconds, and a function pointer, and an argument to be passed to the function
 
         # build the idf selection
-        self.build_button(None)
+        self.rebuild_idf_list()
 
         # after the IDF list has been built, try to restore the IDF selection from the IDFs in settings
         if self.try_to_restore_files:
@@ -1011,7 +1011,7 @@ class RegressionGUI(Gtk.Window):
         self.file_list_builder_configuration.check = False
         self.file_list_builder_configuration.master_data_file = os.path.join(script_dir, 'full_file_set_details.csv')
 
-    def build_button(self, widget):
+    def rebuild_idf_list(self):
 
         self.status_bar.push(self.status_bar_context_id, "Building idf list")
 

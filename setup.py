@@ -8,5 +8,7 @@ setup(
     license='',
     author='Edwin Lee',
     author_email='',
-    description='A Python 3 library for evaluating regressions between EnergyPlus builds with a PyGTK-based GUI.'
+    description='A Python 3 library for evaluating regressions between EnergyPlus builds with a PyGTK-based GUI.',
+    test_suite='nose.collector',
+    tests_require=['nose'],
 )

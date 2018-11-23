@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import argparse
 from datetime import datetime
+import io
 import json
 import os
 import shutil
@@ -197,7 +198,7 @@ class TestSuiteRunner:
 
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
-                with open(os.path.join(test_run_directory, self.ep_in_filename)) as f_idf:
+                with io.open(os.path.join(test_run_directory, self.ep_in_filename), encoding='utf-8') as f_idf:
                     idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
                     # idf_text = unicode(idf_text, errors='ignore')
 
@@ -260,7 +261,7 @@ class TestSuiteRunner:
                 with open(os.path.join(
                     build_tree['build_dir'], this_test_dir, this_entry.basename,
                     self.ep_in_filename
-                ), 'w') as f_i:
+                ), 'w', encoding='utf-8') as f_i:
                     f_i.write("%s\n" % idf_text)
 
             elif os.path.exists(imf_path):
@@ -369,8 +370,8 @@ class TestSuiteRunner:
     @staticmethod
     def diff_text_files(file_a, file_b, diff_file):
         # read the contents of the two files into a list, could read it into text first
-        txt1 = open(file_a).readlines()
-        txt2 = open(file_b).readlines()
+        txt1 = io.open(file_a, encoding='utf-8').readlines()
+        txt2 = io.open(file_b, encoding='utf-8').readlines()
         # remove any lines that have some specific listed strings in them
         txt1_cleaned = []
         skip_strings = [
@@ -399,7 +400,7 @@ class TestSuiteRunner:
         # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
         # cmp = d.compare(txt1_cleaned, txt2_cleaned)  # EDWIN: What was this doing, cmp, then cmp again?
         cmp = unified_diff(txt1_cleaned, txt2_cleaned)
-        out_file = open(diff_file, 'w')
+        out_file = open(diff_file, 'w', encoding='utf-8')
         out_file.writelines(list(cmp))
         return TextDifferences.DIFFS
 
@@ -614,7 +615,7 @@ class TestSuiteRunner:
         #     EnergyPlus Terminated--Fatal Error Detected. 0 Warning; 4 Severe Errors; Elapse
         #      d Time=00hr 00min  0.59sec
         # A NEWLINE?? Gotta sanitize it.
-        with open(end_path) as f_end:
+        with io.open(end_path, encoding='utf-8') as f_end:
             end_contents = f_end.read().replace("\n", "")
 
         if "Successfully" in end_contents:
@@ -788,7 +789,7 @@ if __name__ == "__main__":
 
     # Build the list of files to run here:
     entries = []
-    with open(args.idf_list_file) as f:  # need to ask for this name separately
+    with io.open(args.idf_list_file, encoding='utf-8') as f:  # need to ask for this name separately
         json_object = json.loads(f.read())
         for entry in json_object['files_to_run']:
             basename = entry['file']

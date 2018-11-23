@@ -1,0 +1,9 @@
+[run]
+source =
+    epregressions
+omit =
+    /usr/*
+    .tox/*
+    */.pyenv/*
+    */virtualenv/*
+    */virtualenvs/*
