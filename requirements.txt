@@ -1,8 +1,9 @@
 # Core pip-install-able dependencies here
+coveralls==1.5.1
 beautifulsoup4==4.6.3
 flake8==3.6.0
 nose==1.3.7
-# Sphinx==1.8.1
+Sphinx==1.8.1
 
 # this GUI uses PyGtk, relying on GTK3+
 # For Ubuntu, install GTK using the instructions here:
