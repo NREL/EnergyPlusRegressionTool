@@ -18,8 +18,20 @@ install:
 - pip install --upgrade pip
 - pip install -r requirements.txt
 
+matrix:
+  include:
+    name: "2.7 Unit Test"
+    python: "2.7"
+    env: TEST_COMMAND=test
+  - name: "3.6 Unit Tests"
+    python: "3.6"
+    env: TEST_COMMAND=test
+  - name: "3.6 Code Quality"
+    python: "3.6"
+    env: TEST_COMMAND=flake8
+
 script:
-- coverage run setup.py test
+- coverage run setup.py $TEST_COMMAND
 
 after_success:
 - coveralls

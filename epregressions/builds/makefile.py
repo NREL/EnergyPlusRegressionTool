@@ -102,4 +102,3 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             'weather_dir': os.path.join(self.source_directory, 'weather'),
             'data_sets_dir': os.path.join(self.source_directory, 'datasets')
         }
-

@@ -31,7 +31,7 @@ from epregressions.builds.install import EPlusInstallDirectory
 import gi
 gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, Gtk, GObject
+from gi.repository import Gdk, Gtk, GObject  # noqa
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
@@ -1542,18 +1542,15 @@ class RegressionGUI(Gtk.Window):
         current_config = self.force_run_type
         if current_config == ForceRunType.NONE:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests' directory will be created in each run directory.\n" +
-                "  Comparison results will be in run directory 1."
+                "A 'Tests' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         elif current_config == ForceRunType.DD:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests-DDOnly' directory will be created in each run directory.\n" +  # TODO: Clean this out
-                "  Comparison results will be in run directory 1."
+                "A 'Tests-DDOnly' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         elif current_config == ForceRunType.ANNUAL:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests-Annual' directory will be created in each run directory.\n" +
-                "  Comparison results will be in run directory 1."
+                "A 'Tests-Annual' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         else:
             pass  # gonna go ahead and say this won't happen

@@ -1,10 +1,14 @@
 [flake8]
-ignore = D203
+ignore =
+    D203,
+    C901
 exclude =
     .git,
     __pycache__,
     epregressions/diffs/math_diff.py,
+    epregressions/diffs/mycsv.py,
     epregressions/diffs/table_diff.py,
+    epregressions/diffs/thresh_dict.py,
     old,
     build,
     dist
