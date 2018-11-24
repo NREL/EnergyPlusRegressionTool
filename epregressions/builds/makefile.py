@@ -23,6 +23,8 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             self.source_directory = 'unknown - invalid build directory?'
             return
         cmake_cache_file = os.path.join(self.build_directory, 'CMakeCache.txt')
+        if not os.path.exists(cmake_cache_file):
+            raise Exception('Could not find cache file in build directory')
         with open(cmake_cache_file, 'r') as f_cache:
             for this_line in f_cache.readlines():
                 if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
