@@ -1,9 +1,6 @@
 
 os: linux
 language: python
-python:
-  - 2.7
-  - 3.6
 
 addons:
   apt:
@@ -20,7 +17,7 @@ install:
 
 matrix:
   include:
-    name: "2.7 Unit Test"
+  - name: "2.7 Unit Test"
     python: "2.7"
     env: TEST_COMMAND=test
   - name: "3.6 Unit Tests"
