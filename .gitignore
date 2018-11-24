@@ -8,3 +8,7 @@ epregressions/files_to_run.txt
 docs/_build
 venv
 .python-version
+.coverage
+EnergyPlusRegressionTool.egg-info
+aa_testSuite_error.txt
+htmlcov
