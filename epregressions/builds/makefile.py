@@ -7,7 +7,7 @@ from epregressions.platform import exe_extension
 class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
 
     def __init__(self):
-        super(CMakeCacheMakeFileBuildDirectory, self).__init__()
+        super(BaseBuildDirectoryStructure, self).__init__()
         self.source_directory = None
 
     def set_build_directory(self, build_directory):

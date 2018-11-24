@@ -7,7 +7,7 @@ from epregressions.platform import exe_extension
 class EPlusInstallDirectory(BaseBuildDirectoryStructure):
 
     def __init__(self):
-        super(EPlusInstallDirectory, self).__init__()
+        super(BaseBuildDirectoryStructure, self).__init__()
         self.source_directory = None
 
     def set_build_directory(self, build_directory):

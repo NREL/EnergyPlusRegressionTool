@@ -10,7 +10,7 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
     """
 
     def __init__(self):
-        super(CMakeCacheVisualStudioBuildDirectory, self).__init__()
+        super(BaseBuildDirectoryStructure, self).__init__()
         self.source_directory = None
         self.build_mode = 'Release'
 
