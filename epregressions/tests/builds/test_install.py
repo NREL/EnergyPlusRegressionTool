@@ -4,7 +4,7 @@ import unittest
 from epregressions.builds.install import EPlusInstallDirectory
 
 
-class TestBaseWorkflowMethods(unittest.TestCase):
+class TestEPInstallBuildMethods(unittest.TestCase):
 
     def setUp(self):
         self.build = EPlusInstallDirectory()

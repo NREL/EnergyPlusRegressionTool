@@ -5,7 +5,7 @@ import unittest
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 
 
-class TestBaseWorkflowMethods(unittest.TestCase):
+class TestMakefileBuildMethods(unittest.TestCase):
 
     def setUp(self):
         self.build = CMakeCacheMakeFileBuildDirectory()

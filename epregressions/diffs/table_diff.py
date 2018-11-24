@@ -41,12 +41,57 @@ import getopt
 import os.path
 
 from bs4 import BeautifulSoup, NavigableString, Tag
-from epregressions.diffs import html_data
 
 help_message = __doc__
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
+
+titlecss = """<!DOCTYPE html PUBLIC "-
+//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>%s</title>  <style type="text/css"> %s </style>
+<meta name="generator" content="BBEdit 8.2" /></head>
+<body></body></html>
+"""
+
+titlehtml = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>%s</title>
+    <meta name="generator" content="BBEdit 8.2" />
+</head>
+<body>
+
+</body>
+</html>
+"""
+
+thecss = """td.big {
+    background-color: #FF969D;
+}
+
+td.small {
+    background-color: #FFBE84;
+}
+
+td.equal {
+    background-color: #CBFFFF;
+}
+
+td.table_size_error {
+    background-color: #FCFF97;
+} 
+.big {
+    background-color: #FF969D;
+}
+
+.small {
+    background-color: #FFBE84;
+}
+
+"""
 
 
 class Usage(Exception):
@@ -57,7 +102,7 @@ class Usage(Exception):
 
 
 def thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y):
-    if (x == y):
+    if x == y:
         return (0, 0, 'equal')
     try:
         fx = float(x)
@@ -320,13 +365,16 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     comparingthis = 'Comparing<br> %s<br> vs<br> %s<br><hr>' % (inputfile1, inputfile2)
 
     # Error soup
-    err_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- summary', html_data.thecss,), features='html.parser')
+    err_soup = BeautifulSoup(titlecss % (pagetitle + ' -- summary', thecss,),
+                             features='html.parser')
 
     # Abs diff soup
-    abs_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- absolute differences', html_data.thecss,), features='html.parser')
+    abs_diff_soup = BeautifulSoup(titlecss % (pagetitle + ' -- absolute differences', thecss,),
+                                  features='html.parser')
 
     # Rel diff soup
-    rel_diff_soup = BeautifulSoup(html_data.titlecss % (pagetitle + ' -- relative differences', html_data.thecss,), features='html.parser')
+    rel_diff_soup = BeautifulSoup(titlecss % (pagetitle + ' -- relative differences', thecss,),
+                                  features='html.parser')
 
     # Make error table 
     tabletag = Tag(err_soup, name='table', attrs=[('border', '1')])
@@ -449,14 +497,16 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         for h in horder1:
             if h not in horder2:
                 continue
-            abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [(x_y_z[0],x_y_z[2]) for x_y_z in diff_dict[h]]
+            abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
+                (x_y_z[0], x_y_z[2]) for x_y_z in diff_dict[h]]
         hdict2soup(abs_diff_soup, uheading1, count_of_tables, abs_diff_dict.copy(), h_thresh_dict, horder1)
 
         rel_diff_dict = {}
         for h in horder1:
             if h not in horder2:
                 continue
-            rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [(x_y_z[1],x_y_z[2]) for x_y_z in diff_dict[h]]
+            rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
+                (x_y_z[1], x_y_z[2]) for x_y_z in diff_dict[h]]
         hdict2soup(rel_diff_soup, uheading1, count_of_tables, rel_diff_dict.copy(), h_thresh_dict, horder1)
 
         count_of_tables_diff += 1
@@ -487,8 +537,9 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                     "Case,TableCount,BigDiffCount,SmallDiffCount,EqualCount,StringDiffCount,SizeErrorCount,NotIn1Count,NotIn2Count\n")
         with open(summary_file, 'a') as summarize:
             summarize.write("%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (
-            case_name, count_of_tables, count_of_big_diff, count_of_small_diff, count_of_equal, count_of_string_diff,
-            count_of_size_error, count_of_not_in_1, count_of_not_in_2))
+                case_name, count_of_tables, count_of_big_diff, count_of_small_diff, count_of_equal,
+                count_of_string_diff,
+                count_of_size_error, count_of_not_in_1, count_of_not_in_2))
 
     return ('', count_of_tables, count_of_big_diff, count_of_small_diff, count_of_equal, count_of_string_diff,
             count_of_size_error, count_of_not_in_1, count_of_not_in_2)
