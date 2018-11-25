@@ -68,14 +68,15 @@ def writecsv(mat, outfile=None, mode='w'):
             writer = csv.writer(f_out)
             writer.writerows(mat)
     else:
-        f = StringIO()
-        writer = csv.writer(f)
+        out_str = ''
         for row in mat:
-            new_row = []
-            for cell in row:
-                new_row.append(str(cell))
-            writer.writerow(new_row)
-        return f.getvalue()
+            for i, cell in enumerate(row):
+                max_col_num = len(row)
+                if i < max_col_num:
+                    out_str += str(cell) + ','
+                else:
+                    out_str += str(cell) + '\n'
+        return out_str
 
 
 def ismatrice(mat):
