@@ -70,7 +70,11 @@ def writecsv(mat, outfile=None, mode='w'):
     else:
         f = StringIO()
         writer = csv.writer(f)
-        writer.writerows(mat)
+        for row in mat:
+            new_row = []
+            for cell in row:
+                new_row.append(str(cell))
+            writer.writerow(new_row)
         return f.getvalue()
 
 
