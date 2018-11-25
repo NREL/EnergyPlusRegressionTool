@@ -34,63 +34,69 @@ __license__ = "GNU General Public License Version 3"
 
 import sys
 import re
-import traceback
+
 
 # Load threshold dictionary from math_diff.config file
 class ThreshDict(object):
 
     def __init__(self, tdname):
-        self.tdict = {}
+        self.thresholds = {}
         f = open(tdname, 'r')
         while f:
-            l = f.readline().rstrip('\n')
-            l = l.strip()
-            if l == '':
+            line = f.readline().rstrip('\n')
+            line = line.strip()
+            if line == '':
                 break
             # Ignore comment lines
-            if l[0] == '#':
+            if line[0] == '#':
                 continue
             try:
                 # Split off end-of-line comments
-                if l.find('#') > -1:
-                    l = l[:l.find('#')]
+                if line.find('#') > -1:
+                    line = line[:line.find('#')]
 
-                [unit,agg,abs_thresh,rel_thresh] = [x.strip() for x in re.split(',|=',l) if x != '']
+                [unit, agg, abs_thresh, rel_thresh] = [x.strip() for x in re.split('[,=]', line) if x != '']
                 tag = unit+'|'+agg
             
-                if tag in self.tdict:
-                    print >> sys.stderr, 'Over-riding existing entry for %s in threshold dictionary math_diff.config' % (tag)
+                if tag in self.thresholds:
+                    print(
+                        'Over-riding existing entry for %s in threshold dictionary math_diff.config' % tag,
+                        file=sys.stderr
+                    )
 
-                self.tdict[tag] = (float(abs_thresh), float(rel_thresh))
-            except:
-                print >> sys.stderr, 'Skipping line <%s>' % (l)
+                self.thresholds[tag] = (float(abs_thresh), float(rel_thresh))
+            except Exception as exc:
+                print('Skipping line <%s> because %s' % (line, str(exc)), file=sys.stderr)
 
         f.close()
 
-
     def lookup(self, hstr):
         # Lookup a threshold value in the dictionary using a report column
-        # header string and a differncing type (relative or absolute)
+        # header string and a differencing type (relative or absolute)
 
         if hstr == 'Date/Time' or hstr == 'Time':
-            return (0.0, 0.0)
+            return 0.0, 0.0
 
         # Parse hstr (column header) to extract Unit and Aggregation 
         
         try: 
             if hstr.find('[]') == -1 and hstr.find('[') > -1:
-                tokens = [x.strip() for x in re.split('\[|\]', hstr) if x.strip() != '']
+                tokens = [x.strip() for x in re.split('[\[\]]', hstr) if x.strip() != '']
                 unit = tokens[1] if len(tokens) > 1 else tokens[0]
             else:
                 unit = '*'
             if hstr.find('{}') == -1 and hstr.find('{') > -1:
-                tokens = [x.strip() for x in re.split('\{|\}', hstr) if x.strip() != '']
+                tokens = [x.strip() for x in re.split('[{\}]', hstr) if x.strip() != '']
                 agg = tokens[1] if len(tokens) > 1 else tokens[0]
             else:
                 agg = '*'
                 
-        except:
+        except Exception as exc:  # pragma: no cover - I could not figure out how to get an exception
             # print >> sys.stderr, 'PROBLEM: cannot figure out unit/aggregation for ' + hstr + ', defaulting to *,*'
+            print(
+                'Cannot figure out unit/aggregation for ' + hstr + ', defaulting to *,* (%s)' % str(exc),
+                file=sys.stderr
+            )
             unit = '*'
             agg = '*'
             
@@ -98,14 +104,13 @@ class ThreshDict(object):
         tag_d1 = unit+'|*'
         tag_d2 = '*|*'
         # Look for matching Quantity and Aggregation
-        if tag in self.tdict:
-            return self.tdict[tag]
+        if tag in self.thresholds:
+            return self.thresholds[tag]
         # Then just matching Quantity
-        elif tag_d1 in self.tdict:
-            return self.tdict[tag_d1]
+        elif tag_d1 in self.thresholds:
+            return self.thresholds[tag_d1]
         # Then the global default
-        elif tag_d2 in self.tdict:
-            return self.tdict[tag_d2]
+        elif tag_d2 in self.thresholds:
+            return self.thresholds[tag_d2]
         else:
-            return (0.0, 0.0)
-
+            return 0.0, 0.0

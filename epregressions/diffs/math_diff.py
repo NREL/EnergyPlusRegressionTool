@@ -260,10 +260,10 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     for h in hset_sdiff:
         if h in hset1:
             mycsv.writecsv([['Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
-            h, inputfile1, inputfile2)]], err_file, 'ab');
+            h, inputfile1, inputfile2)]], err_file, 'ab')
         else:
             mycsv.writecsv([['Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
-            h, inputfile2, inputfile1)]], err_file, 'ab');
+            h, inputfile2, inputfile1)]], err_file, 'ab')
 
     # convert time matrix to dictionary (both time matrices should be identical here)
     tdict = matrix2hdict(time1)
