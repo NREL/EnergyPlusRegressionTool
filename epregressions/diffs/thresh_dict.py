@@ -59,10 +59,8 @@ class ThreshDict(object):
                 tag = unit+'|'+agg
             
                 if tag in self.thresholds:
-                    print(
-                        'Over-riding existing entry for %s in threshold dictionary math_diff.config' % tag,
-                        file=sys.stderr
-                    )
+                    # 'Over-riding existing entry for %s in threshold dictionary math_diff.config' % tag,
+                    pass
 
                 self.thresholds[tag] = (float(abs_thresh), float(rel_thresh))
             except Exception as exc:
@@ -91,12 +89,8 @@ class ThreshDict(object):
             else:
                 agg = '*'
                 
-        except Exception as exc:  # pragma: no cover - I could not figure out how to get an exception
+        except:  # pragma: no cover - I could not figure out how to get an exception
             # print >> sys.stderr, 'PROBLEM: cannot figure out unit/aggregation for ' + hstr + ', defaulting to *,*'
-            print(
-                'Cannot figure out unit/aggregation for ' + hstr + ', defaulting to *,* (%s)' % str(exc),
-                file=sys.stderr
-            )
             unit = '*'
             agg = '*'
             

@@ -64,7 +64,7 @@ class TestWriteCSV(unittest.TestCase):
 
     def test_valid_write_to_string(self):
         this_matrix = [
-            ['hi', 'bye'],
+            [u'hi', u'bye'],
             [1, 2],
             [3.14159, 2.71828]
         ]
