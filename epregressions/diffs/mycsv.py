@@ -89,6 +89,7 @@ def ismatrice(mat):
     for row in mat:
         for cell in row:
             if type(cell) not in (float, int, str):
+                print("DKLDLFKJSDLFKJSDFLKJ  TYPE: " + str(type(cell)))
                 return False
     return True
 
