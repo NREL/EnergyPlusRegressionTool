@@ -31,4 +31,4 @@ script:
 - coverage run setup.py $TEST_COMMAND
 
 after_success:
-- coveralls
+- test $TEST_COMMAND = "test" && coveralls
