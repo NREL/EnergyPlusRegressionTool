@@ -64,7 +64,8 @@ class ThreshDict(object):
 
                 self.thresholds[tag] = (float(abs_thresh), float(rel_thresh))
             except Exception as exc:
-                print('Skipping line <%s> because %s' % (line, str(exc)), file=sys.stderr)
+                # print('Skipping line <%s> because %s' % (line, str(exc)), file=sys.stderr)
+                pass
 
         f.close()
 
