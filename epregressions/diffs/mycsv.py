@@ -71,7 +71,7 @@ def writecsv(mat, outfile=None, mode='w'):
         out_str = ''
         for row in mat:
             for i, cell in enumerate(row):
-                max_col_num = len(row)
+                max_col_num = len(row) - 1
                 if i < max_col_num:
                     out_str += str(cell) + ','
                 else:
