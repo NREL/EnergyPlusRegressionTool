@@ -11,7 +11,7 @@ import webbrowser
 
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import (
-    FileListArgsBuilderForGUI,
+    FileListBuilderArgs,
     FileListBuilder,
 )
 from epregressions.platform import platform, Platforms
@@ -1005,7 +1005,7 @@ class RegressionGUI(Gtk.Window):
         # could read from temp file
 
         # build a default set of arguments
-        self.file_list_builder_configuration = FileListArgsBuilderForGUI()
+        self.file_list_builder_configuration = FileListBuilderArgs()
 
         # override with our defaults
         self.file_list_builder_configuration.check = False
@@ -1017,7 +1017,7 @@ class RegressionGUI(Gtk.Window):
 
         file_builder = FileListBuilder(self.file_list_builder_configuration)
         file_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
-        return_data = file_builder.build_verified_list(self.file_list_builder_configuration)
+        return_data = file_builder.build_verified_list()
         status, verified_idf_files, idf_files_missing_in_folder, idf_files_missing_from_csv_file = return_data
 
         # reset the progress bar either way

@@ -46,7 +46,7 @@ provided here verbatim:
     Create EnergyPlus test file inputs for a specific configuration. Can be
     executed in 2 ways: 1: Arguments can be passed from the command line, such as
     `./build_files_to_run.py -r 3 -w' .. Most useful for scripting, or 2: An
-    argument class can be created using the FileListArgsBuilderForGUI class and
+    argument class can be created using the FileListBuilderArgs class and
     passed into a FileListBuilder instance .. Most useful for UIs
 
     optional arguments:
