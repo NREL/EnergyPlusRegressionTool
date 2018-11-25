@@ -1,6 +1,3 @@
-"""my csv functions
-"""
-
 # Copyright (C) 2009 Santosh Philip
 # This file is part of mathdiff.
 # 
@@ -38,24 +35,26 @@ def readcsv(filename):
     """read csv file fname into a matrice mat
     Also reads a string instead of a file
     """
-    is_file = False
     try:
-        f = open(filename)
-        reader = csv.reader(f)  # if it is a file
-        is_file = True
+        with open(filename) as f:
+            reader = csv.reader(f)  # if it is a file
+            data = []
+            for line in reader:
+                # print ("%s : %s" % (filename, line))
+                data.append(line)
+            return data
     except:
         try:
-            string = StringIO(filename)
-            reader = csv.reader(string)  # if it is a string
+            lines = filename.split('\n')
+            data = []
+            for line in lines:
+                if line.strip() == '':
+                    break
+                # print ("%s : %s" % (filename, line))
+                data.append(line.strip().split(','))
+            return data
         except:
             raise BadInput('csv source is neither a file nor a file object')
-    data = []
-    for line in reader:
-        # print ("%s : %s" % (filename, line))
-        data.append(line)
-    if is_file:
-        f.close()
-    return data
 
 
 def writecsv(mat, outfile=None, mode='w'):
