@@ -23,43 +23,26 @@ from io import StringIO
 
 
 class MyCsv(Exception):
-    """pass"""
     pass
 
 
 class BadMatrice(MyCsv):
-    """pass"""
     pass
 
 
 class BadInput(MyCsv):
-    """pass"""
     pass
-
-
-def mergehoriz(mat1, mat2):
-    """paste mat2 to the right of mat1
-    tested only for mat1 and mat2 of same size
-    """
-    if not ismatrice(mat1):
-        raise BadMatrice('The input is not a matrice')
-    if not ismatrice(mat2):
-        raise BadMatrice('The input is not a matrice')
-    if len(mat1) != len(mat2):
-        raise BadInput('mat1 and mat2 are not of same size')
-    mmat = []
-    for i in range(len(mat1)):
-        row = mat1[i] + mat2[i]
-        mmat.append(row)
-    return mmat
 
 
 def readcsv(filename):
     """read csv file fname into a matrice mat
     Also reads a string instead of a file
     """
+    is_file = False
     try:
-        reader = csv.reader(open(filename, 'rU'))  # if it is a file
+        f = open(filename)
+        reader = csv.reader(f)  # if it is a file
+        is_file = True
     except:
         try:
             string = StringIO(filename)
@@ -70,6 +53,8 @@ def readcsv(filename):
     for line in reader:
         # print ("%s : %s" % (filename, line))
         data.append(line)
+    if is_file:
+        f.close()
     return data
 
 
@@ -79,8 +64,9 @@ def writecsv(mat, outfile=None, mode='w'):
     if not ismatrice(mat):
         raise BadMatrice('The input is not a matrice')
     if outfile:
-        writer = csv.writer(open(outfile, mode))
-        writer.writerows(mat)
+        with open(outfile, mode) as f_out:
+            writer = csv.writer(f_out)
+            writer.writerows(mat)
     else:
         f = StringIO()
         writer = csv.writer(f)
@@ -91,6 +77,11 @@ def writecsv(mat, outfile=None, mode='w'):
 def ismatrice(mat):
     """test if the matrice mat is a csv matrice
     """
+    # test for iterability over rows
+    try:
+        iter(mat)
+    except TypeError:
+        return False
     # test for rows
     for row in mat:
         if type(row) != list:
@@ -123,9 +114,7 @@ def transpose2d(mtx):
     return trmtx
 
 
-##   -------------------------
-##    from python cookbook 2nd edition page 162
-# map(mtx, zip(*arr))
+# from python cookbook 2nd edition page 162
 
 def getlist(fname):
     """Gets a list from a csv file
@@ -144,10 +133,3 @@ def getlist(fname):
     if onecolumn:
         mat = transpose2d(mat)[0]
     return mat
-
-
-def pick_and_reorder_columns(listofrows, column_indexes):
-    """as the function name says
-    from python cookbook 2nd ed. page 161
-    """
-    return [[row[colindex] for colindex in column_indexes] for row in listofrows]
