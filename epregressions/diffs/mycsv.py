@@ -15,6 +15,7 @@
 # along with mathdiff.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
+import six
 
 from io import StringIO
 
@@ -85,12 +86,12 @@ def ismatrice(mat):
     for row in mat:
         if type(row) != list:
             return False
-    # test if cell is float,int or string
+    # test if cell is float, int or string
     for row in mat:
         for cell in row:
-            if type(cell) not in (float, int, str):
-                print("DKLDLFKJSDLFKJSDFLKJ  TYPE: " + str(type(cell)))
-                return False
+            if type(cell) not in (float, int):
+                if not isinstance(cell, six.string_types):
+                    return False
     return True
 
 
