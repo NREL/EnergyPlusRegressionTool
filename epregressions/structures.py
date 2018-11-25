@@ -19,162 +19,10 @@ class ReportingFreq:
     ANNUAL = "Annual"
 
 
-class TestRunConfiguration:
-    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False):
-        self.force_run_type = force_run_type
-        self.TestOneFile = single_test_run
-        self.num_threads = num_threads
-        self.buildA = build_a
-        self.buildB = build_b
-        self.report_freq = report_freq
-
-
 class ResultsLists:
     def __init__(self):
         self.descriptions = []
         self.base_names = set()
-
-
-class CompletedStructure:
-    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir, results_dir):
-        self.case_a_source_dir = case_a_source_dir
-        self.case_a_build_dir = case_a_build_dir
-        self.case_b_source_dir = case_b_source_dir
-        self.case_b_build_dir = case_b_build_dir
-        self.results_dir = results_dir
-        # results by file
-        self.entries_by_file = []
-        # results by type
-        self.all_files = ResultsLists()
-        self.success_case_a = ResultsLists()
-        self.failure_case_a = ResultsLists()
-        self.success_case_b = ResultsLists()
-        self.failure_case_b = ResultsLists()
-        self.total_files_compared = ResultsLists()
-        self.big_math_diffs = ResultsLists()
-        self.small_math_diffs = ResultsLists()
-        self.big_table_diffs = ResultsLists()
-        self.small_table_diffs = ResultsLists()
-        self.text_diffs = ResultsLists()
-
-    def add_test_entry(self, this_entry):
-        self.entries_by_file.append(this_entry)
-        # always add the current entry because it was tested
-        self.all_files.descriptions.append("%s" % this_entry.basename)
-        self.all_files.base_names.add(this_entry.basename)
-
-        # add the entry to the appropriate success/failure bins
-        if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-            self.success_case_a.descriptions.append("%s" % this_entry.basename)
-            self.success_case_a.base_names.add(this_entry.basename)
-        else:
-            self.failure_case_a.descriptions.append("%s" % this_entry.basename)
-            self.failure_case_a.base_names.add(this_entry.basename)
-        if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-            self.success_case_b.descriptions.append("%s" % this_entry.basename)
-            self.success_case_b.base_names.add(this_entry.basename)
-        else:
-            self.failure_case_b.descriptions.append("%s" % this_entry.basename)
-            self.failure_case_b.base_names.add(this_entry.basename)
-
-        # check the math diffs for this entry
-        math_diff_hash = {
-            this_entry.eso_diffs: "eso",
-            this_entry.mtr_diffs: "mtr",
-            this_entry.zsz_diffs: "zsz",
-            this_entry.ssz_diffs: "ssz"
-        }
-        for diff in math_diff_hash:
-            file_type = math_diff_hash[diff]
-            if diff:
-                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                self.total_files_compared.base_names.add(this_entry.basename)
-                if diff.count_of_big_diff > 0:
-                    self.big_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.big_math_diffs.base_names.add(this_entry.basename)
-                elif diff.count_of_small_diff > 0:
-                    self.small_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.small_math_diffs.base_names.add(this_entry.basename)
-
-        # get tabular diffs
-        if this_entry.table_diffs:
-            self.total_files_compared.descriptions.append("%s: table" % this_entry.basename)
-            self.total_files_compared.base_names.add(this_entry.basename)
-            if this_entry.table_diffs.big_diff_count > 0:
-                self.big_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
-                self.big_table_diffs.base_names.add(this_entry.basename)
-            elif this_entry.table_diffs.small_diff_count > 0:
-                self.small_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
-                self.small_table_diffs.base_names.add(this_entry.basename)
-
-        # check the textual diffs
-        text_diff_hash = {
-            this_entry.aud_diffs: "audit",
-            this_entry.bnd_diffs: "bnd",
-            this_entry.dxf_diffs: "dxf",
-            this_entry.eio_diffs: "eio",
-            this_entry.mdd_diffs: "mdd",
-            this_entry.mtd_diffs: "mtd",
-            this_entry.rdd_diffs: "rdd",
-            this_entry.shd_diffs: "shd",
-            this_entry.err_diffs: "err",
-            this_entry.dl_in_diffs: "delightin",
-            this_entry.dl_out_diffs: "delightout",
-        }
-        for diff in text_diff_hash:
-            file_type = text_diff_hash[diff]
-            if diff:
-                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                if diff.diff_type != TextDifferences.EQUAL:
-                    self.total_files_compared.base_names.add(this_entry.basename)  # should just use a set()
-                    self.text_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.text_diffs.base_names.add(this_entry.basename)
-
-    def to_runtime_summary(self, csv_file_path):
-        try:
-            with open(csv_file_path, "w") as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerow(["Case", "Runtime [s]", "Runtime [s]"])
-                for this_entry in self.entries_by_file:
-                    runtime1 = -1
-                    runtime2 = -1
-                    if this_entry.summary_result:
-                        if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-                            runtime1 = this_entry.summary_result.run_time_seconds_case1
-                        if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-                            runtime2 = this_entry.summary_result.run_time_seconds_case2
-                    writer.writerow([this_entry.basename, runtime1, runtime2])
-        except Exception as this_exception:
-            print(this_exception)
-
-    def to_json_summary(self, json_file_path):
-        output_data = {
-            'directories': {
-                'case_a_source': self.case_a_source_dir,
-                'case_a_build': self.case_a_build_dir,
-                'case_b_source': self.case_b_source_dir,
-                'case_b_build': self.case_b_build_dir
-            },
-            'runs': {
-                'all_files': [x for x in self.all_files.base_names],
-                'success_case_a': [x for x in self.success_case_a.base_names],
-                'failure_case_a': [x for x in self.failure_case_a.base_names],
-                'success_case_b': [x for x in self.success_case_b.base_names],
-                'failure_case_b': [x for x in self.failure_case_b.base_names],
-                'all_files_compared': [x for x in self.total_files_compared.descriptions]
-            },
-            'diffs': {
-                'big_math': [x for x in self.big_math_diffs.descriptions],
-                'small_math': [x for x in self.small_math_diffs.descriptions],
-                'big_table': [x for x in self.big_table_diffs.descriptions],
-                'small_table': [x for x in self.small_table_diffs.descriptions],
-                'textual': [x for x in self.text_diffs.descriptions],
-            },
-            'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
-        }
-        output_string = json.dumps(output_data, indent=2)
-        with open(json_file_path, 'w') as json_file:
-            json_file.write(output_string)
 
 
 class TextDifferences:
@@ -401,10 +249,144 @@ class TestEntry:
         return response
 
 
-class TestCaseCompleted:
-    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, name_of_thread):
-        self.run_directory = run_directory
-        self.case_name = case_name
-        self.run_success = run_status
-        self.name_of_thread = name_of_thread
-        self.muffle_err_msg = error_msg_reported_already
+class CompletedStructure:
+    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir, results_dir):
+        self.case_a_source_dir = case_a_source_dir
+        self.case_a_build_dir = case_a_build_dir
+        self.case_b_source_dir = case_b_source_dir
+        self.case_b_build_dir = case_b_build_dir
+        self.results_dir = results_dir
+        # results by file
+        self.entries_by_file = []
+        # results by type
+        self.all_files = ResultsLists()
+        self.success_case_a = ResultsLists()
+        self.failure_case_a = ResultsLists()
+        self.success_case_b = ResultsLists()
+        self.failure_case_b = ResultsLists()
+        self.total_files_compared = ResultsLists()
+        self.big_math_diffs = ResultsLists()
+        self.small_math_diffs = ResultsLists()
+        self.big_table_diffs = ResultsLists()
+        self.small_table_diffs = ResultsLists()
+        self.text_diffs = ResultsLists()
+
+    def add_test_entry(self, this_entry):
+        self.entries_by_file.append(this_entry)
+        # always add the current entry because it was tested
+        self.all_files.descriptions.append("%s" % this_entry.basename)
+        self.all_files.base_names.add(this_entry.basename)
+
+        # add the entry to the appropriate success/failure bins
+        if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
+            self.success_case_a.descriptions.append("%s" % this_entry.basename)
+            self.success_case_a.base_names.add(this_entry.basename)
+        else:
+            self.failure_case_a.descriptions.append("%s" % this_entry.basename)
+            self.failure_case_a.base_names.add(this_entry.basename)
+        if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
+            self.success_case_b.descriptions.append("%s" % this_entry.basename)
+            self.success_case_b.base_names.add(this_entry.basename)
+        else:
+            self.failure_case_b.descriptions.append("%s" % this_entry.basename)
+            self.failure_case_b.base_names.add(this_entry.basename)
+
+        # check the math diffs for this entry
+        math_diff_hash = {
+            this_entry.eso_diffs: "eso",
+            this_entry.mtr_diffs: "mtr",
+            this_entry.zsz_diffs: "zsz",
+            this_entry.ssz_diffs: "ssz"
+        }
+        for diff in math_diff_hash:
+            file_type = math_diff_hash[diff]
+            if diff:
+                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                self.total_files_compared.base_names.add(this_entry.basename)
+                if diff.count_of_big_diff > 0:
+                    self.big_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                    self.big_math_diffs.base_names.add(this_entry.basename)
+                elif diff.count_of_small_diff > 0:
+                    self.small_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                    self.small_math_diffs.base_names.add(this_entry.basename)
+
+        # get tabular diffs
+        if this_entry.table_diffs:
+            self.total_files_compared.descriptions.append("%s: table" % this_entry.basename)
+            self.total_files_compared.base_names.add(this_entry.basename)
+            if this_entry.table_diffs.big_diff_count > 0:
+                self.big_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
+                self.big_table_diffs.base_names.add(this_entry.basename)
+            elif this_entry.table_diffs.small_diff_count > 0:
+                self.small_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
+                self.small_table_diffs.base_names.add(this_entry.basename)
+
+        # check the textual diffs
+        text_diff_hash = {
+            this_entry.aud_diffs: "audit",
+            this_entry.bnd_diffs: "bnd",
+            this_entry.dxf_diffs: "dxf",
+            this_entry.eio_diffs: "eio",
+            this_entry.mdd_diffs: "mdd",
+            this_entry.mtd_diffs: "mtd",
+            this_entry.rdd_diffs: "rdd",
+            this_entry.shd_diffs: "shd",
+            this_entry.err_diffs: "err",
+            this_entry.dl_in_diffs: "delightin",
+            this_entry.dl_out_diffs: "delightout",
+        }
+        for diff in text_diff_hash:
+            file_type = text_diff_hash[diff]
+            if diff:
+                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                if diff.diff_type != TextDifferences.EQUAL:
+                    self.total_files_compared.base_names.add(this_entry.basename)  # should just use a set()
+                    self.text_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                    self.text_diffs.base_names.add(this_entry.basename)
+
+    def to_runtime_summary(self, csv_file_path):
+        try:
+            with open(csv_file_path, "w") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(["Case", "Runtime [s]", "Runtime [s]"])
+                for this_entry in self.entries_by_file:
+                    runtime1 = -1
+                    runtime2 = -1
+                    if this_entry.summary_result:
+                        if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
+                            runtime1 = this_entry.summary_result.run_time_seconds_case1
+                        if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
+                            runtime2 = this_entry.summary_result.run_time_seconds_case2
+                    writer.writerow([this_entry.basename, runtime1, runtime2])
+        except Exception as this_exception:
+            print(this_exception)
+            raise this_exception
+
+    def to_json_summary(self, json_file_path):
+        output_data = {
+            'directories': {
+                'case_a_source': self.case_a_source_dir,
+                'case_a_build': self.case_a_build_dir,
+                'case_b_source': self.case_b_source_dir,
+                'case_b_build': self.case_b_build_dir
+            },
+            'runs': {
+                'all_files': [x for x in self.all_files.base_names],
+                'success_case_a': [x for x in self.success_case_a.base_names],
+                'failure_case_a': [x for x in self.failure_case_a.base_names],
+                'success_case_b': [x for x in self.success_case_b.base_names],
+                'failure_case_b': [x for x in self.failure_case_b.base_names],
+                'all_files_compared': [x for x in self.total_files_compared.descriptions]
+            },
+            'diffs': {
+                'big_math': [x for x in self.big_math_diffs.descriptions],
+                'small_math': [x for x in self.small_math_diffs.descriptions],
+                'big_table': [x for x in self.big_table_diffs.descriptions],
+                'small_table': [x for x in self.small_table_diffs.descriptions],
+                'textual': [x for x in self.text_diffs.descriptions],
+            },
+            'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
+        }
+        output_string = json.dumps(output_data, indent=2)
+        with open(json_file_path, 'w') as json_file:
+            json_file.write(output_string)

@@ -15,12 +15,11 @@ from epregressions.build_files_to_run import (
     FileListBuilder,
 )
 from epregressions.platform import platform, Platforms
-from epregressions.runtests import TestSuiteRunner
+from epregressions.runtests import TestSuiteRunner, TestRunConfiguration
 from epregressions.structures import (
     ForceRunType,
     ReportingFreq,
     TestEntry,
-    TestRunConfiguration,
 )
 from epregressions.builds.base import KnownBuildTypes
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory

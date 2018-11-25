@@ -17,13 +17,11 @@ from epregressions.diffs import math_diff, table_diff, thresh_dict as td
 from epregressions import energyplus
 from epregressions.structures import (
     ForceRunType,
-    TestCaseCompleted,
     TextDifferences,
     EndErrSummary,
     MathDifferences,
     TableDifferences,
     CompletedStructure,
-    TestRunConfiguration,
     ReportingFreq,
     TestEntry
 )
@@ -32,6 +30,25 @@ from epregressions.structures import (
 # get the current file path for convenience
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
+
+
+class TestRunConfiguration:
+    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False):
+        self.force_run_type = force_run_type
+        self.TestOneFile = single_test_run
+        self.num_threads = num_threads
+        self.buildA = build_a
+        self.buildB = build_b
+        self.report_freq = report_freq
+
+
+class TestCaseCompleted:
+    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, name_of_thread):
+        self.run_directory = run_directory
+        self.case_name = case_name
+        self.run_success = run_status
+        self.name_of_thread = name_of_thread
+        self.muffle_err_msg = error_msg_reported_already
 
 
 # the actual main test suite run class
