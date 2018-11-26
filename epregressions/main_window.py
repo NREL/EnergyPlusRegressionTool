@@ -15,7 +15,7 @@ from epregressions.build_files_to_run import (
     FileListBuilder,
 )
 from epregressions.platform import platform, Platforms
-from epregressions.runtests import TestSuiteRunner, TestRunConfiguration
+from epregressions.runtests import SuiteRunner, TestRunConfiguration
 from epregressions.structures import (
     ForceRunType,
     ReportingFreq,
@@ -1337,7 +1337,7 @@ class RegressionGUI(Gtk.Window):
             return
 
         # set up the test suite
-        self.runner = TestSuiteRunner(run_configuration, these_entries)
+        self.runner = SuiteRunner(run_configuration, these_entries)
         self.runner.add_callbacks(print_callback=self.print_callback,
                                   simstarting_callback=self.sim_starting_callback,
                                   casecompleted_callback=self.case_completed_callback,

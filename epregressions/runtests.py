@@ -52,7 +52,7 @@ class TestCaseCompleted:
 
 
 # the actual main test suite run class
-class TestSuiteRunner:
+class SuiteRunner:
 
     def __init__(self, run_config, these_entries):
 
@@ -764,7 +764,7 @@ if __name__ == "__main__":
         description="""
     Run EnergyPlus tests using a specified configuration.  Can be executed in 2 ways:
       1: Arguments can be passed from the command line in the usage here, or
-      2: An instance of the TestSuiteRunner class can be constructed, more useful for UIs or scripting"""
+      2: An instance of the SuiteRunner class can be constructed, more useful for UIs or scripting"""
     )
     parser.add_argument('a_src', action="store", help='Path to case a\'s source repository root')
     parser.add_argument('a_build', action="store", help='Path to case a\'s build directory')
@@ -827,7 +827,7 @@ if __name__ == "__main__":
                                      build_b=mod)
 
     # instantiate the test suite
-    Runner = TestSuiteRunner(RunConfig, entries)
+    Runner = SuiteRunner(RunConfig, entries)
 
     # Run it
     Runner.run_test_suite()

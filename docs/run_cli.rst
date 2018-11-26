@@ -114,7 +114,7 @@ usage of the script is available here:
 
     Run EnergyPlus tests using a specified configuration. Can be executed in 2
     ways: 1: Arguments can be passed from the command line in the usage here, or
-    2: An instance of the TestSuiteRunner class can be constructed, more useful
+    2: An instance of the SuiteRunner class can be constructed, more useful
     for UIs or scripting
 
     positional arguments:
@@ -209,7 +209,7 @@ Creating and Running
 ''''''''''''''''''''
 
 Once the list of input files is developed and the run configuration is ready, the test
-suite can be created by passing these two variables in to the ``TestSuiteRunner``
+suite can be created by passing these two variables in to the ``SuiteRunner``
 constructor. The test suite engine then processes this information into an internal data structure.
 Once complete, the run\_test\_suite method can be called on this
 instance, and the test suite will run. The output files from the test
