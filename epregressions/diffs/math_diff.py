@@ -141,10 +141,10 @@ def make_summary_dict(tdict, hdict):
             else:
                 try:
                     column[i] = float(cell)
-                except ValueError:
+                except ValueError:  # pragma: no cover - I don't know how to get here
                     columnerror = True  # Now we can't do any summary calcs for this column
                     break  # get out of this inner loop
-        if columnerror:
+        if columnerror:  # pragma: no cover - I don't know how to get here
             continue  # go to next step in this outer loop
 
         sdict[key]['count'] = len(column)
@@ -194,7 +194,7 @@ def abs_diff(x, y):
         return abs(float(x) - float(y))
     #        return (float(x)-float(y))
     except Exception:
-        return 'exception'
+        return 9999  # 'exception'
 
 
 def rel_diff(x, y):
@@ -205,12 +205,12 @@ def rel_diff(x, y):
         return abs((float(x) - float(y)) / (float(x))) if (abs(float(x)) > 0) else 999
     #        return (float(x)-float(y))/(float(x)+.00001)
     except Exception:
-        return 'exception'
+        return 9999  # 'exception'
 
 
 def info(line, logfile=None):
     if logfile:
-        mycsv.writecsv([[line]], logfile, 'ab')
+        mycsv.writecsv([[line]], logfile, 'a')
     # print >> sys.stderr, line
 
 
@@ -269,7 +269,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
                     ]
                 ],
                 err_file,
-                'ab'
+                'a'
             )
         else:
             mycsv.writecsv(
@@ -283,7 +283,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
                     ]
                 ],
                 err_file,
-                'ab'
+                'a'
             )
 
     # convert time matrix to dictionary (both time matrices should be identical here)
@@ -295,11 +295,11 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     hdict2 = matrix2hdict(mat2)
 
     # Dictionaries of absolute and relative differences
-    abs_diff_dict = {}
-    rel_diff_dict = {}
+    abs_diffs = {}
+    rel_diffs = {}
     for key in horder:
-        abs_diff_dict[key] = list(map(abs_diff, hdict1[key], hdict2[key]))
-        rel_diff_dict[key] = list(map(rel_diff, hdict1[key], hdict2[key]))
+        abs_diffs[key] = list(map(abs_diff, hdict1[key], hdict2[key]))
+        rel_diffs[key] = list(map(rel_diff, hdict1[key], hdict2[key]))
 
     err_dict = {}
     for key in horder:
@@ -307,34 +307,48 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
 
         (abs_thresh, rel_thresh) = thresh_dict.lookup(key)
 
-        max_abs_diff = max(abs_diff_dict[key])
-        index_max_abs_diff = abs_diff_dict[key].index(max_abs_diff)
+        max_abs_diff = max(abs_diffs[key])
+        index_max_abs_diff = abs_diffs[key].index(max_abs_diff)
         err_dict[key]['abs_thresh'] = abs_thresh
         err_dict[key]['max_abs_diff'] = max_abs_diff
-        err_dict[key]['rel_diff_of_max_abs_diff'] = rel_diff_dict[key][index_max_abs_diff]
+        err_dict[key]['rel_diff_of_max_abs_diff'] = rel_diffs[key][index_max_abs_diff]
         err_dict[key]['time_of_max_abs_diff'] = tdict[tkey][index_max_abs_diff]
-        err_dict[key]['count_of_small_abs_diff'] = sum(1 for x in abs_diff_dict[key] if 0.0 < x <= abs_thresh)
-        err_dict[key]['count_of_big_abs_diff'] = sum(1 for x in abs_diff_dict[key] if x > abs_thresh)
+        err_dict[key]['count_of_small_abs_diff'] = sum(1 for x in abs_diffs[key] if 0.0 < x <= abs_thresh)
+        err_dict[key]['count_of_big_abs_diff'] = sum(1 for x in abs_diffs[key] if x > abs_thresh)
 
-        max_rel_diff = max(rel_diff_dict[key])
-        index_max_rel_diff = rel_diff_dict[key].index(max_rel_diff)
+        max_rel_diff = max(rel_diffs[key])
+        index_max_rel_diff = rel_diffs[key].index(max_rel_diff)
 
         err_dict[key]['rel_thresh'] = rel_thresh
         err_dict[key]['max_rel_diff'] = max_rel_diff
-        err_dict[key]['abs_diff_of_max_rel_diff'] = abs_diff_dict[key][index_max_rel_diff]
+        err_dict[key]['abs_diff_of_max_rel_diff'] = abs_diffs[key][index_max_rel_diff]
         err_dict[key]['time_of_max_rel_diff'] = tdict[tkey][index_max_rel_diff]
-        err_dict[key]['count_of_small_rel_diff'] = sum(1 for x in rel_diff_dict[key] if 0.0 < x <= rel_thresh)
-        err_dict[key]['count_of_big_rel_diff'] = sum(1 for x in rel_diff_dict[key] if x > rel_thresh)
+        if rel_thresh > 0:
+            err_dict[key]['count_of_small_rel_diff'] = sum(1 for x in rel_diffs[key] if 0.0 < x <= rel_thresh)
+            err_dict[key]['count_of_big_rel_diff'] = sum(1 for x in rel_diffs[key] if x > rel_thresh)
+        else:
+            err_dict[key]['count_of_small_rel_diff'] = 0
+            err_dict[key]['count_of_big_rel_diff'] = 0
 
-        err_dict[key]['count_of_small_abs_rel_diff'] = sum(1 for x, y in zip(abs_diff_dict[key], rel_diff_dict[key]) if
-                                                           0 < x <= abs_thresh and 0 < y <= rel_thresh)
-        err_dict[key]['count_of_big_abs_rel_diff'] = sum(
-            1 for x, y in zip(abs_diff_dict[key], rel_diff_dict[key]) if x > abs_thresh and y > rel_thresh)
+        if rel_thresh > 0:
+            err_dict[key]['count_of_small_abs_rel_diff'] = sum(
+                1 for x, y in zip(abs_diffs[key], rel_diffs[key]) if 0 < x <= abs_thresh or 0 < y <= rel_thresh
+            )
+            err_dict[key]['count_of_big_abs_rel_diff'] = sum(
+                1 for x, y in zip(abs_diffs[key], rel_diffs[key]) if x > abs_thresh and y > rel_thresh
+            )
+        else:
+            err_dict[key]['count_of_small_abs_rel_diff'] = err_dict[key]['count_of_small_abs_diff']
+            err_dict[key]['count_of_big_abs_rel_diff'] = err_dict[key]['count_of_big_abs_diff']
 
-    count_of_small_diff = sum(err_dict[key]['count_of_small_abs_rel_diff'] for key in horder)
-    count_of_big_diff = sum(err_dict[key]['count_of_big_abs_rel_diff'] for key in horder)
+    num_small = sum(err_dict[key]['count_of_small_abs_rel_diff'] for key in horder)
+    num_big = sum(err_dict[key]['count_of_big_abs_rel_diff'] for key in horder)
 
-    diff_type = 'Big Diffs' if count_of_big_diff > 0 else 'Small Diffs' if count_of_small_diff > 0 else 'All Equal'
+    diff_type = 'All Equal'
+    if num_big > 0:
+        diff_type = 'Big Diffs'
+    elif num_small > 0:
+        diff_type = 'Small Diffs'
 
     num_records = len(tdict[tkey])
 
@@ -355,7 +369,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
 
     # We are done
     if diff_type == 'All Equal':
-        return diff_type, num_records, count_of_big_diff, count_of_small_diff
+        return diff_type, num_records, num_big, num_small
 
     # Which columns had diffs?
     dhorder = [h for h in horder if
@@ -375,8 +389,8 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     time_of_max_max_rel_diff = err_dict[key_of_max_max_rel_diff]['time_of_max_rel_diff']
 
     # put the time column back
-    abs_diff_dict[tkey] = tdict[tkey]
-    rel_diff_dict[tkey] = tdict[tkey]
+    abs_diffs[tkey] = tdict[tkey]
+    rel_diffs[tkey] = tdict[tkey]
 
     # Summarize the input files
     summary_dict1 = make_summary_dict(tdict, hdict1)
@@ -401,10 +415,10 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     tdhorder = [tkey] + dhorder
 
     # Convert the absolute and relative diff dictionaries to matrices and write them to files
-    abs_diff_mat = hdict2matrix(tdhorder, abs_diff_dict)
+    abs_diff_mat = hdict2matrix(tdhorder, abs_diffs)
     # print("Trying to write to %s " % abs_diff_file)
     mycsv.writecsv(abs_diff_mat, abs_diff_file)
-    rel_diff_mat = hdict2matrix(tdhorder, rel_diff_dict)
+    rel_diff_mat = hdict2matrix(tdhorder, rel_diffs)
     mycsv.writecsv(rel_diff_mat, rel_diff_file)
 
     # Write the error file header
@@ -458,10 +472,10 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     mycsv.writecsv([[], [], ['Relative difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
                     []] + rel_diff_summary_mat, err_file, 'a')
 
-    return diff_type, num_records, count_of_big_diff, count_of_small_diff
+    return diff_type, num_records, num_big, num_small
 
 
-def main(argv=None):
+def main(argv=None):  # pragma: no cover
     if argv is None:
         argv = sys.argv
     try:
@@ -493,7 +507,7 @@ def main(argv=None):
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())
 
 # TODO document what happens when there is a time mismatch.
