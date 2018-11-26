@@ -95,24 +95,21 @@ td.table_size_error {
 """
 
 
-class Usage(Exception):
-    """ usage """
-
-    def __init__(self, msg):
-        self.msg = msg
-
-
 def thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y):
     if x == y:
         return 0, 0, 'equal'
     # noinspection PyBroadException
     try:
+        diff = 'equal'
+
         fx = float(x)
         fy = float(y)
 
         abs_diff = abs(fx - fy)
-        if abs_diff == 0.0:
-            return 0, 0, 'equal'
+
+        # the following two lines were here, but I don't see how they could be hit, I'm commenting for now
+        # if abs_diff == 0.0:
+        #     return 0, 0, 'equal'
 
         rel_diff = abs((fx - fy) / fx) if abs(fx) > abs(fy) else abs((fy - fx) / fy)
 
@@ -120,8 +117,9 @@ def thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y):
             diff = 'big'
         elif (0 < abs_diff <= abs_thresh) or (0 < rel_diff <= rel_thresh):
             diff = 'small'
-        else:
-            diff = 'equal'
+        # the following else clause was here, but again, I don't see how it could be hit, commenting
+        # else:
+        #     diff = 'equal'
         return abs_diff, rel_diff, diff
     except:
         return '%s vs %s' % (x, y), '%s vs %s' % (x, y), 'stringdiff'
@@ -144,58 +142,13 @@ def get_table_unique_heading(table):
     """return table unique name which should be in comment immediately before table"""
     # noinspection PyBroadException
     try:
-        return '%s' % (prev_sib(table))
-    except:
+        val = prev_sib(table)
+        if val:
+            return '%s' % val
+        else:
+            return None
+    except:  # pragma: no cover - AFAIK the prev_sib will always return _something_, including None, but I can't be sure
         return None
-
-
-def get_table_heading(table):
-    """return a list of E+ table headings. All tags are removed and some headings are modified."""
-    # test for heading type 1
-    # <b>heading1</b><br><br>
-    # <table></table>
-    try:
-        pr1 = prev_sib(table)
-        pr2 = prev_sib(pr1)
-        soup = BeautifulSoup('')
-        brtag = Tag(soup, 'br')
-        if pr1 == brtag and pr2 == brtag:
-            return '%s' % prev_sib(pr2).contents[0]
-    except (IndexError, AttributeError):
-        pass
-    # test for heading type 2
-    # <p>Report:<b>Name1</b></p><p>For:<b>Name2</b></p><p>Timestamp</p>
-    # <table></table>
-    try:
-        prevs1 = prev_sib(table)
-        prevs2 = prev_sib(prevs1)
-        prevs3 = prev_sib(prevs2)
-        if prevs2.contents[0] == u'For:':
-            if prevs3.contents[0] == u'Report:':
-                name1 = prevs3.contents[1].contents[0]
-                name2 = prevs2.contents[1].contents[0]
-                return '%s for %s' % (name1, name2)
-    except (IndexError, AttributeError):
-        pass
-        # test for heading type 3
-    # <p>Report:<b>Name1</b></p><p>For:<b>Name2</b></p><p>Timestamp</p>
-    # Values in table are in hours.<br><br>
-    # <table></table>
-    try:
-        pr1 = prev_sib(table)
-        pr2 = prev_sib(pr1)
-        pr3 = prev_sib(pr2)
-        prevs1 = prev_sib(pr3)
-        prevs2 = prev_sib(prevs1)
-        prevs3 = prev_sib(prevs2)
-        if prevs2.contents[0] == u'For:':
-            if prevs3.contents[0] == u'Report:':
-                name1 = prevs3.contents[1].contents[0]
-                name2 = prevs2.contents[1].contents[0]
-                return '%s for %s' % (name1, name2)
-    except (IndexError, AttributeError):
-        pass
-    return None
 
 
 def hdict2soup(soup, heading, num, hdict, tdict, horder):
@@ -263,8 +216,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                 trtag.append(tdtag)
 
 
-# Convert html table to heading dictionary (and header list) in single
-# step
+# Convert html table to heading dictionary (and header list) in single step
 def table2hdict_horder(table):
     hdict = {}
     horder = []
@@ -359,9 +311,9 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
     # Test for existence of input files
     if not os.path.exists(inputfile1):
-        return 'unable to open file <%s>' % inputfile1, 0, 0, 0, 0, 0
+        return 'unable to open file <%s>' % inputfile1, 0, 0, 0, 0, 0, 0, 0, 0
     if not os.path.exists(inputfile2):
-        return 'unable to open file <%s>' % inputfile2, 0, 0, 0, 0, 0
+        return 'unable to open file <%s>' % inputfile2, 0, 0, 0, 0, 0, 0, 0, 0
 
     with open(inputfile1) as f_1:
         txt1 = f_1.read()
@@ -407,6 +359,11 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         uheadings1.append(get_table_unique_heading(table))
     for table in tables2:
         uheadings2.append(get_table_unique_heading(table))
+
+    if any([x is None for x in uheadings1]):
+        return 'malformed comment/table structure in <%s>' % inputfile1, 0, 0, 0, 0, 0, 0, 0, 0
+    if any([x is None for x in uheadings2]):
+        return 'malformed comment/table structure in <%s>' % inputfile2, 0, 0, 0, 0, 0, 0, 0, 0
 
     uhset1 = set(uheadings1)
     uhset2 = set(uheadings2)
@@ -479,15 +436,20 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                     diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
 
                 # Statistics local to this table
-                table_small_diff += sum(1 for (_, _, diff) in diff_dict[h] if diff == 'small')
-                table_big_diff += sum(1 for (_, _, diff) in diff_dict[h] if diff == 'big')
-                table_equal += sum(1 for (_, _, diff) in diff_dict[h] if diff == 'equal')
-                table_string_diff += sum(1 for (_, _, diff) in diff_dict[h] if diff == 'stringdiff')
-
-                count_of_small_diff += table_small_diff
-                count_of_big_diff += table_big_diff
-                count_of_equal += table_equal
-                count_of_string_diff += table_string_diff
+                for diff_result in diff_dict[h]:
+                    diff_type = diff_result[2]
+                    if diff_type == 'small':
+                        table_small_diff += 1
+                        count_of_small_diff += 1
+                    elif diff_type == 'big':
+                        table_big_diff += 1
+                        count_of_big_diff += 1
+                    elif diff_type == 'equal':
+                        table_equal += 1
+                        count_of_equal += 1
+                    if diff_type == 'stringdiff':
+                        table_string_diff += 1
+                        count_of_string_diff += 1
 
         make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                            table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
@@ -500,7 +462,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         # Add difference tables to absolute and relative difference soups
         abs_diff_dict = {}
         for h in horder1:
-            if h not in horder2:
+            if h not in horder2:  # pragma: no cover - this would be a super weird corner case given the logic above
                 continue
             abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[0], x_y_z[2]) for x_y_z in diff_dict[h]]
@@ -508,7 +470,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
         rel_diff_dict = {}
         for h in horder1:
-            if h not in horder2:
+            if h not in horder2:  # pragma: no cover - this would be a super weird corner case given the logic above
                 continue
             rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[1], x_y_z[2]) for x_y_z in diff_dict[h]]
@@ -531,10 +493,12 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     # Only write absolute and relative diff files if any tables were actually different
     if count_of_tables_diff > 0:
         abs_diff_txt = abs_diff_soup.prettify()
-        open(abs_diff_file, 'w').write(abs_diff_txt)
+        with open(abs_diff_file, 'w') as f_abs:
+            f_abs.write(abs_diff_txt)
 
         rel_diff_txt = rel_diff_soup.prettify()
-        open(rel_diff_file, 'w').write(rel_diff_txt)
+        with open(rel_diff_file, 'w') as f_rel:
+            f_rel.write(rel_diff_txt)
 
     if summary_file:
         if not os.path.exists(summary_file):
