@@ -161,6 +161,7 @@ class SuiteRunner:
         self.my_print("Test suite complete")
 
         self.my_alldone(response)
+        return response
 
     def prepare_dir_structure(self, b_a, b_b, d_test):
 
@@ -275,10 +276,11 @@ class SuiteRunner:
                     #         )
 
                 # rewrite the idf with the (potentially) modified idf text
-                with open(os.path.join(
-                    build_tree['build_dir'], this_test_dir, this_entry.basename,
-                    self.ep_in_filename
-                ), 'w', encoding='utf-8') as f_i:
+                with io.open(
+                    os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, self.ep_in_filename),
+                    'w',
+                    encoding='utf-8'
+                ) as f_i:
                     f_i.write("%s\n" % idf_text)
 
             elif os.path.exists(imf_path):
@@ -417,7 +419,7 @@ class SuiteRunner:
         # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
         # cmp = d.compare(txt1_cleaned, txt2_cleaned)  # EDWIN: What was this doing, cmp, then cmp again?
         cmp = unified_diff(txt1_cleaned, txt2_cleaned)
-        out_file = open(diff_file, 'w', encoding='utf-8')
+        out_file = io.open(diff_file, 'w', encoding='utf-8')
         out_file.writelines(list(cmp))
         return TextDifferences.DIFFS
 

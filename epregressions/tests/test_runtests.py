@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import tempfile
@@ -19,7 +20,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.temp_mod_build_dir = tempfile.mkdtemp()
         self.temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
-    def establish_build_folder(self, target_build_dir, target_source_dir):
+    def establish_build_folder(self, target_build_dir, target_source_dir, idf_config):
         with open(os.path.join(target_build_dir, 'CMakeCache.txt'), 'w') as f:
             f.write('HEY\n')
             f.write('CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' % target_source_dir)
@@ -42,7 +43,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         testfiles_dir = os.path.join(target_source_dir, 'testfiles')
         os.makedirs(testfiles_dir)
         with open(os.path.join(testfiles_dir, 'my_file.idf'), 'w') as f:
-            f.write('HI')
+            f.write(json.dumps(idf_config))
         weather_dir = os.path.join(target_source_dir, 'weather')
         os.makedirs(weather_dir)
         shutil.copy(os.path.join(self.resources, 'dummy.in.epw'), os.path.join(weather_dir, 'my_weather.epw'))
@@ -55,12 +56,34 @@ class TestTestSuiteRunner(unittest.TestCase):
 
     def test_a(self):
         base = CMakeCacheMakeFileBuildDirectory()
-        self.establish_build_folder(self.temp_base_build_dir, self.temp_base_source_dir)
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success"
+                }
+            }
+        )
         base.set_build_directory(self.temp_base_build_dir)
         base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
-        self.establish_build_folder(self.temp_mod_build_dir, self.temp_mod_source_dir)
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success"
+                }
+            }
+        )
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
@@ -84,4 +107,5 @@ class TestTestSuiteRunner(unittest.TestCase):
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
-        r.run_test_suite()
+        diff_results = r.run_test_suite()
+        i = 1
