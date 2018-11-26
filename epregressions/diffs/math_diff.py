@@ -59,6 +59,7 @@ import os
 import sys
 
 from epregressions.diffs import mycsv
+from epregressions.diffs.thresh_dict import ThreshDict
 
 help_message = __doc__
 
@@ -66,18 +67,15 @@ path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
 
-# This is the configurable delta threshold dictionary which we use to
-# customize thresholds based on unit (C, W, kWH, etc.) and aggregation
-# (timestep, hourly, etc.).  Customization is applied using the
-# math_diff.config file
-
 class DuplicateHeaderException(Exception):
     """docstring for DuplicateHeaderException"""
     pass
 
 
 def fill_matrix_holes(mat):
-    """matrix may have blanks. Sometimes the tail end of some rows will not have elements. Make sure all rows have the same length as the first row. Also remove cells if the row is longer than the first row"""
+    """matrix may have blanks. Sometimes the tail end of some rows will not have elements.
+    Make sure all rows have the same length as the first row.
+    Also remove cells if the row is longer than the first row"""
     numcols = len(mat[0])
     for i, row in enumerate(mat[1:]):
         morecells = numcols - len(row)
@@ -95,22 +93,23 @@ def slicetime(mat):
 
 def matrix2hdict(mat):
     """from a csv matrix make a dict with column headers as keys. This dict is called 'header dictionary' or hdct"""
-    dict = {}
+    this_dict = {}
     tmat = mycsv.transpose2d(mat)
     for col in tmat:
-        if col[0] in dict:
+        if col[0] in this_dict:
             raise DuplicateHeaderException("There are two columns with the same header name " + str(col[0]))
             # TODO - DuplicateHeaderException - this has to go into the error file and mini file
         else:
-            dict[col[0]] = col[1:]
-    return dict
+            this_dict[col[0]] = col[1:]
+    return this_dict
 
 
-def hdict2matrix(order, dict):
-    """convert the header dictionary (as created by matrix2hdct) to a csv matrix held in tmat. 'order' is the order of the headers in the matrix. (order is needed because keys in a dict have no sort order)"""
+def hdict2matrix(order, this_dict):
+    """convert the header dictionary (as created by matrix2hdct) to a csv matrix held in tmat.
+    'order' is the order of the headers in the matrix. (order is needed because keys in a dict have no sort order)"""
     mat = []
     for key in order:
-        mat.append([key] + list(dict[key]))
+        mat.append([key] + list(this_dict[key]))
     return mycsv.transpose2d(mat)
 
 
@@ -142,7 +141,7 @@ def make_summary_dict(tdict, hdict):
             else:
                 try:
                     column[i] = float(cell)
-                except ValueError as e:
+                except ValueError:
                     columnerror = True  # Now we can't do any summary calcs for this column
                     break  # get out of this inner loop
         if columnerror:
@@ -157,7 +156,7 @@ def make_summary_dict(tdict, hdict):
         sdict[key]['time_of_min'] = times[column.index(sdict[key]['min'])]
 
         nz_items = [item for item in column if item != 0]
-        if nz_items == []:
+        if not nz_items:
             sdict[key]['nz_count'] = 0
             sdict[key]['nz_sum'] = 0.0
             sdict[key]['nz_max'] = 0.0
@@ -188,49 +187,51 @@ def dict_of_dicts2dict_of_lists(dict_of_dicts, key_order, list_labels):
 
 
 def abs_diff(x, y):
-    if (x == y):
+    if x == y:
         return 0
+    # noinspection PyBroadException
     try:
         return abs(float(x) - float(y))
     #        return (float(x)-float(y))
-    except:
+    except Exception:
         return 'exception'
 
 
 def rel_diff(x, y):
-    if (x == y):
+    if x == y:
         return 0
+    # noinspection PyBroadException
     try:
         return abs((float(x) - float(y)) / (float(x))) if (abs(float(x)) > 0) else 999
     #        return (float(x)-float(y))/(float(x)+.00001)
-    except:
+    except Exception:
         return 'exception'
 
 
 def info(line, logfile=None):
     if logfile:
         mycsv.writecsv([[line]], logfile, 'ab')
-    print >> sys.stderr, line
+    # print >> sys.stderr, line
 
 
 def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_csv):
     # Test for existence of input files
     if not os.path.exists(inputfile1):
-        info('unable to open file <%s>' % (inputfile1), err_file)
-        return ('unable to open file <%s>' % (inputfile1), 0, 0, 0)
+        info('unable to open file <%s>' % inputfile1, err_file)
+        return 'unable to open file <%s>' % inputfile1, 0, 0, 0
     if not os.path.exists(inputfile2):
-        info('unable to open file <%s>' % (inputfile2), err_file)
-        return ('unable to open file <%s>' % (inputfile2), 0, 0, 0)
+        info('unable to open file <%s>' % inputfile2, err_file)
+        return 'unable to open file <%s>' % inputfile2, 0, 0, 0
 
     # read data out of files
     mat1 = mycsv.getlist(inputfile1)
     if len(mat1) < 2:
-        info('<%s> has no data' % (inputfile1), err_file)
-        return ('<%s> has no data' % (inputfile1), 0, 0, 0)
+        info('<%s> has no data' % inputfile1, err_file)
+        return '<%s> has no data' % inputfile1, 0, 0, 0
     mat2 = mycsv.getlist(inputfile2)
     if len(mat2) < 2:
-        info('<%s> has no data' % (inputfile2), err_file)
-        return ('<%s> has no data' % (inputfile2), 0, 0, 0)
+        info('<%s> has no data' % inputfile2, err_file)
+        return '<%s> has no data' % inputfile2, 0, 0, 0
 
     # clean up the files
     matrix1 = fill_matrix_holes(mat1)
@@ -242,7 +243,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     # Not going to compare two files with different time series
     if time1 != time2:
         info('Time series in <%s> and <%s> do not match' % (inputfile1, inputfile2), err_file)
-        return ('Time series do not match', 0, 0, 0)
+        return 'Time series do not match', 0, 0, 0
 
     # Only going to compare fields that are found in both files
     hset1 = set(mat1[0])
@@ -250,7 +251,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     hset = hset1.intersection(hset2)
     if len(hset) == 0:
         info('Input files <%s> and <%s> have no common fields' % (inputfile1, inputfile2), err_file)
-        return ('No common fields', 0, 0, 0)
+        return 'No common fields', 0, 0, 0
 
     # Order will be order in which intersection fields appear in first file
     horder = [h for h in mat1[0] if h in hset]
@@ -259,11 +260,31 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     hset_sdiff = hset1.symmetric_difference(hset2)
     for h in hset_sdiff:
         if h in hset1:
-            mycsv.writecsv([['Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
-            h, inputfile1, inputfile2)]], err_file, 'ab')
+            mycsv.writecsv(
+                [
+                    [
+                        'Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
+                            h, inputfile1, inputfile2
+                        )
+                    ]
+                ],
+                err_file,
+                'ab'
+            )
         else:
-            mycsv.writecsv([['Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
-            h, inputfile2, inputfile1)]], err_file, 'ab')
+            mycsv.writecsv(
+                [
+                    [
+                        'Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
+                            h,
+                            inputfile2,
+                            inputfile1
+                        )
+                    ]
+                ],
+                err_file,
+                'ab'
+            )
 
     # convert time matrix to dictionary (both time matrices should be identical here)
     tdict = matrix2hdict(time1)
@@ -292,7 +313,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         err_dict[key]['max_abs_diff'] = max_abs_diff
         err_dict[key]['rel_diff_of_max_abs_diff'] = rel_diff_dict[key][index_max_abs_diff]
         err_dict[key]['time_of_max_abs_diff'] = tdict[tkey][index_max_abs_diff]
-        err_dict[key]['count_of_small_abs_diff'] = sum(1 for x in abs_diff_dict[key] if x > 0.0 and x <= abs_thresh)
+        err_dict[key]['count_of_small_abs_diff'] = sum(1 for x in abs_diff_dict[key] if 0.0 < x <= abs_thresh)
         err_dict[key]['count_of_big_abs_diff'] = sum(1 for x in abs_diff_dict[key] if x > abs_thresh)
 
         max_rel_diff = max(rel_diff_dict[key])
@@ -302,11 +323,11 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         err_dict[key]['max_rel_diff'] = max_rel_diff
         err_dict[key]['abs_diff_of_max_rel_diff'] = abs_diff_dict[key][index_max_rel_diff]
         err_dict[key]['time_of_max_rel_diff'] = tdict[tkey][index_max_rel_diff]
-        err_dict[key]['count_of_small_rel_diff'] = sum(1 for x in rel_diff_dict[key] if x > 0.0 and x <= rel_thresh)
+        err_dict[key]['count_of_small_rel_diff'] = sum(1 for x in rel_diff_dict[key] if 0.0 < x <= rel_thresh)
         err_dict[key]['count_of_big_rel_diff'] = sum(1 for x in rel_diff_dict[key] if x > rel_thresh)
 
         err_dict[key]['count_of_small_abs_rel_diff'] = sum(1 for x, y in zip(abs_diff_dict[key], rel_diff_dict[key]) if
-                                                           x > 0 and x <= abs_thresh and y > 0 and y <= rel_thresh)
+                                                           0 < x <= abs_thresh and 0 < y <= rel_thresh)
         err_dict[key]['count_of_big_abs_rel_diff'] = sum(
             1 for x, y in zip(abs_diff_dict[key], rel_diff_dict[key]) if x > abs_thresh and y > rel_thresh)
 
@@ -319,18 +340,22 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
 
     input_file_path_tokens = inputfile1.split(os.sep)
 
-    # if it's the first pass, create the file with the header; also the null-pointer-ish check allows skipping the summary_csv file if the filename is blank
+    # if it's the first pass, create the file with the header;
+    # also the null-pointer-ish check allows skipping the summary_csv file if the filename is blank
     if summary_csv:
         if not os.path.isfile(summary_csv):
             with open(summary_csv, 'w') as f:
                 f.write("CaseName,FileName,Status,#Records\n")
         with open(summary_csv, 'a') as f:
-            f.write("%s,%s,%s,%s records compared\n" % (
-            input_file_path_tokens[-2], input_file_path_tokens[-1], diff_type, num_records))
+            f.write(
+                "%s,%s,%s,%s records compared\n" % (
+                    input_file_path_tokens[-2], input_file_path_tokens[-1], diff_type, num_records
+                )
+            )
 
     # We are done
     if diff_type == 'All Equal':
-        return (diff_type, num_records, count_of_big_diff, count_of_small_diff)
+        return diff_type, num_records, count_of_big_diff, count_of_small_diff
 
     # Which columns had diffs?
     dhorder = [h for h in horder if
@@ -433,7 +458,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     mycsv.writecsv([[], [], ['Relative difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
                     []] + rel_diff_summary_mat, err_file, 'a')
 
-    return (diff_type, num_records, count_of_big_diff, count_of_small_diff)
+    return diff_type, num_records, count_of_big_diff, count_of_small_diff
 
 
 def main(argv=None):
@@ -448,25 +473,23 @@ def main(argv=None):
     # Test for correct number of arguments
     prog_name = os.path.basename(sys.argv[0])
     if len(args) == 6:
-        [inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, csvsummary] = args
+        [csv1, csv2, abs_diff_file, rel_diff_file, err_file, csvsummary] = args
     else:
         info('%s: incorrect operands: Try %s -h for more info' % (prog_name, prog_name))
         return -1
 
-    if (inputfile1[-4:] != '.csv' or inputfile1[-7:] == 'Map.csv' or inputfile1[-9:] == 'Table.csv' or inputfile1[
-                                                                                                       -10:] == 'Screen.csv'):
-        info('%s: input file <%s> with improper extension' % (prog_name, inputfile1))
+    if csv1[-4:] != '.csv' or csv1[-7:] == 'Map.csv' or csv1[-9:] == 'Table.csv' or csv1[-10:] == 'Screen.csv':
+        info('%s: input file <%s> with improper extension' % (prog_name, csv1))
         return -1
 
-    if (inputfile2[-4:] != '.csv' or inputfile2[-7:] == 'Map.csv' or inputfile2[-9:] == 'Table.csv' or inputfile2[
-                                                                                                       -10:] == 'Screen.csv'):
-        info('%s: input file <%s> with improper extension' % (prog_name, inputfile2))
+    if csv2[-4:] != '.csv' or csv2[-7:] == 'Map.csv' or csv2[-9:] == 'Table.csv' or csv2[-10:] == 'Screen.csv':
+        info('%s: input file <%s> with improper extension' % (prog_name, csv2))
         return -1
 
     # Load diffing threshold dictionary
-    thresh_dict = thresh_dict.ThreshDict(os.path.join(script_dir, 'math_diff.config'))
+    thresh_dict = ThreshDict(os.path.join(script_dir, 'math_diff.config'))
 
-    math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, csvsummary)
+    math_diff(thresh_dict, csv1, csv2, abs_diff_file, rel_diff_file, err_file, csvsummary)
     return 0
 
 
