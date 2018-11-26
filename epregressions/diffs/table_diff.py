@@ -358,8 +358,10 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         # info('unable to open file <%s>' % (inputfile2), err_file)
         return ('unable to open file <%s>' % (inputfile2), 0, 0, 0, 0, 0)
 
-    txt1 = open(inputfile1, 'r').read()
-    txt2 = open(inputfile2, 'r').read()
+    with open(inputfile1) as f_1:
+        txt1 = f_1.read()
+    with open(inputfile2) as f_2:
+        txt2 = f_2.read()
 
     pagetitle = '%s vs %s' % (os.path.basename(inputfile1), os.path.basename(inputfile2))
     comparingthis = 'Comparing<br> %s<br> vs<br> %s<br><hr>' % (inputfile1, inputfile2)
@@ -520,7 +522,8 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
     # Write error file
     err_txt = err_soup.prettify()
-    open(err_file, 'w').write(err_txt)
+    with open(err_file, 'w') as f_out:
+        f_out.write(err_txt)
 
     # Only write absolute and relative diff files if any tables were actually different
     if count_of_tables_diff > 0:

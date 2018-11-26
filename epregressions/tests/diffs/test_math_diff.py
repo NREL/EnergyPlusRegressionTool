@@ -10,7 +10,7 @@ class TestMathDiff(unittest.TestCase):
 
     def setUp(self):
         self.cur_dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.diff_files_dir = os.path.join(self.cur_dir_path, 'resources')
+        self.diff_files_dir = os.path.join(self.cur_dir_path, 'csv_resources')
         self.temp_output_dir = tempfile.mkdtemp()
         self.thresh_dict = ThreshDict(os.path.join(self.diff_files_dir, 'test_math_diff.config'))
 
