@@ -16,7 +16,7 @@ usage:
                summary of input1
                summary of input2
                absolute differences of summary of input1 and summary of input2
-               relative differences of summary of input1 and summary of input2 
+               relative differences of summary of input1 and summary of input2
     summary_csv = output file containing csv rows for each result, but no details
 
     configuration file math_diff.config customizes absolute and relative difference thresholds
@@ -28,17 +28,17 @@ usage:
 
 # Copyright (C) 2009, 2010 Santosh Philip and 2013 Amir Roth
 # This file is part of mathdiff.
-# 
+#
 # mathdiff is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # mathdiff is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with mathdiff.  If not, see <http://www.gnu.org/licenses/>.
 # VERSION: 1.3
@@ -396,7 +396,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     summary_dict1 = make_summary_dict(tdict, hdict1)
     summary_dict2 = make_summary_dict(tdict, hdict2)
 
-    # Flatten summaries out to dictionaries of lists rather than dictionaries of dictionaries 
+    # Flatten summaries out to dictionaries of lists rather than dictionaries of dictionaries
     summary_dict12 = dict_of_dicts2dict_of_lists(summary_dict1, horder, list(summary_labels))
     summary_dict12[tkey] = [sl + ':' for sl in list(summary_labels)]
 
@@ -519,14 +519,14 @@ if __name__ == "__main__":  # pragma: no cover
 # "t1",  1  ,  2  ,  4
 # "t2",  11 ,  22 ,  44
 # "t3",  111,  222,  444
-# 
-# In the first line 
-#     "h2", "h3", "h4" 
+#
+# In the first line
+#     "h2", "h3", "h4"
 # are considered the headers of the columns
-# 
+#
 # When we compare two files, it is assumed that the headers of the two files will match.
 # In case the headers do not match mathdiff.py still has to respond in an intelligent way.
-# 
+#
 # We have the following four possiblities:
 # 1. identical headers
 #     file1 = "h2", "h3", "h4"
@@ -551,55 +551,55 @@ if __name__ == "__main__":  # pragma: no cover
 #     file1 = "h2", "h3", "h4", "h5", "h6"
 #     file2 = "h2", "h3", "h4", "h7"
 #     the number of columns in file1 and file2 do not match.
-#     The program will report on all the columns in file1 and file2 
+#     The program will report on all the columns in file1 and file2
 #     output = "h2", "h3", "h4", "h5", "h6", "h7"
 #         columns "h5", "h6", "h7" will report an ERROR
-#     
-# 
-# 
-# 
+#
+#
+#
+#
 # ----------------------------------------------------------------------------------
 # data structure for mathdiff.py - to be read if you are planning to update the code
 # ----------------------------------------------------------------------------------
-# 
+#
 # the csv file had data in the following format
 # "time", "h2", "h3", "h4"
 # "t1",  1  ,  2  ,  4
 # "t2",  11 ,  22 ,  44
 # "t3",  111,  222,  444
-# 
+#
 # the standard python module "csv" has functions that can read this text file in as a nested list.
 # I call this nested list a matrix.
-# 
+#
 # The above text file will then read into the following structure
 # matrix1 = [['time', ' "h2"', ' "h3"', ' "h4"'],
 #          ['t1', '  1  ', '  2  ', '  4'],
 #          ['t2', '  11 ', '  22 ', '  44'],
 #          ['t3', '  111', '  222', '  444']]
-# 
+#
 # Each item in the matrix is a row.
-# Each item in the row is a cell. 
-#          
-# the time column is stripped from the matrix 
+# Each item in the row is a cell.
+#
+# the time column is stripped from the matrix
 # time1, mat1 = slicetime(matrix1)
-# 
-# giving us the matrix 
+#
+# giving us the matrix
 # mat1 = [[' "h2"', ' "h3"', ' "h4"'],
 #      ['  1  ', '  2  ', '  4'],
 #      ['  11 ', '  22 ', '  44'],
 #      ['  111', '  222', '  444']]
-#      
+#
 # mat1 is then converted into a dictionary:
 # hdict1 = matrix2hdct(mat1)
-# 
+#
 # hdict1 = {' "h2"': ['  1  ', '  11 ', '  111'],
 #      ' "h3"': ['  2  ', '  22 ', '  222'],
 #      ' "h4"': ['  4', '  44', '  444']}
-#      
+#
 # Let us call hdict1 the "header dict"
 # - the headers of the columns in the csv file become keys of the dictionary.
 # - the values of the dictionary are the columns under the header
-# 
+#
 # All calculations are done are done using "header dict" data structure
 # the results of the calculations are returned as a "header dict"
 # the "header dict" is converted to a matrix which is then converted a csv text file

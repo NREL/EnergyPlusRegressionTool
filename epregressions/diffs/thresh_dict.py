@@ -11,17 +11,17 @@
 
 # Copyright (C) 2013 Amir Roth
 # This file is part of mathdiff.
-# 
+#
 # mathdiff is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # mathdiff is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with mathdiff.  If not, see <http://www.gnu.org/licenses/>.
 # VERSION: 1.3
@@ -32,7 +32,6 @@ __version__ = "1.4"
 __copyright__ = "Copyright (c) 2013 Amir Roth"
 __license__ = "GNU General Public License Version 3"
 
-import sys
 import re
 
 
@@ -50,20 +49,21 @@ class ThreshDict(object):
             # Ignore comment lines
             if line[0] == '#':
                 continue
+            # noinspection PyBroadException
             try:
                 # Split off end-of-line comments
                 if line.find('#') > -1:
                     line = line[:line.find('#')]
 
                 [unit, agg, abs_thresh, rel_thresh] = [x.strip() for x in re.split('[,=]', line) if x != '']
-                tag = unit+'|'+agg
-            
+                tag = unit + '|' + agg
+
                 if tag in self.thresholds:
                     # 'Over-riding existing entry for %s in threshold dictionary math_diff.config' % tag,
                     pass
 
                 self.thresholds[tag] = (float(abs_thresh), float(rel_thresh))
-            except Exception as exc:
+            except Exception:
                 # print('Skipping line <%s> because %s' % (line, str(exc)), file=sys.stderr)
                 pass
 
@@ -76,27 +76,28 @@ class ThreshDict(object):
         if hstr == 'Date/Time' or hstr == 'Time':
             return 0.0, 0.0
 
-        # Parse hstr (column header) to extract Unit and Aggregation 
-        
-        try: 
+        # Parse hstr (column header) to extract Unit and Aggregation
+
+        # noinspection PyBroadException
+        try:
             if hstr.find('[]') == -1 and hstr.find('[') > -1:
-                tokens = [x.strip() for x in re.split('[\[\]]', hstr) if x.strip() != '']
+                tokens = [x.strip() for x in re.split(r'[\[\]]', hstr) if x.strip() != '']
                 unit = tokens[1] if len(tokens) > 1 else tokens[0]
             else:
                 unit = '*'
             if hstr.find('{}') == -1 and hstr.find('{') > -1:
-                tokens = [x.strip() for x in re.split('[{\}]', hstr) if x.strip() != '']
+                tokens = [x.strip() for x in re.split(r'[{\}]', hstr) if x.strip() != '']
                 agg = tokens[1] if len(tokens) > 1 else tokens[0]
             else:
                 agg = '*'
-                
+
         except:  # pragma: no cover - I could not figure out how to get an exception
             # print >> sys.stderr, 'PROBLEM: cannot figure out unit/aggregation for ' + hstr + ', defaulting to *,*'
             unit = '*'
             agg = '*'
-            
-        tag = unit+'|'+agg
-        tag_d1 = unit+'|*'
+
+        tag = unit + '|' + agg
+        tag_d1 = unit + '|*'
         tag_d2 = '*|*'
         # Look for matching Quantity and Aggregation
         if tag in self.thresholds:
