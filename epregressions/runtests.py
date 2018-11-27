@@ -420,7 +420,8 @@ class SuiteRunner:
         print("ABOUT TO OPEN OUT_FILE")
         out_file = io.open(diff_file, 'w', encoding='utf-8')
         print("OPENED OUT_FILE - ABOUT TO WRITE LINES")
-        out_file.writelines(list(cmp))
+        for out_line in list(cmp):
+            out_file.write(str(out_line))
         print("DONE WITH OUT_FILE - CLOSING AND DONE")
         out_file.close()
         return TextDifferences.DIFFS
