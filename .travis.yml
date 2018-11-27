@@ -1,10 +1,10 @@
-
 os: linux
 language: python
 
 addons:
   apt:
     packages:
+    - xvfb
     - python-gi
     - python-gi-cairo
     - python3-gi
@@ -28,7 +28,7 @@ matrix:
     env: TEST_COMMAND=flake8
 
 script:
-- coverage run setup.py $TEST_COMMAND
+- xvfb-run coverage run setup.py $TEST_COMMAND
 
 after_success:
 - test $TEST_COMMAND = "test" && coveralls

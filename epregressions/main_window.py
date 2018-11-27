@@ -236,7 +236,7 @@ class RegressionGUI(Gtk.Window):
 
         # create an exit button
         menu_item_file_exit = Gtk.MenuItem("Exit")
-        menu_item_file_exit.connect("activate", Gtk.main_quit)
+        menu_item_file_exit.connect("activate", self.go_away)
         menu_item_file_exit.show()
 
         # create the base root menu item for FILE

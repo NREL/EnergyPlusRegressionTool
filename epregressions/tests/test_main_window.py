@@ -9,3 +9,9 @@ class TestResultsTreeRoots(unittest.TestCase):
         """If the length of this changes, the UI must be updated also"""
         tree_roots = ResultsTreeRoots.list_all()
         self.assertEqual(11, len(tree_roots))
+
+
+class TestRegressionGUI(unittest.TestCase):
+
+    def test_a(self):
+        pass
