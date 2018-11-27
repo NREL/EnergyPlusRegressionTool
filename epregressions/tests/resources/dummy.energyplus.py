@@ -86,7 +86,7 @@ with open('eplustbl.htm', 'w') as f_tbl:
     f_tbl.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<title> Building FRESNO ANN HTG 99% CONDNS DB ** 
+<title> Building FRESNO ANN HTG 99% CONDNS DB **
   2018-11-05
   09:17:42
  - EnergyPlus</title>
