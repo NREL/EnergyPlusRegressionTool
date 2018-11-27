@@ -1,10 +1,12 @@
-
 os: linux
 language: python
+virtualenv:
+  system_site_packages: true
 
 addons:
   apt:
     packages:
+    - xvfb
     - python-gi
     - python-gi-cairo
     - python3-gi
@@ -20,15 +22,15 @@ matrix:
   - name: "2.7 Unit Test"
     python: "2.7"
     env: TEST_COMMAND=test
-  - name: "3.6 Unit Tests"
-    python: "3.6"
+  - name: "3.4 Unit Tests"
+    python: "3.4"
     env: TEST_COMMAND=test
-  - name: "3.6 Code Quality"
-    python: "3.6"
+  - name: "3.4 Code Quality"
+    python: "3.4"
     env: TEST_COMMAND=flake8
 
 script:
-- coverage run setup.py $TEST_COMMAND
+- xvfb-run coverage run setup.py $TEST_COMMAND
 
 after_success:
 - test $TEST_COMMAND = "test" && coveralls

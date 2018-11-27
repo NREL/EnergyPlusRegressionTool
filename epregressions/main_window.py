@@ -30,7 +30,7 @@ from epregressions.builds.install import EPlusInstallDirectory
 import gi
 gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, Gtk, GObject  # noqa
+from gi.repository import Gdk, Gtk, GObject, GLib  # noqa
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
@@ -161,8 +161,7 @@ class RegressionGUI(Gtk.Window):
         self.currently_saving = False
 
         # start the auto-save timer
-        GObject.timeout_add(300000, self.save_settings,
-                            None)  # milliseconds, and a function pointer, and an argument to be passed to the function
+        GLib.timeout_add(300000, self.save_settings, None)  # milli-seconds, function pointer, and args to pass to func
 
         # build the idf selection
         self.rebuild_idf_list()
@@ -171,11 +170,14 @@ class RegressionGUI(Gtk.Window):
         if self.try_to_restore_files:
             self.restore_file_selection(self.try_to_restore_files)
 
-    def go_away(self, widget):
+    def go_away(self, widget):  # pragma: no cover - This won't be covered
         try:
             self.save_settings(None)
         except Exception as this_exception:
             print(this_exception)
+        if Gtk.main_level() == 0:  # pragma: no cover
+            # this indicates a main loop isn't running, as with unit testing
+            return
         Gtk.main_quit()
 
     def gui_build(self):
@@ -194,16 +196,16 @@ class RegressionGUI(Gtk.Window):
 
         # build the last run context menu
         self.last_run_context = Gtk.Menu()
-        self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
+        self.last_run_context_copy = Gtk.MenuItem(label="Copy files from this node to the clipboard")
         self.last_run_context.append(self.last_run_context_copy)
         self.last_run_context_copy.connect("activate", self.handle_results_list_copy)
         self.last_run_context_copy.hide()
-        self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
+        self.last_run_context_nocopy = Gtk.MenuItem(label="No files on this node to copy to the clipboard")
         self.last_run_context.append(self.last_run_context_nocopy)
         self.last_run_context_nocopy.show()
 
         # create a v-box to start laying out the geometry of the form
-        this_v_box = Gtk.VBox(False, box_spacing)
+        this_v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
 
         # add the menu to the v-box
         this_v_box.pack_start(self.gui_build_menu_bar(), False, False, box_spacing)
@@ -226,21 +228,21 @@ class RegressionGUI(Gtk.Window):
         # this is what is added to the v-box, or in the case of Ubuntu the global menu
         mb = Gtk.MenuBar()
 
-        menu_item_file_load = Gtk.MenuItem("Load Settings from File")
+        menu_item_file_load = Gtk.MenuItem(label="Load Settings from File")
         menu_item_file_load.connect("activate", self.load_settings, "from_menu")
         menu_item_file_load.show()
 
-        menu_item_file_save = Gtk.MenuItem("Save Settings to File")
+        menu_item_file_save = Gtk.MenuItem(label="Save Settings to File")
         menu_item_file_save.connect("activate", self.save_settings, "from_menu")
         menu_item_file_save.show()
 
         # create an exit button
-        menu_item_file_exit = Gtk.MenuItem("Exit")
-        menu_item_file_exit.connect("activate", Gtk.main_quit)
+        menu_item_file_exit = Gtk.MenuItem(label="Exit")
+        menu_item_file_exit.connect("activate", self.go_away)
         menu_item_file_exit.show()
 
         # create the base root menu item for FILE
-        menu_item_file = Gtk.MenuItem("File")
+        menu_item_file = Gtk.MenuItem(label="File")
 
         # create a menu to hold FILE items and put them in there
         file_menu = Gtk.Menu()
@@ -253,11 +255,11 @@ class RegressionGUI(Gtk.Window):
         # attach the FILE menu to the main menu bar
         mb.append(menu_item_file)
 
-        menu_item_help_pdf = Gtk.MenuItem("Open Online Documentation")
+        menu_item_help_pdf = Gtk.MenuItem(label="Open Online Documentation")
         menu_item_help_pdf.connect("activate", self.open_documentation)
         menu_item_help_pdf.show()
 
-        menu_item_help = Gtk.MenuItem("Help")
+        menu_item_help = Gtk.MenuItem(label="Help")
         help_menu = Gtk.Menu()
         help_menu.append(menu_item_help_pdf)
         menu_item_help.set_submenu(help_menu)
@@ -271,7 +273,7 @@ class RegressionGUI(Gtk.Window):
 
         # auto-save when closing if from_menu is False
         settings_file = os.path.join(os.path.expanduser("~"), ".saved-epsuite-settings")
-        if from_menu:
+        if from_menu:  # pragma: no cover - I won't cover anything related to menu click operations
             sure_dialog = Gtk.MessageDialog(
                 self, flags=0, type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.YES_NO,
                 message_format="Are you sure you want to load a new configuration?"
@@ -301,14 +303,15 @@ class RegressionGUI(Gtk.Window):
                 dialog.destroy()
                 return
         else:
-            if not os.path.exists(settings_file):
+            if not os.path.exists(settings_file):  # pragma: no cover - because who cares
                 # abort early because there isn't an auto-saved file
                 return
 
-        file_content = open(settings_file, 'r').read()
         try:
+            with open(settings_file) as f_settings:
+                file_content = f_settings.read()
             project_tree = json.loads(file_content)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError:  # pragma: no cover - not needed to cover here
             print("Could not process settings save file, may be an old XML version")
             return
 
@@ -334,9 +337,9 @@ class RegressionGUI(Gtk.Window):
                 self.case_2_type = case_b['build_type']
             if 'runconfig' in suite_data:
                 run_config_option = suite_data['runconfig']
-                if run_config_option == "NONE":
+                if run_config_option == "NONE":  # pragma: no cover - I could test these, but it's not necessary
                     self.force_run_type = ForceRunType.NONE
-                elif run_config_option == "DDONLY":
+                elif run_config_option == "DDONLY":  # pragma: no cover - I could test these, but it's not necessary
                     self.force_run_type = ForceRunType.DD
                 elif run_config_option == "ANNUAL":
                     self.force_run_type = ForceRunType.ANNUAL
@@ -344,7 +347,7 @@ class RegressionGUI(Gtk.Window):
                 self.report_frequency = suite_data['reportfreq']
             if 'numthreads' in suite_data:
                 self.num_threads_to_run = suite_data['numthreads']
-        if from_menu:
+        if from_menu:  # pragma: no cover - not covering anything with menu clicks
             self.gui_fill_with_data()
 
     def gui_fill_with_data(self):
@@ -388,7 +391,7 @@ class RegressionGUI(Gtk.Window):
         # if we are already saving, don't do it again at the same time, just get out! :)
         # this could cause a - uh - problem if the user attempts to save during an auto-save
         # but what are the chances, meh, we can issue a log message that might show up long enough in the status bar
-        if self.currently_saving:
+        if self.currently_saving:  # pragma: no cover - not going to recreate race conditions here
             self.status_bar.push(
                 self.status_bar_context_id,
                 "Attempted a (perhaps auto-) save while another (perhaps auto-) save was in progress; try again now"
@@ -400,7 +403,7 @@ class RegressionGUI(Gtk.Window):
 
         # auto-save when closing if from_menu is False
         save_file = os.path.join(os.path.expanduser("~"), ".saved-epsuite-settings")
-        if from_menu:
+        if from_menu:  # pragma: no cover - not catching menu click operations, etc.
             dialog = Gtk.FileChooserDialog(
                 title="Select settings file save name",
                 parent=self,
@@ -444,9 +447,9 @@ class RegressionGUI(Gtk.Window):
             'selected': self.case_2_run,
             'build_directory': self.case_2_dir
         }
-        if self.force_run_type == ForceRunType.NONE:
+        if self.force_run_type == ForceRunType.NONE:  # pragma: no cover - I could test these, but it's not necessary
             output_object['suiteoptions']['runconfig'] = "NONE"
-        elif self.force_run_type == ForceRunType.DD:
+        elif self.force_run_type == ForceRunType.DD:  # pragma: no cover - I could test these, but it's not necessary
             output_object['suiteoptions']['runconfig'] = "DDONLY"
         elif self.force_run_type == ForceRunType.ANNUAL:
             output_object['suiteoptions']['runconfig'] = "ANNUAL"
@@ -466,69 +469,69 @@ class RegressionGUI(Gtk.Window):
     def restore_file_selection(self, file_list):
         for idf_entry in self.idf_list_store:
             idf_entry[IDFListViewColumnIndex.RUN] = False
-        for filename in self.try_to_restore_files:
-            for idf_entry in file_list:
+        for filename in file_list:
+            for idf_entry in self.idf_list_store:
                 if idf_entry[IDFListViewColumnIndex.IDF] == filename:  # if it matches
                     idf_entry[IDFListViewColumnIndex.RUN] = True
 
     def gui_build_notebook_page_test_suite(self):
 
         notebook_page_suite = Gtk.HPaned()
-        notebook_page_suite_options = Gtk.VBox(False, box_spacing)
+        notebook_page_suite_options = Gtk.VBox(homogeneous=False, spacing=box_spacing)
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Test Suite Directories:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 1: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        this_label = Gtk.Label(label="Case 1: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(this_label)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.case_1_check = Gtk.CheckButton("Run Case 1?", use_underline=False)
+        self.case_1_check = Gtk.CheckButton(label="Run Case 1?", use_underline=False)
         self.case_1_check.connect("toggled", self.suite_option_handler_basedir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_1_check)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        h_box_case_1_build = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Build Directory: ")
+        h_box_case_1_build = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Build Directory: ")
         button1.connect("clicked", self.suite_option_handler_base_build_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
         alignment.add(button1)
         h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
-        self.case_1_build_dir_label = Gtk.Label("<select_build_dir>")
+        self.case_1_build_dir_label = Gtk.Label(label="<select_build_dir>")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_1_build_dir_label)
         h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
 
-        h_box_2 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 2: ")
+        h_box_2 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        this_label = Gtk.Label(label="Case 2: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(this_label)
         h_box_2.pack_start(alignment, False, False, box_spacing)
-        self.case_2_check = Gtk.CheckButton("Run Case 2?", use_underline=False)
+        self.case_2_check = Gtk.CheckButton(label="Run Case 2?", use_underline=False)
         self.case_2_check.connect("toggled", self.suite_option_handler_mod_dir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_2_check)
         h_box_2.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_2, False, False, box_spacing)
 
-        h_box_case_2_build = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Build Directory: ")
+        h_box_case_2_build = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Build Directory: ")
         button1.connect("clicked", self.suite_option_handler_mod_build_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
         alignment.add(button1)
         h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
-        self.case_2_build_dir_label = Gtk.Label("<select_build_dir>")
+        self.case_2_build_dir_label = Gtk.Label(label="<select_build_dir>")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_2_build_dir_label)
         h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
@@ -536,28 +539,28 @@ class RegressionGUI(Gtk.Window):
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>IDF Selection:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_select_1 = Gtk.HBox(False, box_spacing)
-        button = Gtk.Button("Select All")
+        h_box_select_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button = Gtk.Button(label="Select All")
         button.connect("clicked", self.idf_selection_all, True)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Deselect All")
+        button = Gtk.Button(label="Deselect All")
         button.connect("clicked", self.idf_selection_all, False)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_select_1, False, False, box_spacing)
 
-        h_box_select_2 = Gtk.HBox(False, box_spacing)
+        h_box_select_2 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         self.file_list_num_files = Gtk.SpinButton()
         self.file_list_num_files.set_range(0, 1000)
         self.file_list_num_files.set_increments(1, 10)
@@ -565,20 +568,20 @@ class RegressionGUI(Gtk.Window):
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.file_list_num_files)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Select N Random Files")
+        button = Gtk.Button(label="Select N Random Files")
         button.connect("clicked", self.idf_selection_random)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_select_2, False, False, box_spacing)
 
-        h_box_select_3 = Gtk.HBox(False, box_spacing)
-        button = Gtk.Button("Select from List")
+        h_box_select_3 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button = Gtk.Button(label="Select from List")
         button.connect("clicked", self.idf_selection_list)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_3.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Select from Folder")
+        button = Gtk.Button(label="Select from Folder")
         button.connect("clicked", self.idf_selection_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
@@ -587,31 +590,31 @@ class RegressionGUI(Gtk.Window):
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Options:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
         # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
         if platform() != Platforms.Windows:
-            num_threads_box = Gtk.HBox(False, box_spacing)
+            num_threads_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
             self.suite_option_num_threads.set_range(1, 8)
             self.suite_option_num_threads.set_increments(1, 4)
             self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
             self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
-            num_threads_label = Gtk.Label("Number of threads to use for suite: ")
+            num_threads_label = Gtk.Label(label="Number of threads to use for suite: ")
             num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
             num_threads_label_aligner.add(num_threads_label)
             num_threads_box.pack_start(num_threads_label_aligner, False, False, box_spacing)
             num_threads_box.pack_start(self.suite_option_num_threads, True, True, box_spacing)
             notebook_page_suite_options.pack_start(num_threads_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a test suite run configuration: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        label1 = Gtk.Label(label="Select a test suite run configuration: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
@@ -625,8 +628,8 @@ class RegressionGUI(Gtk.Window):
         h_box_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a minimum reporting frequency: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        label1 = Gtk.Label(label="Select a minimum reporting frequency: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
@@ -645,34 +648,34 @@ class RegressionGUI(Gtk.Window):
         h_box_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Ready to Run:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        self.suite_dir_struct_info = Gtk.Label("<Test suite run directory structure information>")
+        self.suite_dir_struct_info = Gtk.Label(label="<Test suite run directory structure information>")
         self.gui_update_label_for_run_config()
         aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         aligner.add(self.suite_dir_struct_info)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(aligner, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Validate Test Suite Structure")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Validate Test Suite Structure")
         button1.connect("clicked", self.suite_option_handler_suite_validate)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button1)
         h_box_1.pack_start(alignment, True, True, box_spacing)
-        self.btn_run_suite = Gtk.Button("Run Suite")
+        self.btn_run_suite = Gtk.Button(label="Run Suite")
         self.btn_run_suite.connect("clicked", self.run_button)
         self.btn_run_suite.set_size_request(120, -1)
-        color = Gdk.color_parse('green')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('green')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.btn_run_suite)
         h_box_1.pack_start(alignment, True, True, box_spacing)
@@ -687,8 +690,7 @@ class RegressionGUI(Gtk.Window):
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.idf_list_store = Gtk.ListStore(bool, str, str)
         self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --"])
-        tree_view = Gtk.TreeView(self.idf_list_store)
-        tree_view.set_rules_hint(True)
+        tree_view = Gtk.TreeView(model=self.idf_list_store)
         # make the columns for the tree view; could add more columns including a checkbox
         # column: selected for run
         renderer_toggle = Gtk.CellRendererToggle()
@@ -720,8 +722,7 @@ class RegressionGUI(Gtk.Window):
         # make the list store and the treeview
         self.verify_list_store = Gtk.ListStore(str, str, bool, str)
         self.verify_list_store.append(["Press \"Validate Test Suite Structure\" to see results", "", True, None])
-        self.verify_tree_view = Gtk.TreeView(self.verify_list_store)
-        self.verify_tree_view.set_rules_hint(True)
+        self.verify_tree_view = Gtk.TreeView(model=self.verify_list_store)
         # make the columns for the treeview; could add more columns including a checkbox
         # column: idf name
         renderer_text = Gtk.CellRendererText()
@@ -763,8 +764,7 @@ class RegressionGUI(Gtk.Window):
             self.results_parent[parent_root] = self.results_list_store.append(None, [parent_root])
             self.results_child[parent_root] = None
 
-        self.tree_view = Gtk.TreeView(self.results_list_store)
-        self.tree_view.set_rules_hint(True)
+        self.tree_view = Gtk.TreeView(model=self.results_list_store)
         tree_view_column = Gtk.TreeViewColumn('Results Summary')
         cell = Gtk.CellRendererText()
         tree_view_column.pack_start(cell, True)
@@ -775,22 +775,46 @@ class RegressionGUI(Gtk.Window):
         self.tree_view.connect("row-activated", self.handle_tree_view_row_activated)
         self.tree_selection = self.tree_view.get_selection()
 
-        self.last_run_heading = Gtk.Label(None)
+        self.last_run_heading = Gtk.Label(label=None)
         self.last_run_heading.set_markup(
             "<b>Hint:</b> Try double-clicking on a filename to launch a file browser to that folder.")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(self.last_run_heading)
-        this_hbox = Gtk.HBox(False, box_spacing)
+        this_hbox = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_hbox.pack_start(alignment, False, False, box_spacing)
 
-        v_box = Gtk.VBox(False, box_spacing)
+        v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
         v_box.pack_start(this_hbox, False, False, box_spacing)
         notebook_page_results.add(self.tree_view)
 
         v_box.add(notebook_page_results)
         return v_box
 
-    def handle_tree_view_row_activated(self, tv_widget, path_tuple, view_column):
+    @staticmethod
+    def open_file_browser_to_directory(dir_to_open):
+        this_platform = platform()
+        p = None
+        if this_platform == Platforms.Linux:
+            try:
+                p = subprocess.Popen(['xdg-open', dir_to_open])
+            except Exception as this_exception:  # pragma: no cover - not covering bad directories
+                print("Could not open file:")
+                print(this_exception)
+        elif this_platform == Platforms.Windows:  # pragma: no cover - only testing on Linux
+            try:
+                p = subprocess.Popen(['start', dir_to_open], shell=True)
+            except Exception as this_exception:
+                print("Could not open file:")
+                print(this_exception)
+        elif this_platform == Platforms.Mac:  # pragma: no cover - only testing on Linux
+            try:
+                p = subprocess.Popen(['open', dir_to_open])
+            except Exception as this_exception:
+                print("Could not open file:")
+                print(this_exception)
+        return p
+
+    def handle_tree_view_row_activated(self, tv_widget, path_tuple, view_column):  # pragma: no cover
         # Get currently selected item
         (model, item_path) = self.tree_selection.get_selected()
         # If we aren't at the filename level, exit out
@@ -805,25 +829,7 @@ class RegressionGUI(Gtk.Window):
             colon_index = case_name.index(":")
             case_name = case_name[:colon_index]
         dir_to_open = os.path.join(self.last_results_test_dir, case_name)
-        this_platform = platform()
-        if this_platform == Platforms.Linux:
-            try:
-                subprocess.Popen(['xdg-open', dir_to_open])
-            except Exception as this_exception:
-                print("Could not open file:")
-                print(this_exception)
-        elif this_platform == Platforms.Windows:
-            try:
-                subprocess.Popen(['start', dir_to_open], shell=True)
-            except Exception as this_exception:
-                print("Could not open file:")
-                print(this_exception)
-        elif this_platform == Platforms.Mac:
-            try:
-                subprocess.Popen(['open', dir_to_open])
-            except Exception as this_exception:
-                print("Could not open file:")
-                print(this_exception)
+        self.open_file_browser_to_directory(dir_to_open)
 
     def gui_build_notebook_page_log(self):
 
@@ -834,8 +840,7 @@ class RegressionGUI(Gtk.Window):
         self.log_store = Gtk.ListStore(str, str)
         self.log_store.append(["%s" % str(datetime.now()), "%s" % "Program initialized"])
 
-        tree_view = Gtk.TreeView(self.log_store)
-        tree_view.set_rules_hint(True)
+        tree_view = Gtk.TreeView(model=self.log_store)
         tree_view.connect("size-allocate", self.tree_view_size_changed)
 
         column = Gtk.TreeViewColumn("TimeStamp", Gtk.CellRendererText(), text=0)
@@ -849,18 +854,18 @@ class RegressionGUI(Gtk.Window):
         tree_view.append_column(column)
         self.log_scroll_notebook_page.add(tree_view)
 
-        v_box = Gtk.VBox(False, box_spacing)
+        v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
         v_box.pack_start(
             self.log_scroll_notebook_page, True, True, box_spacing
         )
 
-        h_box_buttons = Gtk.HBox(True, box_spacing)
-        save_button = Gtk.Button("Save Log Messages")
+        h_box_buttons = Gtk.HBox(homogeneous=True, spacing=box_spacing)
+        save_button = Gtk.Button(label="Save Log Messages")
         save_button.connect("clicked", self.save_log)
         alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(save_button)
         h_box_buttons.pack_start(alignment, False, False, box_spacing)
-        clear_button = Gtk.Button("Clear Log Messages")
+        clear_button = Gtk.Button(label="Clear Log Messages")
         clear_button.connect("clicked", self.clear_log)
         alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(clear_button)
@@ -869,8 +874,7 @@ class RegressionGUI(Gtk.Window):
 
         return v_box
 
-    def save_log(self, widget):
-        output_string = '\n'.join(["%s: %s" % (x[0], x[1]) for x in self.log_store])
+    def save_log(self, widget):  # pragma: no cover - the bulk of this is the file dialog, moved core to save_log_worker
         save_file = os.path.join(os.path.expanduser("~"), "log_messages.log")
         dialog = Gtk.FileChooserDialog(
             title="Select log messages save file name",
@@ -893,10 +897,14 @@ class RegressionGUI(Gtk.Window):
         else:
             dialog.destroy()
             return
+        self.save_log_worker(save_file)
+
+    def save_log_worker(self, save_file):
         try:
+            output_string = '\n'.join(["%s: %s" % (x[0], x[1]) for x in self.log_store])
             with open(save_file, 'w') as f_save:
                 f_save.write(output_string)
-        except Exception as write_exception:
+        except Exception as write_exception:  # pragma: no cover - failure results in the dialog showing
             self.warning_dialog('Problem writing save file, log not saved; error: %s' % str(write_exception))
             return
 
@@ -918,17 +926,17 @@ class RegressionGUI(Gtk.Window):
         cur_bottom = cur_val + page_size
         distance_from_bottom = new_upper - cur_bottom
         fraction_of_page_size = 0.2 * page_size
-        if distance_from_bottom < fraction_of_page_size:
+        if distance_from_bottom < fraction_of_page_size:  # pragma: no cover - not checking any of this GUI stuff
             adj.set_value(new_upper - page_size)
             return True
-        else:
+        else:  # pragma: no cover - not checking any of this GUI stuff
             return False
 
     def gui_build_notebook(self):
         notebook = Gtk.Notebook()
-        notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
-        notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
-        notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
+        notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label(label="Test Suite"))
+        notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label(label="Last Run Summary"))
+        notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label(label="Log Messages"))
         return notebook
 
     def gui_build_messaging(self):
@@ -945,11 +953,11 @@ class RegressionGUI(Gtk.Window):
     @staticmethod
     def add_frame(widget, for_separator=False):
         frame = Gtk.Frame()
-        if for_separator:
-            color = Gdk.Color(76 * 256, 72 * 256, 69 * 256)
-        else:
-            color = Gdk.Color(56283, 22359, 0)
-        frame.modify_bg(Gtk.StateType.NORMAL, color)
+        # if for_separator:
+        #     color = Gdk.Color(76 * 256, 72 * 256, 69 * 256)
+        # else:
+        #     color = Gdk.Color(56283, 22359, 0)
+        # frame.modify_bg(Gtk.StateType.NORMAL, color)
         frame.add(widget)
         return frame
 
@@ -965,7 +973,7 @@ class RegressionGUI(Gtk.Window):
             self.log_store.remove(self.log_store[0].iter)
         self.log_store.append(["%s" % str(datetime.now()), "%s" % message])
 
-    def warning_dialog(self, message, do_log_entry=True):
+    def warning_dialog(self, message, do_log_entry=True):  # pragma: no cover - not testing any dialog stuff
         dialog = Gtk.MessageDialog(
             self,
             Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
@@ -979,10 +987,10 @@ class RegressionGUI(Gtk.Window):
             self.add_log_entry("Warning: %s" % message)
         dialog.destroy()
 
-    def warning_not_yet_built(self):
+    def warning_not_yet_built(self):  # pragma: no cover - not testing any dialog stuff
         self.warning_dialog("File selection and/or test suite operations can't be performed until master list is built")
 
-    def open_documentation(self, widget):
+    def open_documentation(self, widget):  # pragma: no cover - not testing any extra window stuff
         url = 'https://energyplusregressiontool.readthedocs.io/en/latest/'
         try:
             webbrowser.open_new_tab(url)
@@ -1023,7 +1031,7 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
         # return if not successful
-        if not status:
+        if not status:  # pragma: no cover - not going to try to recreate a failure event for this
             return
 
         self.idf_list_store.clear()
@@ -1035,7 +1043,7 @@ class RegressionGUI(Gtk.Window):
             if file_a.has_weather_file:
                 this_file.append(file_a.weatherfilename)
             else:
-                this_file.append(self.missing_weather_file_key)
+                this_file.append(self.missing_weather_file_key)  # pragma: no cover - would require a new file csv list
             self.idf_list_store.append(this_file)
 
         self.add_log_entry("Completed building idf list")
@@ -1063,7 +1071,7 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
     def idf_selection_all(self, widget, selection):
-        if not self.idf_files_have_been_built:
+        if not self.idf_files_have_been_built:  # pragma: no cover - not testing any warning dialogs
             self.warning_not_yet_built()
             return
         for this_file in self.idf_list_store:
@@ -1071,7 +1079,7 @@ class RegressionGUI(Gtk.Window):
         self.update_status_with_num_selected()
 
     def idf_selection_random(self, widget):
-        if not self.idf_files_have_been_built:
+        if not self.idf_files_have_been_built:  # pragma: no cover - not testing any warning dialogs
             self.warning_not_yet_built()
             return
         # clear them all first; eventually this could be changed to just randomly "down-select" already checked items
@@ -1080,14 +1088,14 @@ class RegressionGUI(Gtk.Window):
         number_to_select = int(self.file_list_num_files.get_value())
         number_of_idf_files = len(self.idf_list_store)
         if len(self.idf_list_store) <= number_to_select:  # just take all of them
-            pass
+            self.idf_selection_all(widget, True)
         else:  # down select randomly
             indices_to_take = random.sample(range(number_of_idf_files), number_to_select)
             for i in indices_to_take:
                 self.idf_list_store[i][0] = True
         self.update_status_with_num_selected()
 
-    def idf_selection_dir(self, widget):
+    def idf_selection_dir(self, widget):  # pragma: no cover - moved core into idf_selection_from_list_worker
         if not self.idf_files_have_been_built:
             self.warning_not_yet_built()
             return
@@ -1105,19 +1113,22 @@ class RegressionGUI(Gtk.Window):
         if response == Gtk.ResponseType.OK:
             self.last_folder_path = dialog.get_filename()
         dialog.destroy()
-        paths_in_dir = glob.glob(os.path.join(self.last_folder_path, "*.idf"))
+        paths_in_dir = glob.glob(os.path.join(self.last_folder_path, "*.idf"))  # TODO: Find IMFs also?
         files_to_select = []
         for this_path in paths_in_dir:
             filename = os.path.basename(this_path)
             file_no_ext = os.path.splitext(filename)[0]
             files_to_select.append(file_no_ext)
+        self.idf_selection_from_list_worker(files_to_select)
+
+    def idf_selection_from_list_worker(self, files_to_select):
         # do a diagnostic check
         files_entered_not_available = []
         file_names_in_list_store = [x[1] for x in self.idf_list_store]
         for this_file in files_to_select:
-            if this_file not in file_names_in_list_store:
+            if this_file not in file_names_in_list_store:  # pragma: no cover - this leads to a dialog message
                 files_entered_not_available.append(this_file)
-        if len(files_entered_not_available) > 0:
+        if len(files_entered_not_available) > 0:  # pragma: no cover - not testing dialogs
             text = ""
             num = 0
             for this_file in files_entered_not_available:
@@ -1146,7 +1157,7 @@ class RegressionGUI(Gtk.Window):
                 this_file[0] = False
         self.update_status_with_num_selected()
 
-    def idf_selection_list(self, widget):
+    def idf_selection_list(self, widget):  # pragma: no cover - moved core into idf_selection_from_list_worker
         if not self.idf_files_have_been_built:
             self.warning_not_yet_built()
             return
@@ -1181,42 +1192,9 @@ class RegressionGUI(Gtk.Window):
             if line[-4:] == ".imf" or line[-4:] == ".idf":
                 this_line = this_line[:-4]
             files_to_select.append(this_line)
-        # do a diagnostic check
-        files_entered_not_available = []
-        file_names_in_list_store = [x[1] for x in self.idf_list_store]
-        for this_file in files_to_select:
-            if this_file not in file_names_in_list_store:
-                files_entered_not_available.append(this_file)
-        if len(files_entered_not_available) > 0:
-            text = ""
-            num = 0
-            for this_file in files_entered_not_available:
-                num += 1
-                text += "\t%s\n" % this_file
-                if num == 3:
-                    break
-            num_missing = len(files_entered_not_available)
-            if num_missing == 1:
-                word = "was"
-            else:
-                word = "were"
-            if num_missing <= 3:
-                self.warning_dialog(
-                    "%s files typed in %s not available for selection, listed here:\n%s" % (num_missing, word, text),
-                    False)
-            else:
-                self.warning_dialog("%s files typed in %s not available for selection, the first 3 listed here:\n%s" % (
-                    num_missing, word, text), False)
-            self.add_log_entry("Warning: %s files typed in %s not available for selection" % (num_missing, word))
-        # deselect them all first
-        for this_file in self.idf_list_store:
-            if this_file[1] in files_to_select:
-                this_file[0] = True
-            else:
-                this_file[0] = False
-        self.update_status_with_num_selected()
+        self.idf_selection_from_list_worker(files_to_select)
 
-    def file_list_handler_toggle_listview(self, widget, this_path, list_store):
+    def file_list_handler_toggle_listview(self, widget, this_path, list_store):  # pragma: no cover - GUI related
         list_store[this_path][0] = not list_store[this_path][0]
         self.update_status_with_num_selected()
 
@@ -1226,13 +1204,14 @@ class RegressionGUI(Gtk.Window):
             if this_file[0]:
                 num_selected += 1
         self.status_bar.push(self.status_bar_context_id, "%i IDFs selected now" % num_selected)
+        return num_selected
 
     # Test Suite workers and GUI handlers
 
     def init_suite_args(self):
 
         this_platform = platform()
-        if this_platform == Platforms.Windows:
+        if this_platform == Platforms.Windows:  # pragma: no cover - Linux only on Travis
             self.case_1_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo1\\Build"
             self.case_1_run = True
             self.case_1_type = KnownBuildTypes.VisualStudio
@@ -1240,7 +1219,7 @@ class RegressionGUI(Gtk.Window):
             self.case_1_dir = "/home/user/EnergyPlus/repo1/build/"
             self.case_1_run = True
             self.case_1_type = KnownBuildTypes.Makefile
-        if this_platform == Platforms.Windows:
+        if this_platform == Platforms.Windows:  # pragma: no cover - Linux only on Travis
             self.case_2_dir = "C:\\ResearchProjects\\EnergyPlus\\Repo2\\Build"
             self.case_2_run = True
             self.case_2_type = KnownBuildTypes.VisualStudio
@@ -1287,7 +1266,7 @@ class RegressionGUI(Gtk.Window):
         except Exception as exception:
             raise Exception('An error occurred in creating the build instance: %s' % str(exception))
 
-    def run_button(self, widget):
+    def run_button(self, widget):  # pragma: no cover - this is all covered in other unit tests
 
         if self.test_suite_is_running:
             self.runner.id_like_to_stop_now = True
@@ -1342,7 +1321,6 @@ class RegressionGUI(Gtk.Window):
                                   simstarting_callback=self.sim_starting_callback,
                                   casecompleted_callback=self.case_completed_callback,
                                   simulationscomplete_callback=self.simulations_complete_callback,
-                                  enderrcompleted_callback=self.end_err_completed_callback,
                                   diffcompleted_callback=self.diff_completed_callback,
                                   alldone_callback=self.all_done_callback,
                                   cancel_callback=self.cancel_callback)
@@ -1358,12 +1336,12 @@ class RegressionGUI(Gtk.Window):
 
         # Update the button
         self.btn_run_suite.set_label("Cancel Suite")
-        color = Gdk.color_parse('red')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('red')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
         self.test_suite_is_running = True
 
-    def suite_option_handler_base_build_dir(self, widget):
+    def suite_option_handler_base_build_dir(self, widget):  # pragma: no cover - don't need to test folder selection
         dialog = Gtk.FileChooserDialog(
             title="Select build folder",
             parent=self,
@@ -1397,7 +1375,7 @@ class RegressionGUI(Gtk.Window):
             elif response == 102:
                 self.case_1_type = KnownBuildTypes.Installation
 
-    def suite_option_handler_mod_build_dir(self, widget):
+    def suite_option_handler_mod_build_dir(self, widget):  # pragma: no cover - don't need to test folder selection
         dialog = Gtk.FileChooserDialog(
             title="Select build folder",
             parent=self,
@@ -1431,13 +1409,13 @@ class RegressionGUI(Gtk.Window):
             elif response == 102:
                 self.case_2_type = KnownBuildTypes.Installation
 
-    def suite_option_handler_basedir_check(self, widget):
+    def suite_option_handler_basedir_check(self, widget):  # pragma: no cover - don't need to test check selection
         self.case_1_run = widget.get_active()
 
-    def suite_option_handler_mod_dir_check(self, widget):
+    def suite_option_handler_mod_dir_check(self, widget):  # pragma: no cover - don't need to test check selection
         self.case_2_run = widget.get_active()
 
-    def suite_option_handler_force_run_type(self, widget):
+    def suite_option_handler_force_run_type(self, widget):  # pragma: no cover - don't need to test combobox selection
         text = widget.get_active_text()
         if text == force_none:
             self.force_run_type = ForceRunType.NONE
@@ -1450,14 +1428,15 @@ class RegressionGUI(Gtk.Window):
             widget.set_active(0)
         self.gui_update_label_for_run_config()
 
-    def suite_option_handler_report_frequency(self, widget):
+    def suite_option_handler_report_frequency(self, widget):  # pragma: no cover - don't need to test combobox selection
         self.report_frequency = widget.get_active_text()
         self.gui_update_label_for_run_config()
 
-    def suite_option_handler_num_threads(self, widget):
+    def suite_option_handler_num_threads(self, widget):  # pragma: no cover - don't need to test spinner selection
         self.num_threads_to_run = widget.get_value()
 
-    def suite_option_handler_suite_validate(self, widget, build_a=None, build_b=None):
+    def suite_option_handler_suite_validate(self, widget, build_a=None, build_b=None):  # pragma: no cover
+        # I'm not unit testing this because verify() function is heavily tested in other unit tests
 
         self.add_log_entry("Verifying directory structure")
 
@@ -1508,7 +1487,7 @@ class RegressionGUI(Gtk.Window):
         else:
             return False
 
-    def handle_results_list_copy(self, widget):
+    def handle_results_list_copy(self, widget):  # pragma: no cover - another topic I'm not testing with unit tests
         current_list = self.results_lists_to_copy[self.results_list_selected_entry_root_index]
         if current_list is not None:
             string = u""
@@ -1519,7 +1498,7 @@ class RegressionGUI(Gtk.Window):
         else:
             pass
 
-    def handle_tree_view_context_menu(self, widget, event):
+    def handle_tree_view_context_menu(self, widget, event):  # pragma: no cover - heavily GUI
         if event.button == 3:
             x = int(event.x)
             y = int(event.y)
@@ -1556,14 +1535,14 @@ class RegressionGUI(Gtk.Window):
 
     # Callbacks and callback handlers for GUI to interact with background operations
 
-    def print_callback(self, msg):
+    def print_callback(self, msg):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.print_callback_handler, msg)
 
     def print_callback_handler(self, msg):
         self.status_bar.push(self.status_bar_context_id, msg)
         self.add_log_entry(msg)
 
-    def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):
+    def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):  # pragma: no cover
         GObject.idle_add(self.sim_starting_callback_handler, number_of_builds, number_of_cases_per_build)
 
     def sim_starting_callback_handler(self, number_of_builds, number_of_cases_per_build):
@@ -1583,7 +1562,7 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(0.0)
         self.status_bar.push(self.status_bar_context_id, "Simulations running...")
 
-    def case_completed_callback(self, test_case_completed_instance):
+    def case_completed_callback(self, test_case_completed_instance):  # pragma: no cover
         GObject.idle_add(self.case_completed_callback_handler, test_case_completed_instance)
 
     def case_completed_callback_handler(self, test_case_completed_instance):
@@ -1597,34 +1576,27 @@ class RegressionGUI(Gtk.Window):
                 self.print_callback_handler("Completed %s : %s, Failed" % (
                     test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
 
-    def simulations_complete_callback(self):
+    def simulations_complete_callback(self):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.simulations_complete_callback_handler)
 
     def simulations_complete_callback_handler(self):
         self.status_bar.push(self.status_bar_context_id, "Simulations done; Post-processing...")
 
-    def end_err_completed_callback(self, build_name, case_name):
-        GObject.idle_add(self.end_err_completed_callback_handler, build_name, case_name)
-
-    def end_err_completed_callback_handler(self, build_name, case_name):
-        self.current_progress_value += 1.0
-        self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
-
-    def diff_completed_callback(self, case_name):
+    def diff_completed_callback(self, case_name):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.diff_completed_callback_handler, case_name)
 
     def diff_completed_callback_handler(self, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def all_done_callback(self, results):
+    def all_done_callback(self, results):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.all_done_callback_handler, results)
 
     def all_done_callback_handler(self, results):
 
-        color = Gdk.color_parse('green')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('green')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
 
         self.results_lists_to_copy = []
 
@@ -1645,7 +1617,7 @@ class RegressionGUI(Gtk.Window):
         for tree_root in root_and_files:
             file_lists = root_and_files[tree_root]
             this_file_list_count = len(file_lists.descriptions)
-            if self.results_child[tree_root]:
+            if self.results_child[tree_root]:  # pragma: no cover - I'd try to test this if the tree was its own class
                 self.results_list_store.remove(self.results_child[tree_root])
             self.results_child[tree_root] = self.results_list_store.append(
                 self.results_parent[tree_root],
@@ -1653,7 +1625,7 @@ class RegressionGUI(Gtk.Window):
             )
             this_path = self.results_list_store.get_path(self.results_parent[tree_root])
             self.tree_view.expand_row(this_path, False)
-            for result in file_lists.descriptions:
+            for result in file_lists.descriptions:  # pragma: no cover
                 self.results_list_store.append(self.results_child[tree_root], [result])
             self.results_lists_to_copy.append(file_lists.base_names)
 
@@ -1664,14 +1636,14 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(1.0)
         self.last_results_test_dir = results.results_dir
 
-    def cancel_callback(self):
+    def cancel_callback(self):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.cancel_callback_handler)
 
     def cancel_callback_handler(self):
         self.btn_run_suite.set_label("Run Suite")
-        color = Gdk.color_parse('green')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('green')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
         self.test_suite_is_running = False
         self.status_bar.push(self.status_bar_context_id, "Cancelled")
         self.progress.set_fraction(1.0)
