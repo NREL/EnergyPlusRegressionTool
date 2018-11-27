@@ -417,7 +417,7 @@ class SuiteRunner:
         out_lines = list(cmp)
         for out_line in out_lines:
             if sys.version_info[0] == 2:
-                out_line = out_line.decode('utf-8')
+                out_line = out_line.decode('utf-8')  # pragma: no cover - This shouldn't interfere with 100% coverage
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS

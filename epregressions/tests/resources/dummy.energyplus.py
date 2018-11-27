@@ -82,6 +82,37 @@ if 'txt_results' in config:
     f_delightin.close()
     f_delightout.close()
 
+with open('eplustbl.htm', 'w') as f_tbl:
+    f_tbl.write("""<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title> Building FRESNO ANN HTG 99% CONDNS DB ** 
+  2018-11-05
+  09:17:42
+ - EnergyPlus</title>
+</head>
+<body>
+<b></b><br><br>
+<b>Site and Source Energy</b><br><br>
+<!-- FullName:Annual Building Utility Performance Summary_Entire Facility_Site and Source Energy-->
+<table border="1" cellpadding="4" cellspacing="0">
+  <tr><td></td>
+    <td align="right">Total Energy [GJ]</td>
+    <td align="right">Energy Per Total Building Area [MJ/m2]</td>
+    <td align="right">Energy Per Conditioned Building Area [MJ/m2]</td>
+  </tr>
+  <tr>
+    <td align="right">Total Site Energy</td>
+    <td align="right">        0.00</td>
+    <td align="right">        0.00</td>
+    <td align="right">        0.00</td>
+  </tr>
+</table>
+<br><br>
+</body>
+</html>
+""")
+
 # DO THIS LAST - it has sys.exit() calls - eplusout.end
 num_warnings = config['num_warnings'] if 'num_warnings' in config else 0
 num_severe = config['num_severe'] if 'num_severe' in config else 0
