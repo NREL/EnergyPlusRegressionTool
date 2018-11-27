@@ -30,7 +30,7 @@ from epregressions.builds.install import EPlusInstallDirectory
 import gi
 gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, Gtk, GObject  # noqa
+from gi.repository import Gdk, Gtk, GObject, GLib  # noqa
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
@@ -161,8 +161,7 @@ class RegressionGUI(Gtk.Window):
         self.currently_saving = False
 
         # start the auto-save timer
-        GObject.timeout_add(300000, self.save_settings,
-                            None)  # milliseconds, and a function pointer, and an argument to be passed to the function
+        GLib.timeout_add(300000, self.save_settings, None)  # milli-seconds, function pointer, and args to pass to func
 
         # build the idf selection
         self.rebuild_idf_list()
@@ -171,11 +170,14 @@ class RegressionGUI(Gtk.Window):
         if self.try_to_restore_files:
             self.restore_file_selection(self.try_to_restore_files)
 
-    def go_away(self, widget):
+    def go_away(self, widget):  # pragma: no cover - This won't be covered
         try:
             self.save_settings(None)
         except Exception as this_exception:
             print(this_exception)
+        if Gtk.main_level() == 0:  # pragma: no cover
+            # this indicates a main loop isn't running, as with unit testing
+            return
         Gtk.main_quit()
 
     def gui_build(self):
@@ -194,16 +196,16 @@ class RegressionGUI(Gtk.Window):
 
         # build the last run context menu
         self.last_run_context = Gtk.Menu()
-        self.last_run_context_copy = Gtk.MenuItem("Copy files from this node to the clipboard")
+        self.last_run_context_copy = Gtk.MenuItem(label="Copy files from this node to the clipboard")
         self.last_run_context.append(self.last_run_context_copy)
         self.last_run_context_copy.connect("activate", self.handle_results_list_copy)
         self.last_run_context_copy.hide()
-        self.last_run_context_nocopy = Gtk.MenuItem("No files on this node to copy to the clipboard")
+        self.last_run_context_nocopy = Gtk.MenuItem(label="No files on this node to copy to the clipboard")
         self.last_run_context.append(self.last_run_context_nocopy)
         self.last_run_context_nocopy.show()
 
         # create a v-box to start laying out the geometry of the form
-        this_v_box = Gtk.VBox(False, box_spacing)
+        this_v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
 
         # add the menu to the v-box
         this_v_box.pack_start(self.gui_build_menu_bar(), False, False, box_spacing)
@@ -226,21 +228,21 @@ class RegressionGUI(Gtk.Window):
         # this is what is added to the v-box, or in the case of Ubuntu the global menu
         mb = Gtk.MenuBar()
 
-        menu_item_file_load = Gtk.MenuItem("Load Settings from File")
+        menu_item_file_load = Gtk.MenuItem(label="Load Settings from File")
         menu_item_file_load.connect("activate", self.load_settings, "from_menu")
         menu_item_file_load.show()
 
-        menu_item_file_save = Gtk.MenuItem("Save Settings to File")
+        menu_item_file_save = Gtk.MenuItem(label="Save Settings to File")
         menu_item_file_save.connect("activate", self.save_settings, "from_menu")
         menu_item_file_save.show()
 
         # create an exit button
-        menu_item_file_exit = Gtk.MenuItem("Exit")
+        menu_item_file_exit = Gtk.MenuItem(label="Exit")
         menu_item_file_exit.connect("activate", self.go_away)
         menu_item_file_exit.show()
 
         # create the base root menu item for FILE
-        menu_item_file = Gtk.MenuItem("File")
+        menu_item_file = Gtk.MenuItem(label="File")
 
         # create a menu to hold FILE items and put them in there
         file_menu = Gtk.Menu()
@@ -253,11 +255,11 @@ class RegressionGUI(Gtk.Window):
         # attach the FILE menu to the main menu bar
         mb.append(menu_item_file)
 
-        menu_item_help_pdf = Gtk.MenuItem("Open Online Documentation")
+        menu_item_help_pdf = Gtk.MenuItem(label="Open Online Documentation")
         menu_item_help_pdf.connect("activate", self.open_documentation)
         menu_item_help_pdf.show()
 
-        menu_item_help = Gtk.MenuItem("Help")
+        menu_item_help = Gtk.MenuItem(label="Help")
         help_menu = Gtk.Menu()
         help_menu.append(menu_item_help_pdf)
         menu_item_help.set_submenu(help_menu)
@@ -271,7 +273,7 @@ class RegressionGUI(Gtk.Window):
 
         # auto-save when closing if from_menu is False
         settings_file = os.path.join(os.path.expanduser("~"), ".saved-epsuite-settings")
-        if from_menu:
+        if from_menu:  # pragma: no cover - I won't cover anything related to menu click operations
             sure_dialog = Gtk.MessageDialog(
                 self, flags=0, type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.YES_NO,
                 message_format="Are you sure you want to load a new configuration?"
@@ -305,10 +307,11 @@ class RegressionGUI(Gtk.Window):
                 # abort early because there isn't an auto-saved file
                 return
 
-        file_content = open(settings_file, 'r').read()
         try:
+            with open(settings_file) as f_settings:
+                file_content = f_settings.read()
             project_tree = json.loads(file_content)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError:  # pragma: no cover - not needed to cover here
             print("Could not process settings save file, may be an old XML version")
             return
 
@@ -388,7 +391,7 @@ class RegressionGUI(Gtk.Window):
         # if we are already saving, don't do it again at the same time, just get out! :)
         # this could cause a - uh - problem if the user attempts to save during an auto-save
         # but what are the chances, meh, we can issue a log message that might show up long enough in the status bar
-        if self.currently_saving:
+        if self.currently_saving:  # pragma: no cover - not going to recreate race conditions here
             self.status_bar.push(
                 self.status_bar_context_id,
                 "Attempted a (perhaps auto-) save while another (perhaps auto-) save was in progress; try again now"
@@ -400,7 +403,7 @@ class RegressionGUI(Gtk.Window):
 
         # auto-save when closing if from_menu is False
         save_file = os.path.join(os.path.expanduser("~"), ".saved-epsuite-settings")
-        if from_menu:
+        if from_menu:  # pragma: no cover - not catching menu click operations, etc.
             dialog = Gtk.FileChooserDialog(
                 title="Select settings file save name",
                 parent=self,
@@ -474,61 +477,61 @@ class RegressionGUI(Gtk.Window):
     def gui_build_notebook_page_test_suite(self):
 
         notebook_page_suite = Gtk.HPaned()
-        notebook_page_suite_options = Gtk.VBox(False, box_spacing)
+        notebook_page_suite_options = Gtk.VBox(homogeneous=False, spacing=box_spacing)
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Test Suite Directories:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 1: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        this_label = Gtk.Label(label="Case 1: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(this_label)
         h_box_1.pack_start(alignment, False, False, box_spacing)
-        self.case_1_check = Gtk.CheckButton("Run Case 1?", use_underline=False)
+        self.case_1_check = Gtk.CheckButton(label="Run Case 1?", use_underline=False)
         self.case_1_check.connect("toggled", self.suite_option_handler_basedir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_1_check)
         h_box_1.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        h_box_case_1_build = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Build Directory: ")
+        h_box_case_1_build = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Build Directory: ")
         button1.connect("clicked", self.suite_option_handler_base_build_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
         alignment.add(button1)
         h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
-        self.case_1_build_dir_label = Gtk.Label("<select_build_dir>")
+        self.case_1_build_dir_label = Gtk.Label(label="<select_build_dir>")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_1_build_dir_label)
         h_box_case_1_build.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_case_1_build, False, False, box_spacing)
 
-        h_box_2 = Gtk.HBox(False, box_spacing)
-        this_label = Gtk.Label("Case 2: ")
+        h_box_2 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        this_label = Gtk.Label(label="Case 2: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(this_label)
         h_box_2.pack_start(alignment, False, False, box_spacing)
-        self.case_2_check = Gtk.CheckButton("Run Case 2?", use_underline=False)
+        self.case_2_check = Gtk.CheckButton(label="Run Case 2?", use_underline=False)
         self.case_2_check.connect("toggled", self.suite_option_handler_mod_dir_check)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_2_check)
         h_box_2.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(h_box_2, False, False, box_spacing)
 
-        h_box_case_2_build = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Build Directory: ")
+        h_box_case_2_build = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Build Directory: ")
         button1.connect("clicked", self.suite_option_handler_mod_build_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.2, yscale=0.0)
         alignment.add(button1)
         h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
-        self.case_2_build_dir_label = Gtk.Label("<select_build_dir>")
+        self.case_2_build_dir_label = Gtk.Label(label="<select_build_dir>")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         alignment.add(self.case_2_build_dir_label)
         h_box_case_2_build.pack_start(alignment, False, False, box_spacing)
@@ -536,28 +539,28 @@ class RegressionGUI(Gtk.Window):
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>IDF Selection:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_select_1 = Gtk.HBox(False, box_spacing)
-        button = Gtk.Button("Select All")
+        h_box_select_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button = Gtk.Button(label="Select All")
         button.connect("clicked", self.idf_selection_all, True)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Deselect All")
+        button = Gtk.Button(label="Deselect All")
         button.connect("clicked", self.idf_selection_all, False)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_select_1, False, False, box_spacing)
 
-        h_box_select_2 = Gtk.HBox(False, box_spacing)
+        h_box_select_2 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         self.file_list_num_files = Gtk.SpinButton()
         self.file_list_num_files.set_range(0, 1000)
         self.file_list_num_files.set_increments(1, 10)
@@ -565,20 +568,20 @@ class RegressionGUI(Gtk.Window):
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.file_list_num_files)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Select N Random Files")
+        button = Gtk.Button(label="Select N Random Files")
         button.connect("clicked", self.idf_selection_random)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_2.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_select_2, False, False, box_spacing)
 
-        h_box_select_3 = Gtk.HBox(False, box_spacing)
-        button = Gtk.Button("Select from List")
+        h_box_select_3 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button = Gtk.Button(label="Select from List")
         button.connect("clicked", self.idf_selection_list)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
         h_box_select_3.pack_start(alignment, True, True, box_spacing)
-        button = Gtk.Button("Select from Folder")
+        button = Gtk.Button(label="Select from Folder")
         button.connect("clicked", self.idf_selection_dir)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button)
@@ -587,31 +590,31 @@ class RegressionGUI(Gtk.Window):
 
         notebook_page_suite_options.pack_start(self.add_frame(Gtk.HSeparator(), True), False, True, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Options:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
         # multi-threading in the GUI doesn't works in windows, so don't add the spin-button if we are on windows
         if platform() != Platforms.Windows:
-            num_threads_box = Gtk.HBox(False, box_spacing)
+            num_threads_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
             self.suite_option_num_threads.set_range(1, 8)
             self.suite_option_num_threads.set_increments(1, 4)
             self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
             self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
-            num_threads_label = Gtk.Label("Number of threads to use for suite: ")
+            num_threads_label = Gtk.Label(label="Number of threads to use for suite: ")
             num_threads_label_aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
             num_threads_label_aligner.add(num_threads_label)
             num_threads_box.pack_start(num_threads_label_aligner, False, False, box_spacing)
             num_threads_box.pack_start(self.suite_option_num_threads, True, True, box_spacing)
             notebook_page_suite_options.pack_start(num_threads_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a test suite run configuration: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        label1 = Gtk.Label(label="Select a test suite run configuration: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
@@ -625,8 +628,8 @@ class RegressionGUI(Gtk.Window):
         h_box_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        label1 = Gtk.Label("Select a minimum reporting frequency: ")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        label1 = Gtk.Label(label="Select a minimum reporting frequency: ")
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(label1)
         h_box_1.pack_start(alignment, False, False, box_spacing)
@@ -645,34 +648,34 @@ class RegressionGUI(Gtk.Window):
         h_box_1.pack_start(alignment, True, True, box_spacing)
         notebook_page_suite_options.pack_start(h_box_1, False, False, box_spacing)
 
-        heading = Gtk.Label(None)
+        heading = Gtk.Label(label=None)
         heading.set_markup("<b>Ready to Run:</b>")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(heading)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(alignment, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        self.suite_dir_struct_info = Gtk.Label("<Test suite run directory structure information>")
+        self.suite_dir_struct_info = Gtk.Label(label="<Test suite run directory structure information>")
         self.gui_update_label_for_run_config()
         aligner = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=0.0, yscale=0.0)
         aligner.add(self.suite_dir_struct_info)
-        this_h_box = Gtk.HBox(False, box_spacing)
+        this_h_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_h_box.pack_start(aligner, False, False, box_spacing)
         notebook_page_suite_options.pack_start(this_h_box, False, False, box_spacing)
 
-        h_box_1 = Gtk.HBox(False, box_spacing)
-        button1 = Gtk.Button("Validate Test Suite Structure")
+        h_box_1 = Gtk.HBox(homogeneous=False, spacing=box_spacing)
+        button1 = Gtk.Button(label="Validate Test Suite Structure")
         button1.connect("clicked", self.suite_option_handler_suite_validate)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(button1)
         h_box_1.pack_start(alignment, True, True, box_spacing)
-        self.btn_run_suite = Gtk.Button("Run Suite")
+        self.btn_run_suite = Gtk.Button(label="Run Suite")
         self.btn_run_suite.connect("clicked", self.run_button)
         self.btn_run_suite.set_size_request(120, -1)
-        color = Gdk.color_parse('green')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('green')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.btn_run_suite)
         h_box_1.pack_start(alignment, True, True, box_spacing)
@@ -687,8 +690,7 @@ class RegressionGUI(Gtk.Window):
         listview_window.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.idf_list_store = Gtk.ListStore(bool, str, str)
         self.idf_list_store.append([False, "-- Re-build idf list --", "-- to see results --"])
-        tree_view = Gtk.TreeView(self.idf_list_store)
-        tree_view.set_rules_hint(True)
+        tree_view = Gtk.TreeView(model=self.idf_list_store)
         # make the columns for the tree view; could add more columns including a checkbox
         # column: selected for run
         renderer_toggle = Gtk.CellRendererToggle()
@@ -720,8 +722,7 @@ class RegressionGUI(Gtk.Window):
         # make the list store and the treeview
         self.verify_list_store = Gtk.ListStore(str, str, bool, str)
         self.verify_list_store.append(["Press \"Validate Test Suite Structure\" to see results", "", True, None])
-        self.verify_tree_view = Gtk.TreeView(self.verify_list_store)
-        self.verify_tree_view.set_rules_hint(True)
+        self.verify_tree_view = Gtk.TreeView(model=self.verify_list_store)
         # make the columns for the treeview; could add more columns including a checkbox
         # column: idf name
         renderer_text = Gtk.CellRendererText()
@@ -763,8 +764,7 @@ class RegressionGUI(Gtk.Window):
             self.results_parent[parent_root] = self.results_list_store.append(None, [parent_root])
             self.results_child[parent_root] = None
 
-        self.tree_view = Gtk.TreeView(self.results_list_store)
-        self.tree_view.set_rules_hint(True)
+        self.tree_view = Gtk.TreeView(model=self.results_list_store)
         tree_view_column = Gtk.TreeViewColumn('Results Summary')
         cell = Gtk.CellRendererText()
         tree_view_column.pack_start(cell, True)
@@ -775,15 +775,15 @@ class RegressionGUI(Gtk.Window):
         self.tree_view.connect("row-activated", self.handle_tree_view_row_activated)
         self.tree_selection = self.tree_view.get_selection()
 
-        self.last_run_heading = Gtk.Label(None)
+        self.last_run_heading = Gtk.Label(label=None)
         self.last_run_heading.set_markup(
             "<b>Hint:</b> Try double-clicking on a filename to launch a file browser to that folder.")
         alignment = Gtk.Alignment(xalign=0.0, xscale=0.0)
         alignment.add(self.last_run_heading)
-        this_hbox = Gtk.HBox(False, box_spacing)
+        this_hbox = Gtk.HBox(homogeneous=False, spacing=box_spacing)
         this_hbox.pack_start(alignment, False, False, box_spacing)
 
-        v_box = Gtk.VBox(False, box_spacing)
+        v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
         v_box.pack_start(this_hbox, False, False, box_spacing)
         notebook_page_results.add(self.tree_view)
 
@@ -834,8 +834,7 @@ class RegressionGUI(Gtk.Window):
         self.log_store = Gtk.ListStore(str, str)
         self.log_store.append(["%s" % str(datetime.now()), "%s" % "Program initialized"])
 
-        tree_view = Gtk.TreeView(self.log_store)
-        tree_view.set_rules_hint(True)
+        tree_view = Gtk.TreeView(model=self.log_store)
         tree_view.connect("size-allocate", self.tree_view_size_changed)
 
         column = Gtk.TreeViewColumn("TimeStamp", Gtk.CellRendererText(), text=0)
@@ -849,18 +848,18 @@ class RegressionGUI(Gtk.Window):
         tree_view.append_column(column)
         self.log_scroll_notebook_page.add(tree_view)
 
-        v_box = Gtk.VBox(False, box_spacing)
+        v_box = Gtk.VBox(homogeneous=False, spacing=box_spacing)
         v_box.pack_start(
             self.log_scroll_notebook_page, True, True, box_spacing
         )
 
-        h_box_buttons = Gtk.HBox(True, box_spacing)
-        save_button = Gtk.Button("Save Log Messages")
+        h_box_buttons = Gtk.HBox(homogeneous=True, spacing=box_spacing)
+        save_button = Gtk.Button(label="Save Log Messages")
         save_button.connect("clicked", self.save_log)
         alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(save_button)
         h_box_buttons.pack_start(alignment, False, False, box_spacing)
-        clear_button = Gtk.Button("Clear Log Messages")
+        clear_button = Gtk.Button(label="Clear Log Messages")
         clear_button.connect("clicked", self.clear_log)
         alignment = Gtk.Alignment(xalign=0.5, yalign=0.0, xscale=0.0, yscale=0.0)
         alignment.add(clear_button)
@@ -926,9 +925,9 @@ class RegressionGUI(Gtk.Window):
 
     def gui_build_notebook(self):
         notebook = Gtk.Notebook()
-        notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label("Test Suite"))
-        notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label("Last Run Summary"))
-        notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label("Log Messages"))
+        notebook.append_page(self.gui_build_notebook_page_test_suite(), Gtk.Label(label="Test Suite"))
+        notebook.append_page(self.gui_build_notebook_page_last_run(), Gtk.Label(label="Last Run Summary"))
+        notebook.append_page(self.gui_build_notebook_page_log(), Gtk.Label(label="Log Messages"))
         return notebook
 
     def gui_build_messaging(self):
@@ -945,11 +944,11 @@ class RegressionGUI(Gtk.Window):
     @staticmethod
     def add_frame(widget, for_separator=False):
         frame = Gtk.Frame()
-        if for_separator:
-            color = Gdk.Color(76 * 256, 72 * 256, 69 * 256)
-        else:
-            color = Gdk.Color(56283, 22359, 0)
-        frame.modify_bg(Gtk.StateType.NORMAL, color)
+        # if for_separator:
+        #     color = Gdk.Color(76 * 256, 72 * 256, 69 * 256)
+        # else:
+        #     color = Gdk.Color(56283, 22359, 0)
+        # frame.modify_bg(Gtk.StateType.NORMAL, color)
         frame.add(widget)
         return frame
 
@@ -1358,9 +1357,9 @@ class RegressionGUI(Gtk.Window):
 
         # Update the button
         self.btn_run_suite.set_label("Cancel Suite")
-        color = Gdk.color_parse('red')
-        rgba = Gdk.RGBA.from_color(color)
-        self.btn_run_suite.override_background_color(0, rgba)
+        # color = Gdk.color_parse('red')
+        # rgba = Gdk.RGBA.from_color(color)
+        # self.btn_run_suite.override_background_color(0, rgba)
         self.test_suite_is_running = True
 
     def suite_option_handler_base_build_dir(self, widget):
@@ -1556,14 +1555,14 @@ class RegressionGUI(Gtk.Window):
 
     # Callbacks and callback handlers for GUI to interact with background operations
 
-    def print_callback(self, msg):
+    def print_callback(self, msg):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.print_callback_handler, msg)
 
     def print_callback_handler(self, msg):
         self.status_bar.push(self.status_bar_context_id, msg)
         self.add_log_entry(msg)
 
-    def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):
+    def sim_starting_callback(self, number_of_builds, number_of_cases_per_build):  # pragma: no cover
         GObject.idle_add(self.sim_starting_callback_handler, number_of_builds, number_of_cases_per_build)
 
     def sim_starting_callback_handler(self, number_of_builds, number_of_cases_per_build):
@@ -1583,7 +1582,7 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(0.0)
         self.status_bar.push(self.status_bar_context_id, "Simulations running...")
 
-    def case_completed_callback(self, test_case_completed_instance):
+    def case_completed_callback(self, test_case_completed_instance):  # pragma: no cover
         GObject.idle_add(self.case_completed_callback_handler, test_case_completed_instance)
 
     def case_completed_callback_handler(self, test_case_completed_instance):
@@ -1597,27 +1596,27 @@ class RegressionGUI(Gtk.Window):
                 self.print_callback_handler("Completed %s : %s, Failed" % (
                     test_case_completed_instance.run_directory, test_case_completed_instance.case_name))
 
-    def simulations_complete_callback(self):
+    def simulations_complete_callback(self):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.simulations_complete_callback_handler)
 
     def simulations_complete_callback_handler(self):
         self.status_bar.push(self.status_bar_context_id, "Simulations done; Post-processing...")
 
-    def end_err_completed_callback(self, build_name, case_name):
+    def end_err_completed_callback(self, build_name, case_name):  # pragma: no cover
         GObject.idle_add(self.end_err_completed_callback_handler, build_name, case_name)
 
     def end_err_completed_callback_handler(self, build_name, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def diff_completed_callback(self, case_name):
+    def diff_completed_callback(self, case_name):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.diff_completed_callback_handler, case_name)
 
     def diff_completed_callback_handler(self, case_name):
         self.current_progress_value += 1.0
         self.progress.set_fraction(self.current_progress_value / self.progress_maximum_value)
 
-    def all_done_callback(self, results):
+    def all_done_callback(self, results):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.all_done_callback_handler, results)
 
     def all_done_callback_handler(self, results):
@@ -1664,7 +1663,7 @@ class RegressionGUI(Gtk.Window):
         self.progress.set_fraction(1.0)
         self.last_results_test_dir = results.results_dir
 
-    def cancel_callback(self):
+    def cancel_callback(self):  # pragma: no cover - I will not cover these callback intermediaries
         GObject.idle_add(self.cancel_callback_handler)
 
     def cancel_callback_handler(self):
