@@ -11,16 +11,15 @@ import webbrowser
 
 # import the supporting python modules for this script
 from epregressions.build_files_to_run import (
-    FileListArgsBuilderForGUI,
+    FileListBuilderArgs,
     FileListBuilder,
 )
 from epregressions.platform import platform, Platforms
-from epregressions.runtests import TestSuiteRunner
+from epregressions.runtests import SuiteRunner, TestRunConfiguration
 from epregressions.structures import (
     ForceRunType,
     ReportingFreq,
     TestEntry,
-    TestRunConfiguration,
 )
 from epregressions.builds.base import KnownBuildTypes
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
@@ -31,7 +30,7 @@ from epregressions.builds.install import EPlusInstallDirectory
 import gi
 gi.require_version('Gdk', '3.0')  # unfortunately these have to go before the import
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gdk, Gtk, GObject
+from gi.repository import Gdk, Gtk, GObject  # noqa
 
 path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
@@ -1005,7 +1004,7 @@ class RegressionGUI(Gtk.Window):
         # could read from temp file
 
         # build a default set of arguments
-        self.file_list_builder_configuration = FileListArgsBuilderForGUI()
+        self.file_list_builder_configuration = FileListBuilderArgs()
 
         # override with our defaults
         self.file_list_builder_configuration.check = False
@@ -1017,7 +1016,7 @@ class RegressionGUI(Gtk.Window):
 
         file_builder = FileListBuilder(self.file_list_builder_configuration)
         file_builder.set_callbacks(self.build_callback_print, self.build_callback_init, self.build_callback_increment)
-        return_data = file_builder.build_verified_list(self.file_list_builder_configuration)
+        return_data = file_builder.build_verified_list()
         status, verified_idf_files, idf_files_missing_in_folder, idf_files_missing_from_csv_file = return_data
 
         # reset the progress bar either way
@@ -1338,7 +1337,7 @@ class RegressionGUI(Gtk.Window):
             return
 
         # set up the test suite
-        self.runner = TestSuiteRunner(run_configuration, these_entries)
+        self.runner = SuiteRunner(run_configuration, these_entries)
         self.runner.add_callbacks(print_callback=self.print_callback,
                                   simstarting_callback=self.sim_starting_callback,
                                   casecompleted_callback=self.case_completed_callback,
@@ -1542,18 +1541,15 @@ class RegressionGUI(Gtk.Window):
         current_config = self.force_run_type
         if current_config == ForceRunType.NONE:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests' directory will be created in each run directory.\n" +
-                "  Comparison results will be in run directory 1."
+                "A 'Tests' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         elif current_config == ForceRunType.DD:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests-DDOnly' directory will be created in each run directory.\n" +  # TODO: Clean this out
-                "  Comparison results will be in run directory 1."
+                "A 'Tests-DDOnly' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         elif current_config == ForceRunType.ANNUAL:
             self.suite_dir_struct_info.set_markup(
-                "A 'Tests-Annual' directory will be created in each run directory.\n" +
-                "  Comparison results will be in run directory 1."
+                "A 'Tests-Annual' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         else:
             pass  # gonna go ahead and say this won't happen

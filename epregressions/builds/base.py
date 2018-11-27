@@ -4,7 +4,7 @@ class KnownBuildTypes:
     Installation = "install"
 
 
-class BaseBuildDirectoryStructure:
+class BaseBuildDirectoryStructure(object):
     def __init__(self):
         self.build_directory = None
         self.run = None

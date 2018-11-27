@@ -25,7 +25,9 @@ class CsvFileEntry(object):
         self.underscore = (self.filename[0] == '_')
 
 
-class FileListArgsBuilderForGUI:
+class FileListBuilderArgs:
+    """The FileListBuilder class accepts arguments in the form created by the argparse library, as this was originally
+    called by the command line only.  This class provides an alternate way to create those arguments."""
 
     def __init__(self):
         # establish defaults
@@ -47,9 +49,11 @@ class FileListBuilder(object):
 
     def __init__(self, _args):
 
+        self.config = _args
+
         # if the 'all' argument is present, turn on all the rest
-        if _args.all:
-            _args.extinterface, _args.underscore, _args.weatherless = [True, True, True]
+        if self.config.all:
+            self.config.extinterface, self.config.underscore, self.config.weatherless = [True, True, True]
 
         # initialize callbacks to None
         self.callback_func_print = None
@@ -61,12 +65,12 @@ class FileListBuilder(object):
         self.input_files_eliminated = None
         self.input_files_found_not_listed = None
 
-    def set_callbacks(self, callback_print, callback_init, callback_increment):
+    def set_callbacks(self, callback_print, callback_init, callback_increment):  # pragma: no cover
         self.callback_func_print = callback_print
         self.callback_func_init = callback_init
         self.callback_func_increment = callback_increment
 
-    def build_verified_list(self, these_args):
+    def build_verified_list(self):
 
         self.my_print("Starting to build file list")
 
@@ -80,12 +84,12 @@ class FileListBuilder(object):
             self.selected_input_file_set = []
 
             # for convenience, count the number of rows first, this should be a cheap operation anyway
-            with open(these_args.master_data_file) as csvfile:
+            with open(self.config.master_data_file) as csvfile:
                 num_lines_approx = csvfile.read().count('\n')
             self.my_init(num_lines_approx + 1)
 
             # get all rows of data
-            with open(these_args.master_data_file) as csvfile:
+            with open(self.config.master_data_file) as csvfile:
                 reader = csv.reader(csvfile)
                 row_num = 0
                 for row in reader:
@@ -105,12 +109,12 @@ class FileListBuilder(object):
             self.input_files_found_not_listed = set()
 
             # if we are verifying using input file directories,
-            if these_args.verify:
+            if self.config.verify:
 
-                self.my_print("Verifying idf list using directory: %s" % these_args.verify)
+                self.my_print("Verifying idf list using directory: %s" % self.config.verify)
 
                 # read in the files in the directory and remove the extensions
-                files_in_this_dir = self.read_input_files_in_dir(these_args.verify)
+                files_in_this_dir = self.read_input_files_in_dir(self.config.verify)
                 files_no_extensions = [os.path.splitext(infile)[0] for infile in files_in_this_dir]
                 just_filenames = [infile.split(os.sep)[-1] for infile in files_no_extensions]
 
@@ -123,10 +127,11 @@ class FileListBuilder(object):
                         self.input_files_eliminated.add(infile)
 
                 # include a report of files found in the directory not represented in the file list
+                just_filenames_from_csv = [x.filename for x in self.selected_input_file_set]
                 for infile in just_filenames:
 
                     # if the file found by globbing is missing from the csv dataset
-                    if infile in self.selected_input_file_set:
+                    if infile not in just_filenames_from_csv:
                         # add it to the report
                         self.input_files_found_not_listed.add(infile)
 
@@ -144,11 +149,11 @@ class FileListBuilder(object):
 
         return success, self.selected_input_file_set, self.input_files_eliminated, self.input_files_found_not_listed
 
-    def print_file_list_to_file(self, _args):
+    def print_file_list_to_file(self):
 
         # if we aren't running in the gui, we need to go ahead and down select and write to the output file
-        if not _args.gui:
-            with open(_args.output_file, 'w') as outfile:
+        if not self.config.gui:
+            with open(self.config.output_file, 'w') as outfile:
                 files = []
                 for i in self.selected_input_file_set:
                     if i.has_weather_file:
@@ -160,7 +165,7 @@ class FileListBuilder(object):
                     files.append(object_to_add)
                 json_object = {'files_to_run': files}
                 outfile.write(json.dumps(json_object, indent=2))
-        print("File list build complete")
+        self.my_print("File list build complete")
 
     @staticmethod
     def read_input_files_in_dir(directory):
@@ -170,51 +175,51 @@ class FileListBuilder(object):
             files_in_dir.extend(glob.glob(directory + os.sep + extension))
         return files_in_dir
 
-    def down_select_idf_list(self, _args):
+    def down_select_idf_list(self):
 
         idf_list = self.selected_input_file_set
 
         # now trim off any of the specialties if the switches are false (by default)
-        if not _args.extinterface:  # only include those without external interface dependencies
+        if not self.config.extinterface:  # only include those without external interface dependencies
             idf_list = [idf for idf in idf_list if not idf.external_interface]
-        if not _args.weatherless:  # only include those that DO have weather files
+        if not self.config.weatherless:  # only include those that DO have weather files
             idf_list = [idf for idf in idf_list if idf.has_weather_file]
-        if not _args.underscore:  # only include those that don't start with an underscore
+        if not self.config.underscore:  # only include those that don't start with an underscore
             idf_list = [idf for idf in idf_list if not idf.underscore]
         # do random down selection as necessary:
-        if _args.random > 0:
-            if len(idf_list) <= _args.random:  # just take all of them
+        if self.config.random > 0:
+            if len(idf_list) <= self.config.random:  # just take all of them
                 pass
             else:  # down select randomly
-                indeces_to_take = sorted(random.sample(range(len(idf_list)), _args.random))
+                indeces_to_take = sorted(random.sample(range(len(idf_list)), self.config.random))
                 idf_list = [idf_list[i] for i in indeces_to_take]
         # return the trimmed list
         self.selected_input_file_set = idf_list
         return idf_list
 
-    def my_init(self, num_files):
+    def my_init(self, num_files):  # pragma: no cover
         if self.callback_func_init:
             self.callback_func_init(num_files)
 
-    def my_increment(self):
+    def my_increment(self):  # pragma: no cover
         if self.callback_func_increment:
             self.callback_func_increment()
 
-    def my_print(self, msg):
+    def my_print(self, msg):  # pragma: no cover
         if self.callback_func_print:
             self.callback_func_print(msg)
         else:
             print(msg)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
 
     # parse command line arguments
     parser = argparse.ArgumentParser(
         description="""
 Create EnergyPlus test file inputs for a specific configuration.  Can be executed in 2 ways:
   1: Arguments can be passed from the command line, such as `%s -r 3 -w' .. Most useful for scripting, or
-  2: An argument class can be created using the FileListArgsBuilderForGUI class and
+  2: An argument class can be created using the FileListBuilderArgs class and
      passed into a FileListBuilder instance .. Most useful for UIs""" % sys.argv[0]
     )
     parser.add_argument(
@@ -275,10 +280,10 @@ Create EnergyPlus test file inputs for a specific configuration.  Can be execute
     # In a script, we will just let the class instance hang on to the values and write out the list file
 
     # build a base file list verified with any directories requested
-    this_builder.build_verified_list(args)
+    this_builder.build_verified_list()
 
     # down select the idf list based on command line arguments
-    this_builder.down_select_idf_list(args)
+    this_builder.down_select_idf_list()
 
     # and go ahead and print to the output file
-    this_builder.print_file_list_to_file(args)
+    this_builder.print_file_list_to_file()

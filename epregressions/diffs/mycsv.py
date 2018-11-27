@@ -1,57 +1,33 @@
-"""my csv functions
-"""
-
 # Copyright (C) 2009 Santosh Philip
 # This file is part of mathdiff.
-# 
+#
 # mathdiff is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # mathdiff is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with mathdiff.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
-
-from io import StringIO
+import six
 
 
 class MyCsv(Exception):
-    """pass"""
     pass
 
 
 class BadMatrice(MyCsv):
-    """pass"""
     pass
 
 
 class BadInput(MyCsv):
-    """pass"""
     pass
-
-
-def mergehoriz(mat1, mat2):
-    """paste mat2 to the right of mat1
-    tested only for mat1 and mat2 of same size
-    """
-    if not ismatrice(mat1):
-        raise BadMatrice('The input is not a matrice')
-    if not ismatrice(mat2):
-        raise BadMatrice('The input is not a matrice')
-    if len(mat1) != len(mat2):
-        raise BadInput('mat1 and mat2 are not of same size')
-    mmat = []
-    for i in range(len(mat1)):
-        row = mat1[i] + mat2[i]
-        mmat.append(row)
-    return mmat
 
 
 def readcsv(filename):
@@ -59,18 +35,25 @@ def readcsv(filename):
     Also reads a string instead of a file
     """
     try:
-        reader = csv.reader(open(filename, 'rU'))  # if it is a file
+        with open(filename) as f:
+            reader = csv.reader(f)  # if it is a file
+            data = []
+            for line in reader:
+                # print ("%s : %s" % (filename, line))
+                data.append(line)
+            return data
     except:
         try:
-            string = StringIO(filename)
-            reader = csv.reader(string)  # if it is a string
+            lines = filename.split('\n')
+            data = []
+            for line in lines:
+                if line.strip() == '':
+                    break
+                # print ("%s : %s" % (filename, line))
+                data.append(line.strip().split(','))
+            return data
         except:
             raise BadInput('csv source is neither a file nor a file object')
-    data = []
-    for line in reader:
-        # print ("%s : %s" % (filename, line))
-        data.append(line)
-    return data
 
 
 def writecsv(mat, outfile=None, mode='w'):
@@ -79,27 +62,39 @@ def writecsv(mat, outfile=None, mode='w'):
     if not ismatrice(mat):
         raise BadMatrice('The input is not a matrice')
     if outfile:
-        writer = csv.writer(open(outfile, mode))
-        writer.writerows(mat)
+        with open(outfile, mode) as f_out:
+            writer = csv.writer(f_out)
+            writer.writerows(mat)
     else:
-        f = StringIO()
-        writer = csv.writer(f)
-        writer.writerows(mat)
-        return f.getvalue()
+        out_str = ''
+        for row in mat:
+            for i, cell in enumerate(row):
+                max_col_num = len(row) - 1
+                if i < max_col_num:
+                    out_str += str(cell) + ','
+                else:
+                    out_str += str(cell) + '\n'
+        return out_str
 
 
 def ismatrice(mat):
     """test if the matrice mat is a csv matrice
     """
+    # test for iterability over rows
+    try:
+        iter(mat)
+    except TypeError:
+        return False
     # test for rows
     for row in mat:
         if type(row) != list:
             return False
-    # test if cell is float,int or string
+    # test if cell is float, int or string
     for row in mat:
         for cell in row:
-            if type(cell) not in (float, int, str):
-                return False
+            if type(cell) not in (float, int):
+                if not isinstance(cell, six.string_types):
+                    return False
     return True
 
 
@@ -123,9 +118,7 @@ def transpose2d(mtx):
     return trmtx
 
 
-##   -------------------------
-##    from python cookbook 2nd edition page 162
-# map(mtx, zip(*arr))
+# from python cookbook 2nd edition page 162
 
 def getlist(fname):
     """Gets a list from a csv file
@@ -144,10 +137,3 @@ def getlist(fname):
     if onecolumn:
         mat = transpose2d(mat)[0]
     return mat
-
-
-def pick_and_reorder_columns(listofrows, column_indexes):
-    """as the function name says
-    from python cookbook 2nd ed. page 161
-    """
-    return [[row[colindex] for colindex in column_indexes] for row in listofrows]

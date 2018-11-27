@@ -43,7 +43,6 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
 
         # Run EPMacro as necessary
         if os.path.exists('in.imf'):
-            print("IMF file exists")
             with open('in.imf', 'rb') as f:
                 lines = f.readlines()
             newlines = []
@@ -51,7 +50,6 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
                 encoded_line = line.decode('UTF-8', 'ignore')
                 if '##fileprefix' in encoded_line:
                     newlines.append('')
-                    print("Replaced fileprefix line with a blank")
                 else:
                     newlines.append(encoded_line)
             with open('in.imf', 'w') as f:
@@ -73,7 +71,7 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                return [build_tree['build_dir'], entry_name, False, current_process().name]
+                return [build_tree['build_dir'], entry_name, False, False, current_process().name]
 
         # Run ExpandObjects and process as necessary
         expand_objects_run = subprocess.Popen(expandobjects, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -162,8 +160,8 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
         return [build_tree['build_dir'], entry_name, True, False, current_process().name]
 
     except Exception as e:
-        f = open("aa_testSuite_error.txt", 'w')
-        print(e, file=f)
+        with open("aa_testSuite_error.txt", 'w') as f:
+            print(e, file=f)
         return [build_tree['build_dir'], entry_name, False, False, current_process().name]
 
     finally:

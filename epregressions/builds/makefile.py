@@ -7,7 +7,7 @@ from epregressions.platform import exe_extension
 class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
 
     def __init__(self):
-        super().__init__()
+        super(CMakeCacheMakeFileBuildDirectory, self).__init__()
         self.source_directory = None
 
     def set_build_directory(self, build_directory):
@@ -23,6 +23,8 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             self.source_directory = 'unknown - invalid build directory?'
             return
         cmake_cache_file = os.path.join(self.build_directory, 'CMakeCache.txt')
+        if not os.path.exists(cmake_cache_file):
+            raise Exception('Could not find cache file in build directory')
         with open(cmake_cache_file, 'r') as f_cache:
             for this_line in f_cache.readlines():
                 if 'CMAKE_HOME_DIRECTORY:INTERNAL=' in this_line:
@@ -100,4 +102,3 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             'weather_dir': os.path.join(self.source_directory, 'weather'),
             'data_sets_dir': os.path.join(self.source_directory, 'datasets')
         }
-

@@ -3,7 +3,7 @@ import unittest
 from epregressions.builds.base import BaseBuildDirectoryStructure
 
 
-class TestBaseWorkflowMethods(unittest.TestCase):
+class TestBaseBuildMethods(unittest.TestCase):
 
     def setUp(self):
         self.base_build = BaseBuildDirectoryStructure()

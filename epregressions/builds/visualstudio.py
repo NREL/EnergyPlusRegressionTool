@@ -10,7 +10,7 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
     """
 
     def __init__(self):
-        super().__init__()
+        super(CMakeCacheVisualStudioBuildDirectory, self).__init__()
         self.source_directory = None
         self.build_mode = 'Release'
 
@@ -74,7 +74,8 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
             ["Case %s Products Directory Exists? ", products_dir, exists]
         )
         build_mode_folder = 'Release'
-        release_folder_exists = os.path.join(self.build_directory, 'Products', build_mode_folder)
+        release_folder = os.path.join(self.build_directory, 'Products', build_mode_folder)
+        release_folder_exists = os.path.exists(release_folder)
         if release_folder_exists:
             self.set_build_mode(debug=False)
         else:
