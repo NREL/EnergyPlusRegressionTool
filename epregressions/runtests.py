@@ -417,8 +417,11 @@ class SuiteRunner:
         # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
         # cmp = d.compare(txt1_cleaned, txt2_cleaned)  # EDWIN: What was this doing, cmp, then cmp again?
         cmp = unified_diff(txt1_cleaned, txt2_cleaned)
+        print("ABOUT TO OPEN OUT_FILE")
         out_file = io.open(diff_file, 'w', encoding='utf-8')
+        print("OPENED OUT_FILE - ABOUT TO WRITE LINES")
         out_file.writelines(list(cmp))
+        print("DONE WITH OUT_FILE - CLOSING AND DONE")
         out_file.close()
         return TextDifferences.DIFFS
 
