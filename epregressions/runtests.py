@@ -418,11 +418,10 @@ class SuiteRunner:
         for out_line in out_lines:
             try:
                 print("TRYING TO WRITE LINE: \"%s\" OF TYPE %s" % (out_line, type(out_line)))
-                out_file.write(str(out_line))
+                out_file.write(out_line.encode('utf-8'))
             except Exception as exc:
                 print("EXCEPTION CAUGHT!: " + str(exc))
                 raise Exception("OK")
-        print("DONE WITH OUT_FILE - CLOSING AND DONE")
         out_file.close()
         return TextDifferences.DIFFS
 
