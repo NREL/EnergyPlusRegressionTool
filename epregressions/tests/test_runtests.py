@@ -135,7 +135,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -231,7 +230,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -298,7 +296,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -365,7 +362,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -432,7 +428,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -499,7 +494,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -566,7 +560,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -633,7 +626,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -717,7 +709,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -801,7 +792,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -873,7 +863,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -952,7 +941,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1026,7 +1014,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1100,7 +1087,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1174,7 +1160,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1248,7 +1233,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1322,7 +1306,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1399,7 +1382,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1474,7 +1456,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1539,7 +1520,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1607,7 +1587,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
@@ -1675,7 +1654,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             simstarting_callback=TestTestSuiteRunner.dummy_callback,
             casecompleted_callback=TestTestSuiteRunner.dummy_callback,
             simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            enderrcompleted_callback=TestTestSuiteRunner.dummy_callback,
             diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
             alldone_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback

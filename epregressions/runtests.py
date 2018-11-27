@@ -61,7 +61,6 @@ class SuiteRunner:
         self.starting_callback = None
         self.case_completed_callback = None
         self.simulations_complete_callback = None
-        self.end_err_completed_callback = None
         self.diff_completed_callback = None
         self.all_done_callback = None
         self.cancel_callback = None
@@ -684,12 +683,11 @@ class SuiteRunner:
         return completed_structure
 
     def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
-                      enderrcompleted_callback, diffcompleted_callback, alldone_callback, cancel_callback):
+                      diffcompleted_callback, alldone_callback, cancel_callback):
         self.print_callback = print_callback
         self.starting_callback = simstarting_callback
         self.case_completed_callback = casecompleted_callback
         self.simulations_complete_callback = simulationscomplete_callback
-        self.end_err_completed_callback = enderrcompleted_callback
         self.diff_completed_callback = diffcompleted_callback
         self.all_done_callback = alldone_callback
         self.cancel_callback = cancel_callback
