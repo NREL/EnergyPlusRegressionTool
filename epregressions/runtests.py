@@ -381,11 +381,13 @@ class SuiteRunner:
 
     @staticmethod
     def diff_text_files(file_a, file_b, diff_file):
+        print("INSIDE DIFF_TEXT_FILES")
         # read the contents of the two files into a list, could read it into text first
         with io.open(file_a, encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.readlines()
         with io.open(file_b, encoding='utf-8') as f_txt_2:
             txt2 = f_txt_2.readlines()
+        print("TEXT FILES OPENED AND READ")
         # remove any lines that have some specific listed strings in them
         txt1_cleaned = []
         skip_strings = [
@@ -408,6 +410,7 @@ class SuiteRunner:
                 pass
             else:
                 txt2_cleaned.append(line)
+        print("LINES CLEANED")
         # compare for equality, if it is faster to compare strings then lists, may want to refactor
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
@@ -561,6 +564,7 @@ class SuiteRunner:
                 path_to_table_diff_log)))
 
         # Do Textual Diffs
+        print("ABOUT TO DO TEXTUAL DIFFS")
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),
