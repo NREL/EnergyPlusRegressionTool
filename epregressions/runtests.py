@@ -418,7 +418,7 @@ class SuiteRunner:
         for out_line in out_lines:
             try:
                 print("TRYING TO WRITE LINE: \"%s\" OF TYPE %s" % (out_line, type(out_line)))
-                out_file.write(out_line.encode('utf-8'))
+                out_file.write(out_line.decode('utf-8'))
             except Exception as exc:
                 print("EXCEPTION CAUGHT!: " + str(exc))
                 raise Exception("OK")
