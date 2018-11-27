@@ -153,7 +153,7 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
 
-    def test_empty_file_1(self):
+    def test_empty_data_file_1(self):
         response = math_diff(
             self.thresh_dict,
             os.path.join(self.diff_files_dir, 'eplusout_empty_data.csv'),
@@ -168,7 +168,7 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
 
-    def test_empty_file_2(self):
+    def test_empty_data_file_2(self):
         response = math_diff(
             self.thresh_dict,
             os.path.join(self.diff_files_dir, 'eplusout.csv'),
@@ -179,6 +179,36 @@ class TestMathDiff(unittest.TestCase):
             os.path.join(self.temp_output_dir, 'summary.csv'),
         )
         self.assertIn('has no data', response[0])  # diff status
+        self.assertEqual(0, response[1])  # num records compared
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+
+    def test_totally_empty_file_1(self):
+        response = math_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplusout_totally_empty.csv'),
+            os.path.join(self.diff_files_dir, 'eplusout.csv'),
+            os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+            os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.csv'),
+        )
+        self.assertIn('empty', response[0])  # diff status
+        self.assertEqual(0, response[1])  # num records compared
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+
+    def test_totally_empty_file_2(self):
+        response = math_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplusout.csv'),
+            os.path.join(self.diff_files_dir, 'eplusout_totally_empty.csv'),
+            os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+            os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.csv'),
+        )
+        self.assertIn('empty', response[0])  # diff status
         self.assertEqual(0, response[1])  # num records compared
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs

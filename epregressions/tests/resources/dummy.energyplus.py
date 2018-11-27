@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import json
-import sys
-
 """
 So we are going to replicate just a few of the core functions of E+ in this binary...in a super silly way
 1) We are going to make it expect an in.idf - not doing the full CLI
@@ -14,11 +11,16 @@ So we are going to replicate just a few of the core functions of E+ in this bina
     "run_time_string": "01hr 20min  0.17sec",
     "num_warnings": 1,
     "num_severe": 0,
-    "end_state": "fatal" / "success" / "crash"
-    
-    
-
+    "end_state": "fatal" / "success" / "crash" / "unknown",
+    "eso_results": "base" / "smalldiffs" / "bigdiffs",
+    "txt_results": "base" / "diffs",
+    "extra_data": "<freeform>" -- this is something like a flag for auxiliary tools to pick up
+  }
+}
 """
+
+import json
+import sys
 
 with open('in.idf') as f_idf:
     idf_body = f_idf.read()
@@ -28,12 +30,64 @@ with open('in.idf') as f_idf:
     except:
         sys.exit(0)
 
+if 'eso_results' in config:
+    with open('eplusout.eso', 'w') as f_eso:
+        f_eso.write(json.dumps({'output': config['eso_results']}))
+
+if 'txt_results' in config:
+    f_audit = open('eplusout.audit', 'w')
+    f_bnd = open('eplusout.bnd', 'w')
+    f_dxf = open('eplusout.dxf', 'w')
+    f_eio = open('eplusout.eio', 'w')
+    f_mdd = open('eplusout.mdd', 'w')
+    f_mtd = open('eplusout.mtd', 'w')
+    f_rdd = open('eplusout.rdd', 'w')
+    f_shd = open('eplusout.shd', 'w')
+    f_err = open('eplusout.err', 'w')
+    f_delightin = open('eplusout.delightin', 'w')
+    f_delightout = open('eplusout.delightout', 'w')
+    if config['txt_results'] == 'base':
+        f_audit.write('Line 1\nLine 2\n(idf)=hello')
+        f_bnd.write('Line 1\nLine 2')
+        f_dxf.write('Line 1\nLine 2')
+        f_eio.write('Line 1\nLine 2')
+        f_mdd.write('Line 1\nLine 2')
+        f_mtd.write('Line 1\nLine 2')
+        f_rdd.write('Line 1\nLine 2')
+        f_shd.write('Line 1\nLine 2')
+        f_err.write('Line 1\nLine 2')
+        f_delightin.write('Line 1\nLine 2')
+        f_delightout.write('Line 1\nLine 2')
+    else:
+        f_audit.write('Line 1\nLine 3\n(idf)=world')  # note this will always be different but should not cause diffs
+        f_bnd.write('Line 1\nLine 3')
+        f_dxf.write('Line 1\nLine 3')
+        f_eio.write('Line 1\nLine 3')
+        f_mdd.write('Line 1\nLine 3')
+        f_mtd.write('Line 1\nLine 3')
+        f_rdd.write('Line 1\nLine 3')
+        f_shd.write('Line 1\nLine 3')
+        f_err.write('Line 1\nLine 3')
+        f_delightin.write('Line 1\nLine 3')
+        f_delightout.write('Line 1\nLine 3')
+    f_audit.close()
+    f_bnd.close()
+    f_dxf.close()
+    f_eio.close()
+    f_mdd.close()
+    f_mtd.close()
+    f_rdd.close()
+    f_shd.close()
+    f_err.close()
+    f_delightin.close()
+    f_delightout.close()
+
 # DO THIS LAST - it has sys.exit() calls - eplusout.end
 num_warnings = config['num_warnings'] if 'num_warnings' in config else 0
 num_severe = config['num_severe'] if 'num_severe' in config else 0
 run_time = config['run_time_string'] if 'run_time_string' in config else '01hr 20min  0.17sec'
 if 'end_state' in config and config['end_state'] == 'success':
-    with open('eplusout.end') as f_end:
+    with open('eplusout.end', 'w') as f_end:
         f_end.write(
             'EnergyPlus Completed Successfully-- %s Warning; %s Severe Errors; Elapsed Time=%s' % (
                 num_warnings, num_severe, run_time
@@ -41,12 +95,16 @@ if 'end_state' in config and config['end_state'] == 'success':
         )
     sys.exit(0)
 elif 'end_state' in config and config['end_state'] == 'fatal':
-    with open('eplusout.end') as f_end:
+    with open('eplusout.end', 'w') as f_end:
         f_end.write(
             'EnergyPlus Terminated--Fatal Error Detected. %s Warning; %s Severe Errors; Elapsed Time=%s' % (
                 num_warnings, num_severe, run_time
             )
         )
+    sys.exit(1)
+elif 'end_state' in config and config['end_state'] == 'unknown':
+    with open('eplusout.end', 'w') as f_end:
+        f_end.write('Energ')  # maybe mimicking a weird out of disk space thing?
     sys.exit(1)
 elif 'end_state' in config and config['end_state'] == 'crash':
     sys.exit(1)

@@ -224,11 +224,17 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         return 'unable to open file <%s>' % inputfile2, 0, 0, 0
 
     # read data out of files
-    mat1 = mycsv.getlist(inputfile1)
+    try:
+        mat1 = mycsv.getlist(inputfile1)
+    except IndexError:
+        return 'malformed or empty csv file: <%s>' % inputfile1, 0, 0, 0
     if len(mat1) < 2:
         info('<%s> has no data' % inputfile1, err_file)
         return '<%s> has no data' % inputfile1, 0, 0, 0
-    mat2 = mycsv.getlist(inputfile2)
+    try:
+        mat2 = mycsv.getlist(inputfile2)
+    except IndexError:
+        return 'malformed or empty csv file: <%s>' % inputfile2, 0, 0, 0
     if len(mat2) < 2:
         info('<%s> has no data' % inputfile2, err_file)
         return '<%s> has no data' % inputfile2, 0, 0, 0

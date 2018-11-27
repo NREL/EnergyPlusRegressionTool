@@ -138,7 +138,7 @@ class TestEnergyPlus(unittest.TestCase):
 
     def test_eplus_passed_parametric(self):
         with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
-            f.write('EXPAND')
+            f.write('PARAMETRIC:')
         return_val = execute_energyplus(
             build_tree=self.build_tree,
             entry_name='entry_name',
