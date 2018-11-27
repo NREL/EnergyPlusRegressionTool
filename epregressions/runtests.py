@@ -415,10 +415,10 @@ class SuiteRunner:
         # cmp = d.compare(txt1_cleaned, txt2_cleaned)  # EDWIN: What was this doing, cmp, then cmp again?
         cmp = unified_diff(txt1_cleaned, txt2_cleaned)
         out_file = io.open(diff_file, 'w', encoding='utf-8')
-        print("OPENED OUT_FILE - ABOUT TO CONVERT cmp TO LIST")
         out_lines = list(cmp)
         print("CONVERTED TO LIST, NOW TRYING TO WRITE THEM OUT")
         for out_line in out_lines:
+            print("TRYING TO WRITE LINE: \"%s\" OF TYPE %s" % (out_line, type(out_line)))
             out_file.write(str(out_line))
         print("DONE WITH OUT_FILE - CLOSING AND DONE")
         out_file.close()
