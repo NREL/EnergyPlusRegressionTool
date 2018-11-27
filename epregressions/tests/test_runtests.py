@@ -7,7 +7,7 @@ import unittest
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
-    EndErrSummary, ForceRunType, ReportingFreq, TestEntry, TextDifferences, MathDifferences
+    EndErrSummary, ForceRunType, ReportingFreq, TestEntry, TextDifferences
 )
 
 
@@ -976,7 +976,7 @@ class TestTestSuiteRunner(unittest.TestCase):
 
     def test_tdv_file_gets_dependencies(self):
         base = CMakeCacheMakeFileBuildDirectory()
-        self.establish_build_folder(
+        self.establish_build_folder(  # noqa: W605
             self.temp_base_build_dir,
             self.temp_base_source_dir,
             {
@@ -994,7 +994,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
-        self.establish_build_folder(
+        self.establish_build_folder(  # noqa: W605
             self.temp_mod_build_dir,
             self.temp_mod_source_dir,
             {
