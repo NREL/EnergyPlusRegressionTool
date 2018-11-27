@@ -421,6 +421,7 @@ class SuiteRunner:
                 out_file.write(str(out_line))
             except Exception as exc:
                 print("EXCEPTION CAUGHT!: " + str(exc))
+                raise Exception("OK")
         print("DONE WITH OUT_FILE - CLOSING AND DONE")
         out_file.close()
         return TextDifferences.DIFFS
