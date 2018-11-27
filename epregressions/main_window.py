@@ -1625,7 +1625,7 @@ class RegressionGUI(Gtk.Window):
             )
             this_path = self.results_list_store.get_path(self.results_parent[tree_root])
             self.tree_view.expand_row(this_path, False)
-            for result in file_lists.descriptions:  # pragma: no cover - I'd try to test this if the tree was its own class
+            for result in file_lists.descriptions:  # pragma: no cover
                 self.results_list_store.append(self.results_child[tree_root], [result])
             self.results_lists_to_copy.append(file_lists.base_names)
 
