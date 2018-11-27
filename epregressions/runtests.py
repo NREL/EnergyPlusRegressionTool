@@ -416,9 +416,14 @@ class SuiteRunner:
         out_file = io.open(diff_file, 'w', encoding='utf-8')
         out_lines = list(cmp)
         for out_line in out_lines:
-            if sys.version[0] == 2:
+            if sys.version_info[0] == 2:
                 out_line = out_line.decode('utf-8')
-            out_file.write(out_line)
+            try:
+                print("TRYING TO WRITE LINE: \"%s\" OF TYPE %s" % (out_line, type(out_line)))
+                out_file.write(out_line)
+            except Exception as exc:
+                print("EXCEPTION CAUGHT!: " + str(exc))
+                raise Exception("OK")
         out_file.close()
         return TextDifferences.DIFFS
 
