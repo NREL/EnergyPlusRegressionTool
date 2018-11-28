@@ -120,5 +120,7 @@ This documentation is written using RST with Sphinx, and published on [ReadTheDo
 
 ## Testing
 
-Very little automated testing has been done, but it will be added, to ensure it runs properly.
-Meaningless as they are, the existing "unit tests" are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).
+Exhaustive unit tests have been added to the codebase.
+The "underneath the hood" code, like the functions that calculate diffs and run builds, are fully tested.
+A major chunk of the GUI code itself has been unit tested, but that's difficult to do, so it's not so exhaustive.
+The unit tests are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).
