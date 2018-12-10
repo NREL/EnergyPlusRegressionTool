@@ -8,8 +8,6 @@ import os
 import sys
 from datetime import datetime
 
-import boto
-
 from epregressions.builds.install import EPlusInstallDirectory
 from epregressions.runtests import SuiteRunner, TestRunConfiguration, TestEntry
 from epregressions.structures import ForceRunType, ReportingFreq
@@ -155,6 +153,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     if test_mode:
         print("Skipping Amazon upload in test_mode operation")
     elif has_small_diffs or has_diffs:
+        import boto
         conn = boto.connect_s3()
         bucket_name = 'energyplus'
         bucket = conn.get_bucket(bucket_name)
