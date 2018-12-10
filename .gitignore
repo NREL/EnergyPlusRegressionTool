@@ -12,3 +12,4 @@ venv
 EnergyPlusRegressionTool.egg-info
 aa_testSuite_error.txt
 htmlcov
+epregressions/tests/diffs/results.json
