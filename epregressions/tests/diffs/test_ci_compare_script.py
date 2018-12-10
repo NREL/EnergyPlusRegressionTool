@@ -5,7 +5,11 @@ import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
-from io import StringIO
+
+try:
+    from cStringIO import StringIO  # Python 2, ensures that the overridden bytes-based-stdout is still bytes-based
+except ImportError:
+    from io import StringIO  # Python 3, will use unicode based overridden stdout
 
 from epregressions.diffs.ci_compare_script import cleanup, get_diff_files, main_function, print_message, process_diffs
 from epregressions.runtests import TestEntry

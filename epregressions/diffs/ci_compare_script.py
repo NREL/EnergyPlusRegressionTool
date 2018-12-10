@@ -42,7 +42,7 @@ def process_diffs(diff_name, diffs, this_has_diffs, this_has_small_diffs):
 
 def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, device_id, test_mode):
 
-    print(u"Device id: %s" % device_id)
+    print("Device id: %s" % device_id)
 
     # build type really doesn't matter, so use the simplest one, the E+ install
     base = EPlusInstallDirectory()
