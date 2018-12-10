@@ -5,8 +5,10 @@ import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
-from io import StringIO
-
+if sys.version_info[0] == 2:
+    from io import BytesIO as IOType
+else:  # python 3
+    from io import StringIO as IOType
 from epregressions.diffs.ci_compare_script import cleanup, get_diff_files, main_function, print_message, process_diffs
 from epregressions.runtests import TestEntry
 from epregressions.structures import MathDifferences
@@ -14,7 +16,7 @@ from epregressions.structures import MathDifferences
 
 @contextmanager
 def captured_output():
-    new_out, new_err = StringIO(), StringIO()
+    new_out, new_err = IOType(), IOType()
     old_out, old_err = sys.stdout, sys.stderr
     try:
         sys.stdout, sys.stderr = new_out, new_err
