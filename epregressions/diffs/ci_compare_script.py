@@ -188,46 +188,47 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
 
                 htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
                 htmlkey.set_contents_from_string("""
-                        <!doctype html>
-                        <html>
-                          <head>
-                            <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
-                            <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-                            <link href="//alexgorbatchev.com/pub/sh/current/styles/shCore.css" rel="stylesheet" type="text/css" />
-                            <link href="//alexgorbatchev.com/pub/sh/current/styles/shThemeDefault.css" rel="stylesheet" type="text/css" />
-                            <script src="//alexgorbatchev.com/pub/sh/current/scripts/shCore.js" type="text/javascript"></script>
-                            <script src="//alexgorbatchev.com/pub/sh/current/scripts/shAutoloader.js" type="text/javascript"></script>
-                            <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPhp.js" type="text/javascript"></script>
-                            <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPlain.js" type="text/javascript"></script>
-                            <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushDiff.js" type="text/javascript"></script>
-                          </head>
-                          <body>
+<!doctype html>
+<html>
+  <head>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <link href="//alexgorbatchev.com/pub/sh/current/styles/shCore.css" rel="stylesheet" type="text/css" />
+    <link href="//alexgorbatchev.com/pub/sh/current/styles/shThemeDefault.css" rel="stylesheet" type="text/css" />
+    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shCore.js" type="text/javascript"></script>
+    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shAutoloader.js" type="text/javascript"></script>
+    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPhp.js" type="text/javascript"></script>
+    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPlain.js" type="text/javascript"></script>
+    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushDiff.js" type="text/javascript"></script>
+  </head>
+  <body>
 
-                            <script>
-                              filename = '/""" + file_path + """'
-                            </script>
+    <script>
+      filename = '/""" + file_path + """'
+    </script>
 
-                            <div id="codeholder">
-                            </div>
+    <div id="codeholder">
+    </div>
 
-                            <script>
-                              $.get(filename , function( data ) {
-                                elem = document.createElement("pre");
-                                brush = "plain";
-                                if (filename.indexOf(".dif") != -1)
-                                {
-                                  brush = "diff";
-                                } 
-                                elem.setAttribute("class", "brush: " + brush + "; gutter: true;");
-                                elem.appendChild(document.createTextNode(data.replace("<", "&lt;")));
-                                document.getElementById("codeholder").appendChild(elem);
-                                SyntaxHighlighter.highlight(elem);
-                              });
+    <script>
+      $.get(filename , function( data ) {
+        elem = document.createElement("pre");
+        brush = "plain";
+        if (filename.indexOf(".dif") != -1)
+        {
+          brush = "diff";
+        }
+        elem.setAttribute("class", "brush: " + brush + "; gutter: true;");
+        elem.appendChild(document.createTextNode(data.replace("<", "&lt;")));
+        document.getElementById("codeholder").appendChild(elem);
+        SyntaxHighlighter.highlight(elem);
+      });
 
-                              SyntaxHighlighter.all();
-                            </script>
-                          </body>
-                        </html>""", headers={"Content-Type": "text/html"})
+      SyntaxHighlighter.all();
+    </script>
+  </body>
+</html>
+                        """, headers={"Content-Type": "text/html"})
 
                 if make_public:
                     htmlkey.make_public()
@@ -241,35 +242,42 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
             try:
                 htmlkey = boto.s3.key.Key(bucket, file_dir + "/index.html")
                 index = """
-                        <!doctype html>
-                        <html>
-                          <head>
-                            <!-- Latest compiled and minified CSS -->
-                            <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<!doctype html>
+<html>
+  <head>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 
-                            <!-- Optional theme -->
-                            <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
 
-                            <!-- Latest compiled and minified JavaScript -->
-                            <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-                            <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
-                            <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-                          </head>
-                          <body>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+  </head>
+  <body>
 
-                            <table class='table table-hover'>
-                              <tr><th>filename</th><th></th><th></th></tr>"""
+    <table class='table table-hover'>
+      <tr><th>filename</th><th></th><th></th></tr>
+                              """
 
                 for filename in found_files:
                     filepath = "{0}/{1}".format(file_dir, os.path.basename(filename))
-                    index += "<tr><td>" + os.path.basename(
-                        filename) + "</td><td><a href='/" + filepath + "'>download</a></td><td><a href='/" + filepath + ".html'>view</a></td></tr>"
+                    index += "<tr><td>"
+                    index += os.path.basename(filename)
+                    index += "</td><td><a href='/"
+                    index += filepath
+                    index += "'>download</a></td><td><a href='/"
+                    index += filepath
+                    index += ".html'>view</a></td></tr>"
 
                 index += """
-                            </table>
-                          </body>
-                        </html>"""
+    </table>
+  </body>
+</html>
+                        """
 
                 htmlkey.set_contents_from_string(index, headers={"Content-Type": "text/html"})
 
