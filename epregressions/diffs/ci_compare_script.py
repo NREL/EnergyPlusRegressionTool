@@ -152,7 +152,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
 
     if test_mode:
         print("Skipping Amazon upload in test_mode operation")
-    elif has_small_diffs or has_diffs:
+    elif has_small_diffs or has_diffs:  # pragma: no cover -- not testing the Amazon upload anytime soon
         import boto
         conn = boto.connect_s3()
         bucket_name = 'energyplus'
@@ -294,7 +294,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         print("Success")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # testing function, not the __main__ entry point
 
     if len(sys.argv) < 8:
         print("syntax: %s file_name base_dir mod_dir base_sha mod_sha make_public device_id [test]" % sys.argv[0])
