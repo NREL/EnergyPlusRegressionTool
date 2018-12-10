@@ -421,14 +421,18 @@ class SuiteRunner:
         out_file.close()
         return TextDifferences.DIFFS
 
-    def process_diffs_for_one_case(self, this_entry):
+    def process_diffs_for_one_case(self, this_entry, ci_mode=False):
 
-        case_result_dir_1 = os.path.join(
-            self.build_tree_a['build_dir'], self.test_output_dir, this_entry.basename
-        )
-        case_result_dir_2 = os.path.join(
-            self.build_tree_b['build_dir'], self.test_output_dir, this_entry.basename
-        )
+        if ci_mode:  # in "ci_mode" the build directory is actually the output directory of each file
+            case_result_dir_1 = self.build_tree_a['build_dir']
+            case_result_dir_2 = self.build_tree_b['build_dir']
+        else:
+            case_result_dir_1 = os.path.join(
+                self.build_tree_a['build_dir'], self.test_output_dir, this_entry.basename
+            )
+            case_result_dir_2 = os.path.join(
+                self.build_tree_b['build_dir'], self.test_output_dir, this_entry.basename
+            )
 
         out_dir = case_result_dir_1
 
@@ -512,7 +516,7 @@ class SuiteRunner:
         thresh_dict = td.ThreshDict(self.thresh_dict_file)
 
         # Do Math (CSV) Diffs
-        if self.both_files_exist(case_result_dir_1, case_result_dir_1, 'eplusout.csv'):
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusout.csv'),

@@ -1,4 +1,5 @@
 # Core pip-install-able dependencies here
+boto==2.49.0
 coveralls==1.5.1
 beautifulsoup4==4.6.3
 flake8==3.6.0
