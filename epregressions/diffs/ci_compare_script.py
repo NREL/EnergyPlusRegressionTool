@@ -294,7 +294,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         print("Success")
 
 
-if __name__ == "__main__":  # testing function, not the __main__ entry point
+if __name__ == "__main__":  # pragma: no cover - testing function, not the __main__ entry point
 
     if len(sys.argv) < 8:
         print("syntax: %s file_name base_dir mod_dir base_sha mod_sha make_public device_id [test]" % sys.argv[0])

@@ -129,6 +129,29 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         # now write out a bunch of diff files and make sure the output is good to go
         end_string = 'EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  3.06sec'
         self._write_files_to_both_folders('eplusout.end', end_string, end_string)
+        # test one set of results there there is just table small diffs
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl.htm'),
+            os.path.join(self.temp_base_dir, 'eplustbl.htm')
+        )
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_small_numeric_diff.htm'),
+            os.path.join(self.temp_mod_dir, 'eplustbl.htm')
+        )
+        with captured_output() as (out, err):
+            # should fail if we don't have any .end files
+            main_function(
+                file_name='HVACTemplate-5ZoneFanCoil',
+                base_dir=self.temp_base_dir,
+                mod_dir=self.temp_mod_dir,
+                base_sha='base123',
+                mod_sha='mod456',
+                make_public=True,
+                device_id='some_device_id',
+                test_mode=True
+            )
+            self.assertIn('Table small diffs', out.getvalue().strip())
+        # now test one where every single file has big diffs
         shutil.copy(
             os.path.join(self.csv_resource_dir, 'eplusout.csv'),
             os.path.join(self.temp_base_dir, 'eplusout.csv')
@@ -192,4 +215,25 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 device_id='some_device_id',
                 test_mode=True
             )
-            self.assertIn('ESO big diffs', out.getvalue().strip())
+            expected_tokens = [
+                'AUD diffs',
+                'BND diffs',
+                'delightin diffs',
+                'delightout diffs',
+                'DXF diffs',
+                'EIO diffs',
+                'ERR diffs',
+                'ESO big diffs',
+                'MDD diffs',
+                'MTD diffs',
+                'MTR big diffs',
+                'RDD diffs',
+                'SHD diffs',
+                'SSZ big diffs',
+                'ZSZ big diffs',
+                'Table big diffs',
+                '[decent_ci:test_result:warn]'
+            ]
+            output = out.getvalue().strip()
+            for token in expected_tokens:
+                self.assertIn(token, output)
