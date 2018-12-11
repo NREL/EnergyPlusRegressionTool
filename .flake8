@@ -9,6 +9,7 @@ exclude =
     __pycache__,
     old,
     build,
-    dist
+    dist,
+    venv
 max-complexity = 20
 max-line-length = 120

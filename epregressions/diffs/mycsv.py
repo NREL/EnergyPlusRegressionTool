@@ -94,7 +94,8 @@ def ismatrice(mat):
         for cell in row:
             if type(cell) not in (float, int):
                 if sys.version_info[0] == 2:
-                    if not isinstance(cell, basestring):
+                    # I would like to just redefine basestring to str on Python 2 but I don't have time right now
+                    if not isinstance(cell, basestring):  # noqa: F821
                         return False
                 else:  # python 3
                     if not isinstance(cell, str):
