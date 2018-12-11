@@ -15,7 +15,7 @@
 # along with mathdiff.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
-import six
+import sys
 
 
 class MyCsv(Exception):
@@ -93,8 +93,12 @@ def ismatrice(mat):
     for row in mat:
         for cell in row:
             if type(cell) not in (float, int):
-                if not isinstance(cell, six.string_types):
-                    return False
+                if sys.version_info[0] == 2:
+                    if not isinstance(cell, basestring):
+                        return False
+                else:  # python 3
+                    if not isinstance(cell, str):
+                        return False
     return True
 
 
