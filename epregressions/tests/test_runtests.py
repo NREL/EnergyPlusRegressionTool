@@ -1667,3 +1667,9 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should have failed in both base and mod cases
         self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case2)
+
+    def test_eio_diff_with_utf8(self):
+        base_eio = os.path.join(self.resources, 'eplusout_with_utf8_base.eio')
+        mod_eio = os.path.join(self.resources, 'eplusout_with_utf8_mod.eio')
+        diff_file = os.path.join(self.temp_base_build_dir, 'eio.diff')
+        SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file)

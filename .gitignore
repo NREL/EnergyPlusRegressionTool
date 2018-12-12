@@ -14,3 +14,5 @@ aa_testSuite_error.txt
 htmlcov
 epregressions/tests/diffs/results.json
 .DS_Store
+results.json
+.eggs

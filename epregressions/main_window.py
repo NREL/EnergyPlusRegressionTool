@@ -1304,11 +1304,11 @@ class RegressionGUI(Gtk.Window):
             if this_file[IDFListViewColumnIndex.RUN]:  # if it is checked
                 if self.missing_weather_file_key not in this_file[IDFListViewColumnIndex.EPW]:
                     these_entries.append(
-                        TestEntry(this_file[IDFListViewColumnIndex.IDF], this_file[IDFListViewColumnIndex.EPW])
+                        TestEntry(os.path.splitext(this_file[IDFListViewColumnIndex.IDF])[0], this_file[IDFListViewColumnIndex.EPW])
                     )
                 else:
                     these_entries.append(
-                        TestEntry(this_file[IDFListViewColumnIndex.IDF], None)
+                        TestEntry(os.path.splitext(this_file[IDFListViewColumnIndex.IDF])[0], None)
                     )
 
         if len(these_entries) == 0:

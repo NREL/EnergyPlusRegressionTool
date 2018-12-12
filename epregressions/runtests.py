@@ -411,12 +411,12 @@ class SuiteRunner:
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
         # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
-        cmp = unified_diff(txt1_cleaned, txt2_cleaned)
+        comparison = unified_diff(txt1_cleaned, txt2_cleaned)
         out_file = io.open(diff_file, 'w', encoding='utf-8')
-        out_lines = list(cmp)
+        out_lines = list(comparison)
         for out_line in out_lines:
             if sys.version_info[0] == 2:
-                out_line = out_line.decode('utf-8')  # pragma: no cover - This shouldn't interfere with 100% coverage
+                out_line = out_line.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover - This shouldn't interfere with 100% coverage
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS
