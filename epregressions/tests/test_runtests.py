@@ -1672,4 +1672,4 @@ class TestTestSuiteRunner(unittest.TestCase):
         base_eio = os.path.join(self.resources, 'eplusout_with_utf8_base.eio')
         mod_eio = os.path.join(self.resources, 'eplusout_with_utf8_mod.eio')
         diff_file = os.path.join(self.temp_base_build_dir, 'eio.diff')
-        SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file)
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
