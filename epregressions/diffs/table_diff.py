@@ -212,7 +212,11 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
             else:
                 (diff, which) = hdict[h][i]
                 tdtag = Tag(soup, name='td', attrs=[('class', which)])
-                tdtag.append(str(diff))
+                try:
+                    tdtag.append(str(diff))
+                except Exception:
+                    diff = diff.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover
+                    tdtag.append(str(diff))
                 trtag.append(tdtag)
 
 
