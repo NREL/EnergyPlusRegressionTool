@@ -416,7 +416,7 @@ class SuiteRunner:
         out_lines = list(comparison)
         for out_line in out_lines:
             if sys.version_info[0] == 2:
-                out_line = out_line.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover - This shouldn't interfere with 100% coverage
+                out_line = out_line.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS
