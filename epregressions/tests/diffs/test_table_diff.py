@@ -273,3 +273,26 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_weird_unicode_issue(self):
+        # There is something about these particular table files that causes an ascii encoding issue
+        # I did not take the time to trim these files down to minimal table outputs, so this also exercises
+        #  table diff more heavily than the other tests here
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_weird_unicode_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_weird_unicode_issue_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(155, response[1])  # count_of_tables
+        self.assertEqual(334, response[2])  # big diffs
+        self.assertEqual(67, response[3])  # small diffs
+        self.assertEqual(3763, response[4])  # equals
+        self.assertEqual(21, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
