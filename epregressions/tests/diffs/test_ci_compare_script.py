@@ -4,6 +4,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import skipIf
 from contextlib import contextmanager
 
 try:
@@ -233,6 +234,134 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 'ZSZ big diffs',
                 'Table big diffs',
                 '[decent_ci:test_result:warn]'
+            ]
+            output = out.getvalue().strip()
+            for token in expected_tokens:
+                self.assertIn(token, output)
+
+    @skipIf(True, 'Running this test requires Amazon credentials on the machine')
+    def test_main_function_not_test_mode(self):
+        # should fail if we don't have any .end files
+        with captured_output() as (out, err):
+            main_function(
+                file_name='HVACTemplate-5ZoneFanCoil',
+                base_dir=self.temp_base_dir,
+                mod_dir=self.temp_mod_dir,
+                base_sha='base123',
+                mod_sha='mod456',
+                make_public=True,
+                device_id='some_device_id',
+                test_mode=True
+            )
+            self.assertIn('Skipping', out.getvalue().strip())
+        # now write out a bunch of diff files and make sure the output is good to go
+        end_string = 'EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  3.06sec'
+        self._write_files_to_both_folders('eplusout.end', end_string, end_string)
+        # test one set of results there there is just table small diffs
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl.htm'),
+            os.path.join(self.temp_base_dir, 'eplustbl.htm')
+        )
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_small_numeric_diff.htm'),
+            os.path.join(self.temp_mod_dir, 'eplustbl.htm')
+        )
+        with captured_output() as (out, err):
+            # should fail if we don't have any .end files
+            main_function(
+                file_name='HVACTemplate-5ZoneFanCoil',
+                base_dir=self.temp_base_dir,
+                mod_dir=self.temp_mod_dir,
+                base_sha='base123',
+                mod_sha='mod456',
+                make_public=True,
+                device_id='some_device_id',
+                test_mode=True
+            )
+            self.assertIn('Table small diffs', out.getvalue().strip())
+        # now test one where every single file has big diffs
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout.csv'),
+            os.path.join(self.temp_base_dir, 'eplusout.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout_big_watt_diffs.csv'),
+            os.path.join(self.temp_mod_dir, 'eplusout.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout.csv'),
+            os.path.join(self.temp_base_dir, 'eplusmtr.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout_big_watt_diffs.csv'),
+            os.path.join(self.temp_mod_dir, 'eplusmtr.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout.csv'),
+            os.path.join(self.temp_base_dir, 'epluszsz.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout_big_watt_diffs.csv'),
+            os.path.join(self.temp_mod_dir, 'epluszsz.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout.csv'),
+            os.path.join(self.temp_base_dir, 'eplusssz.csv')
+        )
+        shutil.copy(
+            os.path.join(self.csv_resource_dir, 'eplusout_big_watt_diffs.csv'),
+            os.path.join(self.temp_mod_dir, 'eplusssz.csv')
+        )
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl.htm'),
+            os.path.join(self.temp_base_dir, 'eplustbl.htm')
+        )
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_big_numeric_diff.htm'),
+            os.path.join(self.temp_mod_dir, 'eplustbl.htm')
+        )
+        self._write_files_to_both_folders('eplusout.audit', 'base audit output', 'mod audit output')
+        self._write_files_to_both_folders('eplusout.bnd', 'base bnd output', 'mod bnd output')
+        self._write_files_to_both_folders('eplusout.dxf', 'base dxf output', 'mod dxf output')
+        self._write_files_to_both_folders('eplusout.eio', 'base eio output', 'mod eio output')
+        self._write_files_to_both_folders('eplusout.mdd', 'base mdd output', 'mod mdd output')
+        self._write_files_to_both_folders('eplusout.mtd', 'base mtd output', 'mod mtd output')
+        self._write_files_to_both_folders('eplusout.rdd', 'base rdd output', 'mod rdd output')
+        self._write_files_to_both_folders('eplusout.shd', 'base shd output', 'mod shd output')
+        self._write_files_to_both_folders('eplusout.err', 'base err output', 'mod err output')
+        self._write_files_to_both_folders('eplusout.delightin', 'base delightin output', 'mod delightin output')
+        self._write_files_to_both_folders('eplusout.delightout', 'base delightout output', 'mod delightout output')
+        with captured_output() as (out, err):
+            # should fail if we don't have any .end files
+            main_function(
+                file_name='HVACTemplate-5ZoneFanCoil',
+                base_dir=self.temp_base_dir,
+                mod_dir=self.temp_mod_dir,
+                base_sha='base123',
+                mod_sha='mod456',
+                make_public=True,
+                device_id='some_device_id',
+                test_mode=False
+            )
+            expected_tokens = [
+                'AUD diffs',
+                'BND diffs',
+                'delightin diffs',
+                'delightout diffs',
+                'DXF diffs',
+                'EIO diffs',
+                'ERR diffs',
+                'ESO big diffs',
+                'MDD diffs',
+                'MTD diffs',
+                'MTR big diffs',
+                'RDD diffs',
+                'SHD diffs',
+                'SSZ big diffs',
+                'ZSZ big diffs',
+                'Table big diffs',
+                '[decent_ci:test_result:warn]',
+                'Regression Results'
             ]
             output = out.getvalue().strip()
             for token in expected_tokens:

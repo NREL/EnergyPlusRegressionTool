@@ -158,11 +158,21 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         print("Skipping Amazon upload in test_mode operation")
     elif has_small_diffs or has_diffs:  # pragma: no cover -- not testing the Amazon upload anytime soon
         import boto
+
+        # so ... if you want to run tests of this script including the Amazon side, you need to pass in Amazon creds
+        # to the boto connect_s3 method.  To run this test, put the amazon key and secret in a file, one per line.
+        # Uncomment the next two lines, and change the first so that the path points to the credentials file.
+        # Comment the empty connect_s3 call below it.  Then go to the test_main_function_not_test_mode() unit test and
+        # enable it (disable skipping it).  Then it should run completely, posting fake but good results to an Amazon
+        # bucket, making them public, and reporting the URL in the output
+
+        # file_data = open('/path/to/s3/creds.txt').read().split('\n')
+        # conn = boto.connect_s3(file_data[0], file_data[1])
         conn = boto.connect_s3()
         bucket_name = 'energyplus'
         bucket = conn.get_bucket(bucket_name)
 
-        potential_files = get_diff_files(mod_dir)
+        potential_files = get_diff_files(base_dir)
 
         date = datetime.now()
         date_str = "%d-%02d" % (date.year, date.month)
