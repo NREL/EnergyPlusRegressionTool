@@ -449,7 +449,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                 diff_dict[h] = hdict1[h]
             else:
                 if h not in horder2:
-                    diff_dict[h] = [[0, 0, 'big']]*(len(table1('tr')) - 1)
+                    diff_dict[h] = [[0, 0, 'big']] * (len(table1('tr')) - 1)
                 else:
                     (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
                     h_thresh_dict[h] = (abs_thresh, rel_thresh)
