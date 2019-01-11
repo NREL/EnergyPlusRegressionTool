@@ -240,7 +240,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 self.assertIn(token, output)
 
     @skipIf(True, 'Running this test requires Amazon credentials on the machine')
-    def test_main_function_not_test_mode(self):
+    def test_main_function_not_test_mode(self):  # pragma: no cover
         # should fail if we don't have any .end files
         with captured_output() as (out, err):
             main_function(

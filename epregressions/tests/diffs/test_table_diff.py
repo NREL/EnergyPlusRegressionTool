@@ -194,26 +194,6 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
-    def test_second_file_has_table_with_different_headings(self):
-        response = table_diff(
-            self.thresh_dict,
-            os.path.join(self.diff_files_dir, 'eplustbl.htm'),
-            os.path.join(self.diff_files_dir, 'eplustbl_table_has_different_heading.htm'),
-            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
-            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
-            os.path.join(self.temp_output_dir, 'math_diff.log'),
-            os.path.join(self.temp_output_dir, 'summary.htm'),
-        )
-        self.assertEqual('', response[0])  # diff status
-        self.assertEqual(3, response[1])  # count_of_tables
-        self.assertEqual(0, response[2])  # big diffs
-        self.assertEqual(0, response[3])  # small diffs
-        self.assertEqual(13, response[4])  # equals
-        self.assertEqual(0, response[5])  # string diffs
-        self.assertEqual(0, response[6])  # size errors
-        self.assertEqual(0, response[7])  # in file 2 but not in file 1
-        self.assertEqual(0, response[8])  # in file 1 but not in file 2
-
     def test_malformed_table_heading_in_file_1(self):
         response = table_diff(
             self.thresh_dict,
@@ -294,5 +274,89 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(3763, response[4])  # equals
         self.assertEqual(21, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_second_file_has_table_with_different_headings(self):
+        # Basically, if a column heading changed, but no data changed, that column was
+        # ignored, and therefore no diffs, so the column heading change doesn't get noticed.
+        # In fact, if data changed in that ignored column, it got totally ignored.
+        # If a diff is encountered in a different column, the diff calculations ended up hitting
+        # a key error because that column was never added to diff_dict.
+
+        # We have four files, each with one table, two data columns (FanEnergyIndex and "End Use"), and two rows of data
+        # eplustbl_heading_change_base.htm -- This has a column heading of End Use Subcategory and FEI = 6.21
+        # eplustbl_heading_change_mod_with_no_other_diffs.htm -- This only has the column name changed to 'End Use'
+        # eplustbl_heading_change_mod_with_diff_in_that_column.htm -- This has 'End Use' and End Use value modified
+        # eplustbl_heading_change_mod_with_diff_in_other_column.htm -- This has 'End Use' and FEI modified to 6.14
+
+        # First the only-name-change instance
+        # It should trigger a size change and a string diff
+        # The two FEI values are the same, so there should be two equal values
+        # The heading change should trigger one big diff, and each row (2) should trigger another, so 3 big diffs
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_mod_with_no_other_diffs.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(3, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(2, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs
+        self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+        # For the case where a value in the changed column changes, it should be identical to the just column change
+        # The value will be reported as a big diff because it can't do a comparison due to the heading change
+        # So 3 big diffs still, along with the single size and single string diffs
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_mod_with_diff_in_that_column.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(3, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(2, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs
+        self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+        # Finally the one that was actually causing the issue, where a diff occurred in a different column
+        # We should have the string diff and size diff due to the heading change
+        # We should have a big diff due to the heading change
+        # We should have a big diff for the two values in the changed heading column that can't be compared
+        # And we should have a big diff for the actual change in the other column
+        # So 4 big diffs total, and none equals
+        # Most importantly, it shouldn't crash.
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_heading_change_mod_with_diff_in_other_column.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(4, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(1, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs
+        self.assertEqual(1, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2

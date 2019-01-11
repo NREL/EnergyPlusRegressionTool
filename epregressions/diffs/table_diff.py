@@ -205,19 +205,21 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
         trtag = Tag(soup, name='tr')
         tabletag.append(trtag)
         for h in horder:
-            if h == 'DummyPlaceholder' or h == 'Subcategory':
+            if h not in hdict:
+                tdtag = Tag(soup, name='td', attrs=[("class", "big")])
+                tdtag.append('ColumnHeadingDifference')
+            elif h == 'DummyPlaceholder' or h == 'Subcategory':
                 tdtag = Tag(soup, name='td')
                 tdtag.append((str(hdict[h][i])))
-                trtag.append(tdtag)
             else:
                 (diff, which) = hdict[h][i]
                 tdtag = Tag(soup, name='td', attrs=[('class', which)])
                 try:
                     tdtag.append(str(diff))
-                except Exception:
-                    diff = diff.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover
+                except Exception:  # pragma: no cover
+                    diff = diff.encode('ascii', 'ignore').decode('ascii')
                     tdtag.append(str(diff))
-                trtag.append(tdtag)
+            trtag.append(tdtag)
 
 
 # Convert html table to heading dictionary (and header list) in single step
@@ -422,6 +424,22 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         hdict1, horder1 = table2hdict_horder(table1)
         hdict2, horder2 = table2hdict_horder(table2)
 
+        # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
+        # up close investigation.  As such, we are going to trigger the following things:
+        # 1) a table_size_error, because even though the sizes are the "same", the sizes have sort-of changed due to the
+        #    missing column and added column in the second table
+        # 2) a table_string_diff, because if the columns have changed, there must be at least one title different (yes
+        #    even if it is duplicate, it is different because there is another one)
+        # 3) a table_big_diff here, because something has definitely changed that needs attention
+        # 4) each datum in each row that doesn't have a match should trigger a big diff as well later
+        if any([h not in horder2 for h in horder1]) or any([h not in horder1 for h in horder2]):
+            table_size_error += 1
+            count_of_size_error += 1
+            table_string_diff += 1
+            count_of_string_diff += 1
+            table_big_diff += 1
+            count_of_big_diff += 1
+
         # Dictionaries of absolute and relative differences
         diff_dict = {}
         h_thresh_dict = {}
@@ -429,15 +447,15 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         for h in horder1:
             if h == 'DummyPlaceholder':
                 diff_dict[h] = hdict1[h]
-            elif h not in horder2:
-                continue
             else:
-                (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
-
-                h_thresh_dict[h] = (abs_thresh, rel_thresh)
-                diff_dict[h] = []
-                for x, y in zip(hdict1[h], hdict2[h]):
-                    diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
+                if h not in horder2:
+                    diff_dict[h] = [[0, 0, 'big']]*(len(table1('tr')) - 1)
+                else:
+                    (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
+                    h_thresh_dict[h] = (abs_thresh, rel_thresh)
+                    diff_dict[h] = []
+                    for x, y in zip(hdict1[h], hdict2[h]):
+                        diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
 
                 # Statistics local to this table
                 for diff_result in diff_dict[h]:
@@ -466,7 +484,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         # Add difference tables to absolute and relative difference soups
         abs_diff_dict = {}
         for h in horder1:
-            if h not in horder2:  # pragma: no cover - this would be a super weird corner case given the logic above
+            if h not in horder2:
                 continue
             abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[0], x_y_z[2]) for x_y_z in diff_dict[h]]
@@ -474,7 +492,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
         rel_diff_dict = {}
         for h in horder1:
-            if h not in horder2:  # pragma: no cover - this would be a super weird corner case given the logic above
+            if h not in horder2:
                 continue
             rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[1], x_y_z[2]) for x_y_z in diff_dict[h]]
