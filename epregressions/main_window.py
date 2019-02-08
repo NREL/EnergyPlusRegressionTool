@@ -602,7 +602,12 @@ class RegressionGUI(Gtk.Window):
         if platform() != Platforms.Windows:
             num_threads_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
-            self.suite_option_num_threads.set_range(1, 8)
+            # Determine max available threads
+            n_threads_max = os.cpu_count()
+            if n_threads_max is None:
+                # If couldn't be determined, assume 8 as default
+                n_threads_max = 8
+            self.suite_option_num_threads.set_range(1, n_threads_max)
             self.suite_option_num_threads.set_increments(1, 4)
             self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
             self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
