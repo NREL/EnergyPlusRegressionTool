@@ -4,6 +4,7 @@ from datetime import datetime  # datetime allows us to generate timestamps for t
 import glob
 import json
 import os
+import sys
 import random
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
@@ -25,6 +26,11 @@ from epregressions.builds.base import KnownBuildTypes
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
 from epregressions.builds.install import EPlusInstallDirectory
+
+if sys.version_info.major > 2:
+    from os import cpu_count
+else:
+    from multiprocessing import cpu_count
 
 # graphics stuff
 import gi
@@ -603,7 +609,7 @@ class RegressionGUI(Gtk.Window):
             num_threads_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
             # Determine max available threads
-            n_threads_max = os.cpu_count()
+            n_threads_max = cpu_count()
             if n_threads_max is None:
                 # If couldn't be determined, assume 8 as default
                 n_threads_max = 8
