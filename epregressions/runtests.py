@@ -208,9 +208,22 @@ class SuiteRunner:
 
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
-                with io.open(os.path.join(test_run_directory, self.ep_in_filename), encoding='utf-8') as f_idf:
-                    idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
-                    # idf_text = unicode(idf_text, errors='ignore')
+
+                # Note: JM 2015-03-08: Absolutely need to make sure this
+                # doesn't fail, or it'll just hang with no activity and no
+                # warnings, so we'll try utf-8, fallback to latin-1, and if
+                # it fails, we try utf-8 and 'replace', if not it raises
+                try:
+                    _p = os.path.join(test_run_directory, self.ep_in_filename)
+                    idf_text = self.my_read_safe_encoding(_p)
+                except UnicodeDecodeError:
+                    # Worst case scenario, we just skip that file
+                    msg = "Reading {} failed, skipping".format(idf_path)
+                    # Print to console (dev warning)
+                    print(msg)
+                    # And to the GUI
+                    self.my_print(msg)
+                    continue
 
                 # if the file requires the window 5 data set file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:
@@ -751,6 +764,63 @@ class SuiteRunner:
 
     def interrupt_please(self):  # pragma: no cover
         self.id_like_to_stop_now = True
+
+    def my_read_safe_encoding(self, path):
+        """
+        Helper functiont that will read a file handling possible problems.
+        It will try the following order:
+            * Read as utf-8, errors='strict'
+            * Read as latin-1, errors='strict'
+            * Read as utf-8, errors='replace'
+            * If all failed, raise `UnicodeDecodeError`
+
+        Args:
+        -----
+        * path (str): path to the file to read
+
+        Returns:
+        --------
+        * idf_text (str): the decoded file content
+        """
+
+        msg = "Cannot read '{p}'".format(p=path)
+        msg += " with encoding={c}, errors={e}"
+        try:
+            encoding = 'utf-8'
+            errors = 'strict'
+            with io.open(path, 'r', encoding=encoding, errors=errors) as f_idf:
+                idf_text = f_idf.read()
+        except UnicodeDecodeError:
+            # Output to console (dev warning of sorts)
+            # AND the GUI
+            thismsg = ("{}, falling back to "
+                       "latin-1".format(msg.format(c=encoding, e=errors)))
+            print(thismsg)
+            self.my_print(thismsg)
+
+            encoding = 'latin-1'
+            errors = 'strict'
+
+            try:
+                with io.open(path, 'r',
+                             encoding=encoding, errors=errors) as f_idf:
+                    idf_text = f_idf.read()
+            except ValueError:
+                thismsg = ("{}, falling back to utf-8, errors='replace'"
+                           "".format(msg.format(c=encoding, e=errors)))
+                print(thismsg)
+                self.my_print(thismsg)
+                encoding = 'utf-8'
+                errors = 'replace'
+                try:
+                    with io.open(path, 'r', encoding=encoding,
+                                 errors=errors) as f_idf:
+                        idf_text = f_idf.read()
+                except UnicodeDecodeError:
+                    # This time it's bad, we raise
+                    raise UnicodeDecodeError(msg.format(c=encoding, e=errors))
+
+        return idf_text
 
 
 if __name__ == "__main__":  # pragma: no cover
