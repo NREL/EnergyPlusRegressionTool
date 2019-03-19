@@ -213,8 +213,6 @@ class SuiteRunner:
                 # copy the idf into the test directory, renaming to in.idf
                 shutil.copy(idf_path, os.path.join(test_run_directory, self.ep_in_filename))
 
-                print("About to read file: " + idf_path)
-
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
                 idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, self.ep_in_filename))
