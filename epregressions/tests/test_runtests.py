@@ -1676,4 +1676,5 @@ class TestTestSuiteRunner(unittest.TestCase):
 
     def test_content_reader(self):
         file_path_to_read = os.path.join(self.resources, 'BadUTF8Marker.idf')
-        idf_contents = SuiteRunner.read_file_content(file_path_to_read)
+        # this should simply pass without throwing an exception
+        SuiteRunner.read_file_content(file_path_to_read)
