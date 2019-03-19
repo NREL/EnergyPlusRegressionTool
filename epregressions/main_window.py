@@ -1189,8 +1189,6 @@ class RegressionGUI(Gtk.Window):
             this_line = line.strip()
             if this_line == "":
                 continue
-            if line[-4:] == ".imf" or line[-4:] == ".idf":
-                this_line = this_line[:-4]
             files_to_select.append(this_line)
         self.idf_selection_from_list_worker(files_to_select)
 
