@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import argparse
+import codecs
 from datetime import datetime
 import io
 import json
@@ -175,7 +176,7 @@ class SuiteRunner:
 
     @staticmethod
     def read_file_content(file_path):
-        with io.open(file_path, encoding='utf-8') as f_idf:
+        with codecs.open(file_path, encoding='utf-8', errors='ignore') as f_idf:
             idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
         return idf_text
 
