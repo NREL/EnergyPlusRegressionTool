@@ -177,7 +177,7 @@ class SuiteRunner:
     @staticmethod
     def read_file_content(file_path):
         with codecs.open(file_path, encoding='utf-8', errors='ignore') as f_idf:
-            idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
+            idf_text = f_idf.read()
         return idf_text
 
     def run_build(self, build_tree):
