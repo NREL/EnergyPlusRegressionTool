@@ -612,7 +612,7 @@ class RegressionGUI(Gtk.Window):
             n_threads_max = cpu_count()
             if n_threads_max is None:
                 # If couldn't be determined, assume 8 as default
-                n_threads_max = 8
+                n_threads_max = 8  # pragma: no cover -- I cant imagine a way to get cpu_count to fail
             self.suite_option_num_threads.set_range(1, n_threads_max)
             self.suite_option_num_threads.set_increments(1, 4)
             self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
