@@ -30,7 +30,8 @@ from epregressions.builds.install import EPlusInstallDirectory
 if sys.version_info.major > 2:
     from os import cpu_count
 else:
-    from multiprocessing import cpu_count
+    from multiprocessing import cpu_count  # pragma: no cover
+    # I'm not sure why this isn't covered by the Py2 test, but it doesn't seem to be
 
 # graphics stuff
 import gi
