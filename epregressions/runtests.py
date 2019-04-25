@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import argparse
+import codecs
 from datetime import datetime
 import io
 import json
@@ -173,6 +174,12 @@ class SuiteRunner:
                 os.mkdir(os.path.join(b_b['build_dir'], d_test))
         self.my_print('Created test directories at <build-dir>/%s' % d_test)
 
+    @staticmethod
+    def read_file_content(file_path):
+        with codecs.open(file_path, encoding='utf-8', errors='ignore') as f_idf:
+            idf_text = f_idf.read()
+        return idf_text
+
     def run_build(self, build_tree):
 
         this_test_dir = self.test_output_dir
@@ -208,9 +215,7 @@ class SuiteRunner:
 
                 # read in the entire text of the idf to do some special operations;
                 # could put in one line, but the with block ensures the file handle is closed
-                with io.open(os.path.join(test_run_directory, self.ep_in_filename), encoding='utf-8') as f_idf:
-                    idf_text = f_idf.read()  # EDWIN: Make sure this reads the IDF properly
-                    # idf_text = unicode(idf_text, errors='ignore')
+                idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, self.ep_in_filename))
 
                 # if the file requires the window 5 data set file, bring it into the test run directory
                 if 'Window5DataFile.dat' in idf_text:

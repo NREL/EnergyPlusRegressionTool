@@ -1673,3 +1673,8 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod_eio = os.path.join(self.resources, 'eplusout_with_utf8_mod.eio')
         diff_file = os.path.join(self.temp_base_build_dir, 'eio.diff')
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
+
+    def test_content_reader(self):
+        file_path_to_read = os.path.join(self.resources, 'BadUTF8Marker.idf')
+        # this should simply pass without throwing an exception
+        SuiteRunner.read_file_content(file_path_to_read)
