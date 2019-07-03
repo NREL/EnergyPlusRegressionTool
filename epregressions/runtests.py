@@ -399,7 +399,8 @@ class SuiteRunner:
             "DElight input generated",
             "(idf)=",
             "(user input)=",
-            "(input file)="
+            "(input file)=",
+            "ReadVars Run Time"
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
@@ -627,6 +628,11 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.delightout'),
                 join(case_result_dir_2, 'eplusout.delightout'),
                 join(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DL_OUT)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'readvars.audit'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'readvars.audit'),
+                join(case_result_dir_2, 'readvars.audit'),
+                join(out_dir, 'readvars.audit.diff'))), TextDifferences.READ_VARS_AUDIT)
 
         # return the updated entry
         return this_entry

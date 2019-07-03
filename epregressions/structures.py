@@ -38,6 +38,7 @@ class TextDifferences:
     SHD = 9
     DL_IN = 10
     DL_OUT = 11
+    READ_VARS_AUDIT = 12
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -165,6 +166,7 @@ class TestEntry:
         self.shd_diffs = None
         self.dl_in_diffs = None
         self.dl_out_diffs = None
+        self.readvars_audit_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -202,6 +204,8 @@ class TestEntry:
             self.dl_in_diffs = diffs
         elif diff_type == TextDifferences.DL_OUT:
             self.dl_out_diffs = diffs
+        elif diff_type == TextDifferences.READ_VARS_AUDIT:
+            self.readvars_audit_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -246,6 +250,8 @@ class TestEntry:
                 response['dl_in_diffs'] = self.dl_in_diffs.to_dict()
             if self.dl_out_diffs:
                 response['dl_out_diffs'] = self.dl_out_diffs.to_dict()
+            if self.readvars_audit_diffs:
+                response['readvars_audit_diffs'] = self.readvars_audit_diffs.to_dict()
         return response
 
 
@@ -334,6 +340,7 @@ class CompletedStructure:
             this_entry.err_diffs: "err",
             this_entry.dl_in_diffs: "delightin",
             this_entry.dl_out_diffs: "delightout",
+            this_entry.readvars_audit_diffs: "readvars_audit"
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

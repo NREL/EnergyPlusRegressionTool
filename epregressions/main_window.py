@@ -1167,7 +1167,7 @@ class RegressionGUI(Gtk.Window):
             Gtk.ButtonsType.OK_CANCEL, None
         )
         dialog.set_title("Enter list of files to select")
-        dialog.set_markup('Enter file names to select, one per line\nFile extensions are optional')
+        dialog.set_markup('Enter file names to select, one per line with extension')
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_size_request(400, 400)
         scrolled_window.set_shadow_type(Gtk.ShadowType.ETCHED_IN)
