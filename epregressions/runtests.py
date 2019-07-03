@@ -633,6 +633,26 @@ class SuiteRunner:
                 join(case_result_dir_1, 'readvars.audit'),
                 join(case_result_dir_2, 'readvars.audit'),
                 join(out_dir, 'readvars.audit.diff'))), TextDifferences.READ_VARS_AUDIT)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.edd'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.edd'),
+                join(case_result_dir_2, 'eplusout.edd'),
+                join(out_dir, 'eplusout.edd.diff'))), TextDifferences.EDD)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.wrl'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.wrl'),
+                join(case_result_dir_2, 'eplusout.wrl'),
+                join(out_dir, 'eplusout.wrl.diff'))), TextDifferences.WRL)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sln'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.sln'),
+                join(case_result_dir_2, 'eplusout.sln'),
+                join(out_dir, 'eplusout.sln.diff'))), TextDifferences.SLN)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sci'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.sci'),
+                join(case_result_dir_2, 'eplusout.sci'),
+                join(out_dir, 'eplusout.sci.diff'))), TextDifferences.SCI)
 
         # return the updated entry
         return this_entry

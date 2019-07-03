@@ -115,6 +115,22 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("ReadvarsAudit diffs.")
 
+    if entry.edd_diffs and (entry.edd_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("EDD diffs.")
+
+    if entry.wrl_diffs and (entry.wrl_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("WRL diffs.")
+
+    if entry.sln_diffs and (entry.sln_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SLN diffs.")
+
+    if entry.sci_diffs and (entry.sci_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SCI diffs.")
+
     # numeric diff
     if entry.eso_diffs:
         has_diffs, has_small_diffs = process_diffs("ESO", entry.eso_diffs, has_diffs, has_small_diffs)

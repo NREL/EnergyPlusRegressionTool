@@ -39,6 +39,10 @@ class TextDifferences:
     DL_IN = 10
     DL_OUT = 11
     READ_VARS_AUDIT = 12
+    EDD = 13
+    WRL = 14
+    SLN = 15
+    SCI = 16
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -167,6 +171,10 @@ class TestEntry:
         self.dl_in_diffs = None
         self.dl_out_diffs = None
         self.readvars_audit_diffs = None
+        self.edd_diffs = None
+        self.wrl_diffs = None
+        self.sln_diffs = None
+        self.sci_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -206,6 +214,14 @@ class TestEntry:
             self.dl_out_diffs = diffs
         elif diff_type == TextDifferences.READ_VARS_AUDIT:
             self.readvars_audit_diffs = diffs
+        elif diff_type == TextDifferences.EDD:
+            self.edd_diffs = diffs
+        elif diff_type == TextDifferences.WRL:
+            self.wrl_diffs = diffs
+        elif diff_type == TextDifferences.SLN:
+            self.sln_diffs = diffs
+        elif diff_type == TextDifferences.SCI:
+            self.sci_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -252,6 +268,14 @@ class TestEntry:
                 response['dl_out_diffs'] = self.dl_out_diffs.to_dict()
             if self.readvars_audit_diffs:
                 response['readvars_audit_diffs'] = self.readvars_audit_diffs.to_dict()
+            if self.edd_diffs:
+                response['edd_diffs'] = self.edd_diffs.to_dict()
+            if self.wrl_diffs:
+                response['wrl_diffs'] = self.wrl_diffs.to_dict()
+            if self.sln_diffs:
+                response['sln_diffs'] = self.sln_diffs.to_dict()
+            if self.sci_diffs:
+                response['sci_diffs'] = self.sci_diffs.to_dict()
         return response
 
 
@@ -340,7 +364,11 @@ class CompletedStructure:
             this_entry.err_diffs: "err",
             this_entry.dl_in_diffs: "delightin",
             this_entry.dl_out_diffs: "delightout",
-            this_entry.readvars_audit_diffs: "readvars_audit"
+            this_entry.readvars_audit_diffs: "readvars_audit",
+            this_entry.edd_diffs: "edd",
+            this_entry.wrl_diffs: "wrl",
+            this_entry.sln_diffs: "sln",
+            this_entry.sci_diffs: "sci",
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]
