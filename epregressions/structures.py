@@ -43,6 +43,9 @@ class TextDifferences:
     WRL = 14
     SLN = 15
     SCI = 16
+    MAP = 17
+    DFS = 18
+    SCREEN = 19
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -175,6 +178,9 @@ class TestEntry:
         self.wrl_diffs = None
         self.sln_diffs = None
         self.sci_diffs = None
+        self.map_diffs = None
+        self.dfs_diffs = None
+        self.screen_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -222,6 +228,12 @@ class TestEntry:
             self.sln_diffs = diffs
         elif diff_type == TextDifferences.SCI:
             self.sci_diffs = diffs
+        elif diff_type == TextDifferences.MAP:
+            self.map_diffs = diffs
+        elif diff_type == TextDifferences.DFS:
+            self.dfs_diffs = diffs
+        elif diff_type == TextDifferences.SCREEN:
+            self.screen_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -276,6 +288,12 @@ class TestEntry:
                 response['sln_diffs'] = self.sln_diffs.to_dict()
             if self.sci_diffs:
                 response['sci_diffs'] = self.sci_diffs.to_dict()
+            if self.map_diffs:
+                response['map_diffs'] = self.map_diffs.to_dict()
+            if self.dfs_diffs:
+                response['dfs_diffs'] = self.dfs_diffs.to_dict()
+            if self.screen_diffs:
+                response['screen_diffs'] = self.screen_diffs.to_dict()
         return response
 
 
@@ -369,6 +387,9 @@ class CompletedStructure:
             this_entry.wrl_diffs: "wrl",
             this_entry.sln_diffs: "sln",
             this_entry.sci_diffs: "sci",
+            this_entry.map_diffs: "map",
+            this_entry.dfs_diffs: "dfs",
+            this_entry.screen_diffs: "screen",
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

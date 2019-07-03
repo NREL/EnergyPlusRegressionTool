@@ -131,6 +131,18 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("SCI diffs.")
 
+    if entry.map_diffs and (entry.map_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("MAP diffs.")
+
+    if entry.dfs_diffs and (entry.dfs_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("DFS diffs.")
+
+    if entry.screen_diffs and (entry.screen_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SCREEN diffs.")
+
     # numeric diff
     if entry.eso_diffs:
         has_diffs, has_small_diffs = process_diffs("ESO", entry.eso_diffs, has_diffs, has_small_diffs)

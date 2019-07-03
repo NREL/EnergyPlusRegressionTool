@@ -653,6 +653,21 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.sci'),
                 join(case_result_dir_2, 'eplusout.sci'),
                 join(out_dir, 'eplusout.sci.diff'))), TextDifferences.SCI)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.map'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.map'),
+                join(case_result_dir_2, 'eplusout.map'),
+                join(out_dir, 'eplusout.map.diff'))), TextDifferences.MAP)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dfs'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.dfs'),
+                join(case_result_dir_2, 'eplusout.dfs'),
+                join(out_dir, 'eplusout.dfs.diff'))), TextDifferences.DFS)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusscreen.csv'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusscreen.csv'),
+                join(case_result_dir_2, 'eplusscreen.csv'),
+                join(out_dir, 'eplusscreen.csv.diff'))), TextDifferences.SCREEN)
 
         # return the updated entry
         return this_entry
