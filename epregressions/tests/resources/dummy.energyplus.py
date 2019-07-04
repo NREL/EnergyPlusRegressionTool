@@ -113,6 +113,62 @@ with open('eplustbl.htm', 'w') as f_tbl:
 </html>
 """)
 
+# write some dummy text output files
+dummy_text_files = [
+    'readvars.audit',
+    'eplusout.edd',
+    'eplusout.wrl',
+    'eplusout.sln',
+    'eplusout.sci',
+    'eplusout.map',
+    'eplusout.dfs',
+    'eplusscreen.csv'
+]
+for fn in dummy_text_files:
+    with open(fn, 'w') as f:
+        f.write('hello from ' + fn)
+
+# and the glhe json file too
+object_to_write = {
+  "GHLE 1": {
+    "Phys Data": {
+      "BH Data": {
+        "BH 1": {
+          "X-Location": 0.0,
+          "Y-Location": 0.0
+        }
+      },
+      "BH Diameter": 0.114,
+      "BH Length": 100.0,
+      "BH Top Depth": 1.0,
+      "Flow Rate": 0.00100944,
+      "Grout k": 0.7443,
+      "Grout rhoCp": 3900000.0,
+      "Max Simulation Years": 1.0,
+      "Pipe Diameter": 0.03341,
+      "Pipe Thickness": 0.002984,
+      "Pipe k": 0.3895,
+      "Pipe rhoCP": 1770000.0,
+      "Soil k": 2.5,
+      "Soil rhoCp": 2500000.0,
+      "U-tube Dist": 0.04913
+    },
+    "Response Factors": {
+      "GFNC": [
+        6.495588983283869
+      ],
+      "LNTTS": [
+        -3.5
+      ],
+      "time": [
+        33552648.247020558
+      ]
+    }
+  }
+}
+with open('eplusout.glhe', 'w') as f_glhe:
+    f_glhe.write(json.dumps(object_to_write))
+
 # DO THIS LAST - it has sys.exit() calls - eplusout.end
 num_warnings = config['num_warnings'] if 'num_warnings' in config else 0
 num_severe = config['num_severe'] if 'num_severe' in config else 0

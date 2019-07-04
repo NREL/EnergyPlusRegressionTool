@@ -427,6 +427,106 @@ class SuiteRunner:
         out_file.close()
         return TextDifferences.DIFFS
 
+    @staticmethod
+    def diff_glhe_files(file_a, file_b, diff_file):
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.read()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.read()
+        # return early if the files match
+        if txt1 == txt2:
+            return TextDifferences.EQUAL
+        # if they don't match as a string, they could still match in terms of values, need to parse into objects
+        json_1 = json.loads(txt1)
+        json_2 = json.loads(txt2)
+        if json_1 == json_2:
+            return TextDifferences.EQUAL
+        # ok, looks like there are actually diffs, time to parse through them
+        # first, the highest level should be a dict with equal keys
+        diffs = []
+        names_ok = True
+        if not len(json_1.keys()) == len(json_2.keys()):
+            diffs.append("GLHE Object count doesn't match")
+            names_ok = False
+        elif not sorted(json_1.keys()) == sorted(json_2.keys()):
+            diffs.append("GLHE Object names don't match")
+            names_ok = False
+        if names_ok:
+            # then it's OK to continue diff-ing
+            for glhe_name in json_1.keys():
+                glhe_in_file_1 = json_1[glhe_name]
+                glhe_in_file_2 = json_2[glhe_name]
+                try:
+                    phys_data_1 = glhe_in_file_1['Phys Data']
+                    phys_data_2 = glhe_in_file_2['Phys Data']
+                    keys_to_search = [
+                        "BH Diameter",
+                        "BH Length",
+                        "BH Top Depth",
+                        "Flow Rate",
+                        "Grout k",
+                        "Grout rhoCp",
+                        "Max Simulation Years",
+                        "Pipe Diameter",
+                        "Pipe Thickness",
+                        "Pipe k",
+                        "Pipe rhoCP",
+                        "Soil k",
+                        "Soil rhoCp",
+                        "U-tube Dist"
+                    ]
+                    for key in keys_to_search:
+                        if (key in phys_data_1 and key not in phys_data_2) or (key not in phys_data_1 and key in phys_data_2):
+                            diffs.append("Phys Data key differences for GLHE object named \"%s\"" % glhe_name)
+                        elif not phys_data_1[key] == phys_data_2[key]:
+                            diffs.append("Different Phys Data values in GLHE object named \"%s\"; field: \"%s\"" % (
+                                glhe_name, key
+                            ))
+                    boreholes_1 = phys_data_1['BH Data']
+                    boreholes_2 = phys_data_2['BH Data']
+                    for borehole_name in boreholes_1.keys():
+                        bh_in_file_1 = boreholes_1[borehole_name]
+                        bh_in_file_2 = boreholes_2[borehole_name]
+                        if not bh_in_file_1['X-Location'] == bh_in_file_2['X-Location']:
+                            diffs.append("Borehole X location difference for GLHE \"%s\", borehole \"%s\"" % (
+                                glhe_name, borehole_name
+                            ))
+                        if not bh_in_file_1['Y-Location'] == bh_in_file_2['Y-Location']:
+                            diffs.append("Borehole Y location difference for GLHE \"%s\", borehole \"%s\"" % (
+                                glhe_name, borehole_name
+                            ))
+                    response_factors_1 = glhe_in_file_1['Response Factors']
+                    response_factors_2 = glhe_in_file_2['Response Factors']
+                    gfnc_1 = response_factors_1['GFNC']
+                    gfnc_2 = response_factors_2['GFNC']
+                    lntts_1 = response_factors_1['LNTTS']
+                    lntts_2 = response_factors_2['LNTTS']
+                    time_1 = response_factors_1['time']
+                    time_2 = response_factors_2['time']
+                    counts_match = True
+                    if not len(gfnc_1) == len(gfnc_2):
+                        diffs.append("Mismatched GFNC count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if not len(lntts_1) == len(lntts_2):
+                        diffs.append("Mismatched LNTTS count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if not len(time_1) == len(time_2):
+                        diffs.append("Mismatched TIME count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if counts_match:
+                        for i in range(len(gfnc_1)):
+                            if not gfnc_1[i] == gfnc_2[i]:
+                                diffs.append("GFNC value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                            if not lntts_1[i] == lntts_2[i]:
+                                diffs.append("LNTTS value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                            if not time_1[i] == time_2[i]:
+                                diffs.append("TIME value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                except KeyError:
+                    diffs.append("Key error in GLHE object named \"%s\"; something doesn't match" % glhe_name)
+        with io.open(diff_file, 'w', encoding='utf-8') as out_file:
+            out_file.write(json.dumps({"diffs": diffs}))
+        return TextDifferences.DIFFS
+
     def process_diffs_for_one_case(self, this_entry, ci_mode=False):
 
         if ci_mode:  # in "ci_mode" the build directory is actually the output directory of each file
@@ -668,6 +768,13 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusscreen.csv'),
                 join(case_result_dir_2, 'eplusscreen.csv'),
                 join(out_dir, 'eplusscreen.csv.diff'))), TextDifferences.SCREEN)
+
+        # sorta textual diff, the GLHE json file
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.glhe'):
+            this_entry.add_text_differences(TextDifferences(self.diff_glhe_files(
+                join(case_result_dir_1, 'eplusout.glhe'),
+                join(case_result_dir_2, 'eplusout.glhe'),
+                join(out_dir, 'eplusout.glhe.diff'))), TextDifferences.GLHE)
 
         # return the updated entry
         return this_entry

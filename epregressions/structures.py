@@ -46,6 +46,7 @@ class TextDifferences:
     MAP = 17
     DFS = 18
     SCREEN = 19
+    GLHE = 20
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -181,6 +182,7 @@ class TestEntry:
         self.map_diffs = None
         self.dfs_diffs = None
         self.screen_diffs = None
+        self.glhe_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -234,6 +236,8 @@ class TestEntry:
             self.dfs_diffs = diffs
         elif diff_type == TextDifferences.SCREEN:
             self.screen_diffs = diffs
+        elif diff_type == TextDifferences.GLHE:
+            self.glhe_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -294,6 +298,8 @@ class TestEntry:
                 response['dfs_diffs'] = self.dfs_diffs.to_dict()
             if self.screen_diffs:
                 response['screen_diffs'] = self.screen_diffs.to_dict()
+            if self.glhe_diffs:
+                response['glhe_diffs'] = self.glhe_diffs.to_dict()
         return response
 
 
@@ -390,6 +396,7 @@ class CompletedStructure:
             this_entry.map_diffs: "map",
             this_entry.dfs_diffs: "dfs",
             this_entry.screen_diffs: "screen",
+            this_entry.glhe_diffs: "glhe",
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

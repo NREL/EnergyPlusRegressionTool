@@ -143,6 +143,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("SCREEN diffs.")
 
+    if entry.glhe_diffs and (entry.glhe_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("GLHE diffs")
+
     # numeric diff
     if entry.eso_diffs:
         has_diffs, has_small_diffs = process_diffs("ESO", entry.eso_diffs, has_diffs, has_small_diffs)

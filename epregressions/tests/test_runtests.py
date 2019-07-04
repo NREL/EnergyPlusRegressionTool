@@ -1674,6 +1674,37 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = os.path.join(self.temp_base_build_dir, 'eio.diff')
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
 
+    def test_glhe_diff(self):
+        base_glhe = os.path.join(self.resources, 'eplusout_base.glhe')
+        # case 1 they are equal
+        mod_glhe = os.path.join(self.resources, 'eplusout_base.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.1.diff')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 2, they may be equal, but the names are different
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_mismatch_object_names.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.2.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 3, there are different numbers of GLHEs, don't compare
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_mismatch_object_count.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.3.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 4, different values
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_bad_values.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.4.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 5, same values but different order
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_text_diff_but_json_equal.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.5.diff')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 6, mismatched g function counts
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_mismatched_counts.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.6.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+        # case 7, bad key
+        mod_glhe = os.path.join(self.resources, 'eplusout_mod_bad_key.glhe')
+        diff_file = os.path.join(self.temp_base_build_dir, 'glhe.7.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+
     def test_content_reader(self):
         file_path_to_read = os.path.join(self.resources, 'BadUTF8Marker.idf')
         # this should simply pass without throwing an exception
