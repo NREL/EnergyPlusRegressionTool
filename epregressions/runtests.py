@@ -457,8 +457,8 @@ class SuiteRunner:
                 glhe_in_file_1 = json_1[glhe_name]
                 glhe_in_file_2 = json_2[glhe_name]
                 try:
-                    phys_data_1 = glhe_in_file_1['Phys Data']
-                    phys_data_2 = glhe_in_file_2['Phys Data']
+                    pd1 = glhe_in_file_1['Phys Data']
+                    pd2 = glhe_in_file_2['Phys Data']
                     keys_to_search = [
                         "BH Diameter",
                         "BH Length",
@@ -476,14 +476,14 @@ class SuiteRunner:
                         "U-tube Dist"
                     ]
                     for key in keys_to_search:
-                        if (key in phys_data_1 and key not in phys_data_2) or (key not in phys_data_1 and key in phys_data_2):
+                        if (key in pd1 and key not in pd2) or (key not in pd1 and key in pd2):
                             diffs.append("Phys Data key differences for GLHE object named \"%s\"" % glhe_name)
-                        elif not phys_data_1[key] == phys_data_2[key]:
+                        elif not pd1[key] == pd2[key]:
                             diffs.append("Different Phys Data values in GLHE object named \"%s\"; field: \"%s\"" % (
                                 glhe_name, key
                             ))
-                    boreholes_1 = phys_data_1['BH Data']
-                    boreholes_2 = phys_data_2['BH Data']
+                    boreholes_1 = pd1['BH Data']
+                    boreholes_2 = pd2['BH Data']
                     for borehole_name in boreholes_1.keys():
                         bh_in_file_1 = boreholes_1[borehole_name]
                         bh_in_file_2 = boreholes_2[borehole_name]
