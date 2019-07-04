@@ -524,7 +524,7 @@ class SuiteRunner:
                 except KeyError:
                     diffs.append("Key error in GLHE object named \"%s\"; something doesn't match" % glhe_name)
         with io.open(diff_file, 'w', encoding='utf-8') as out_file:
-            out_file.write(json.dumps({"diffs": diffs}))
+            out_file.write(json.dumps({u"diffs": diffs}))
         return TextDifferences.DIFFS
 
     def process_diffs_for_one_case(self, this_entry, ci_mode=False):
