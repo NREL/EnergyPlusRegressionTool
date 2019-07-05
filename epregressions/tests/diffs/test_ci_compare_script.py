@@ -209,7 +209,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('eplusout.wrl', 'base wrl output', 'mod wrl output')
         self._write_files_to_both_folders('eplusout.sln', 'base sln output', 'mod sln output')
         self._write_files_to_both_folders('eplusout.sci', 'base sci output', 'mod sci output')
-        self._write_files_to_both_folders('eplusout.map', 'base map output', 'mod map output')
+        self._write_files_to_both_folders('eplusmap.csv', 'base map output', 'mod map output')
         self._write_files_to_both_folders('eplusout.dfs', 'base dfs output', 'mod dfs output')
         self._write_files_to_both_folders('eplusscreen.csv', 'base screen output', 'mod screen output')
         self._write_files_to_both_folders('eplusout.glhe', '{"glhe_1":{}}', '{"glhe 2":{}}')

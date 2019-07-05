@@ -120,7 +120,7 @@ dummy_text_files = [
     'eplusout.wrl',
     'eplusout.sln',
     'eplusout.sci',
-    'eplusout.map',
+    'eplusmap.csv',
     'eplusout.dfs',
     'eplusscreen.csv'
 ]

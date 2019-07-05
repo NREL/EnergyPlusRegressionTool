@@ -756,11 +756,11 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.sci'),
                 join(case_result_dir_2, 'eplusout.sci'),
                 join(out_dir, 'eplusout.sci.diff'))), TextDifferences.SCI)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.map'):
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmap.csv'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
-                join(case_result_dir_1, 'eplusout.map'),
-                join(case_result_dir_2, 'eplusout.map'),
-                join(out_dir, 'eplusout.map.diff'))), TextDifferences.MAP)
+                join(case_result_dir_1, 'eplusmap.csv'),
+                join(case_result_dir_2, 'eplusmap.csv'),
+                join(out_dir, 'eplusmap.csv.diff'))), TextDifferences.MAP)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dfs'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.dfs'),
