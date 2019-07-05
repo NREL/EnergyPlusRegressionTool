@@ -1,0 +1,21 @@
+{
+    "Cols": [
+        {
+            "Units": "",
+            "Variable": "SMSTORE8 ZONE EVAP UNIT:Zone Evaporative Cooler Unit Fan Speed Ratio"
+        },
+        {
+            "Units": "J",
+            "Variable": "SMSTORE8 ZONE EVAP UNIT:Zone Evaporative Cooler Unit Latent Cooling Energy"
+        }
+    ],
+    "ReportFrequency": "Hourly",
+    "Rows": [
+        {
+            "12/21 01:00:00": [
+                0.0,
+                0.0
+            ]
+        }
+     ]
+}

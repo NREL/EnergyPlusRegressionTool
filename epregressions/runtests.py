@@ -530,6 +530,99 @@ class SuiteRunner:
             out_file.write(my_json_str)
         return TextDifferences.DIFFS
 
+    @staticmethod
+    def diff_json_time_series(file_a, file_b, diff_file):  # eventually we will handle the threshold dict here
+        resulting_diff_type = "All Equal"
+        num_values_checked = 0
+        num_big_diffs = 0
+        num_small_diffs = 0
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.read()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.read()
+        # return early if the files match
+        if txt1 == txt2:
+            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
+        # if they don't match as a string, they could still match in terms of values, need to parse into objects
+        json_1 = json.loads(txt1)
+        json_2 = json.loads(txt2)
+        if json_1 == json_2:
+            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
+        # ok, looks like there are actually diffs, time to parse through them
+        diffs = []
+        resulting_diff_type = "All Equal"
+        num_values_checked = 0
+        num_big_diffs = 0
+        num_small_diffs = 0
+        try:
+            columns_1 = json_1['Cols']
+            columns_2 = json_2['Cols']
+            report_freq_1 = json_1['ReportFrequency']
+            report_freq_2 = json_2['ReportFrequency']
+            rows_1 = json_1['Rows']
+            rows_2 = json_2['Rows']
+            time_stamps_1 = [list(row.keys())[0] for row in rows_1]
+            time_stamps_2 = [list(row.keys())[0] for row in rows_2]
+            ok_to_continue = True
+            if not columns_1 == columns_2:
+                diffs.append("Column mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not report_freq_1 == report_freq_2:
+                diffs.append("Report frequency mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not len(rows_1) == len(rows_2):
+                diffs.append("Row count mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not time_stamps_1 == time_stamps_2:
+                diffs.append("Timestamp mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            if ok_to_continue:
+                num_rows = len(rows_1)
+                for row_num in range(num_rows):
+                    this_row_1 = rows_1[row_num]
+                    this_row_2 = rows_2[row_num]
+                    this_time_stamp = list(this_row_1.keys())[0]
+                    this_row_data_1 = this_row_1[this_time_stamp]
+                    this_row_data_2 = this_row_2[this_time_stamp]
+                    num_values = len(this_row_data_1)
+                    for col_num in range(num_values):
+                        num_values_checked += 1
+                        value_1 = this_row_data_1[col_num]
+                        value_2 = this_row_data_2[col_num]
+                        if not value_1 == value_2:
+                            f_1 = float(value_1)
+                            f_2 = float(value_2)
+                            if abs(f_1 - f_2) > 0.00001:
+                                resulting_diff_type = 'Big Diffs'
+                                num_big_diffs += 1
+                            else:
+                                if 'Big' not in resulting_diff_type:
+                                    resulting_diff_type = 'Small Diffs'
+                                num_small_diffs += 1
+        except KeyError:
+            diffs.append("JSON key problem in JSON time-series output, numerics not checked")
+            resulting_diff_type = "Big Diffs"
+            num_values_checked = 1
+            num_big_diffs = 1
+        with io.open(diff_file, 'w', encoding='utf-8') as out_file:
+            my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
+            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
+                my_json_str = my_json_str.decode("utf-8")
+            out_file.write(my_json_str)
+        return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
+
     def process_diffs_for_one_case(self, this_entry, ci_mode=False):
 
         if ci_mode:  # in "ci_mode" the build directory is actually the output directory of each file
@@ -653,7 +746,6 @@ class SuiteRunner:
                 join(out_dir, 'epluszsz.csv.percdiff.csv'),
                 join(out_dir, 'epluszsz.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ZSZ)
-
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
@@ -663,6 +755,13 @@ class SuiteRunner:
                 join(out_dir, 'eplusssz.csv.percdiff.csv'),
                 join(out_dir, 'eplusssz.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.SSZ)
+
+        # Do sorta-math-diff JSON diff
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_hourly.json'):
+            this_entry.add_math_differences(MathDifferences(self.diff_json_time_series(
+                join(case_result_dir_1, 'eplusout_hourly.json'),
+                join(case_result_dir_2, 'eplusout_hourly.json'),
+                join(out_dir, 'eplusout_hourly.diffs.json'))), MathDifferences.JSON)
 
         # Do Tabular (HTML) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):

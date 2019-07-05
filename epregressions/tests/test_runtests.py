@@ -1705,6 +1705,46 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = os.path.join(self.temp_base_build_dir, 'glhe.7.diff')
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
 
+    def test_json_time_series(self):
+        # only hourly for now
+        base_json = os.path.join(self.resources, 'eplusout_hourly_base.json')
+        # case 1 they are equal
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_base.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.1.diff')
+        self.assertEqual(0, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 2 bad key causes diffs
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_bad_key.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.2.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 3, same values but different order
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_text_diff_but_json_equal.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.3.diff')
+        self.assertEqual(0, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 4, a small diff
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_small_diff.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.4.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[3])
+        # case 5, a small diff
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_big_diff.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.5.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 6, column name mismatch
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_col_mismatch.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.6.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 7, report frequency mismatch
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_freq_mismatch.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.7.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 8, row count mismatch
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_row_count_mismatch.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.8.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+        # case 9, timestamp mismatch
+        mod_json = os.path.join(self.resources, 'eplusout_hourly_mod_timestamp_mismatch.json')
+        diff_file = os.path.join(self.temp_base_build_dir, 'json.9.diff')
+        self.assertEqual(1, SuiteRunner.diff_json_time_series(base_json, mod_json, diff_file)[2])
+
     def test_content_reader(self):
         file_path_to_read = os.path.join(self.resources, 'BadUTF8Marker.idf')
         # this should simply pass without throwing an exception

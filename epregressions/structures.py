@@ -74,6 +74,7 @@ class MathDifferences:
     MTR = 2
     ZSZ = 3
     SSZ = 4
+    JSON = 5
 
     def __init__(self, args_from_math_diff):
         self.diff_type = args_from_math_diff[0]
@@ -183,6 +184,7 @@ class TestEntry:
         self.dfs_diffs = None
         self.screen_diffs = None
         self.glhe_diffs = None
+        self.json_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -196,6 +198,8 @@ class TestEntry:
             self.zsz_diffs = diffs
         elif diff_type == MathDifferences.SSZ:
             self.ssz_diffs = diffs
+        elif diff_type == MathDifferences.JSON:
+            self.json_diffs = diffs
 
     def add_text_differences(self, diffs, diff_type):
         if diff_type == TextDifferences.AUD:
@@ -300,6 +304,8 @@ class TestEntry:
                 response['screen_diffs'] = self.screen_diffs.to_dict()
             if self.glhe_diffs:
                 response['glhe_diffs'] = self.glhe_diffs.to_dict()
+            if self.json_diffs:
+                response['json_diffs'] = self.json_diffs.to_dict()
         return response
 
 
@@ -350,7 +356,8 @@ class CompletedStructure:
             this_entry.eso_diffs: "eso",
             this_entry.mtr_diffs: "mtr",
             this_entry.zsz_diffs: "zsz",
-            this_entry.ssz_diffs: "ssz"
+            this_entry.ssz_diffs: "ssz",
+            this_entry.json_diffs: "json"
         }
         for diff in math_diff_hash:
             file_type = math_diff_hash[diff]

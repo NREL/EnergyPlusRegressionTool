@@ -179,6 +179,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     if entry.zsz_diffs:
         has_diffs, has_small_diffs = process_diffs("ZSZ", entry.zsz_diffs, has_diffs, has_small_diffs)
 
+    # numeric diff
+    if entry.json_diffs:
+        has_diffs, has_small_diffs = process_diffs("JSON", entry.json_diffs, has_diffs, has_small_diffs)
+
     if entry.table_diffs:
         if entry.table_diffs.big_diff_count > 0:
             has_diffs = True

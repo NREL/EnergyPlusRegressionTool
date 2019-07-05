@@ -213,6 +213,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('eplusout.dfs', 'base dfs output', 'mod dfs output')
         self._write_files_to_both_folders('eplusscreen.csv', 'base screen output', 'mod screen output')
         self._write_files_to_both_folders('eplusout.glhe', '{"glhe_1":{}}', '{"glhe 2":{}}')
+        self._write_files_to_both_folders('eplusout_hourly.json', '{"hi":{}}', '{"bye":{}}')
         with captured_output() as (out, err):
             # should fail if we don't have any .end files
             main_function(

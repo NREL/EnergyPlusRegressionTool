@@ -169,6 +169,31 @@ object_to_write = {
 with open('eplusout.glhe', 'w') as f_glhe:
     f_glhe.write(json.dumps(object_to_write))
 
+# and the json time series output, for now just hourly
+object_to_write = {
+    "Cols": [
+        {
+            "Units": "",
+            "Variable": "SMSTORE8 ZONE EVAP UNIT:Zone Evaporative Cooler Unit Fan Speed Ratio"
+        },
+        {
+            "Units": "J",
+            "Variable": "SMSTORE8 ZONE EVAP UNIT:Zone Evaporative Cooler Unit Latent Cooling Energy"
+        }
+    ],
+    "ReportFrequency": "Hourly",
+    "Rows": [
+        {
+            "12/21 01:00:00": [
+                0.0,
+                0.0
+            ]
+        }
+    ]
+}
+with open('eplusout_hourly.json', 'w') as f_json:
+    f_json.write(json.dumps(object_to_write))
+
 # DO THIS LAST - it has sys.exit() calls - eplusout.end
 num_warnings = config['num_warnings'] if 'num_warnings' in config else 0
 num_severe = config['num_severe'] if 'num_severe' in config else 0
