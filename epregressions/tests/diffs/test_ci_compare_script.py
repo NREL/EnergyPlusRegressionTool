@@ -251,6 +251,8 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 'MAP diffs',
                 'DFS diffs',
                 'SCREEN diffs',
+                'GLHE diffs',
+                'JSON big diffs',
                 '[decent_ci:test_result:warn]'
             ]
             output = out.getvalue().strip()
