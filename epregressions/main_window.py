@@ -4,6 +4,7 @@ from datetime import datetime  # datetime allows us to generate timestamps for t
 import glob
 import json
 import os
+import sys
 import random
 import subprocess  # subprocess allows us to spawn the help pdf separately
 import threading  # threading allows for the test suite to run multiple E+ runs concurrently
@@ -25,6 +26,12 @@ from epregressions.builds.base import KnownBuildTypes
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
 from epregressions.builds.install import EPlusInstallDirectory
+
+if sys.version_info.major > 2:
+    from os import cpu_count
+else:
+    from multiprocessing import cpu_count  # pragma: no cover
+    # I'm not sure why this isn't covered by the Py2 test, but it doesn't seem to be
 
 # graphics stuff
 import gi
@@ -602,7 +609,12 @@ class RegressionGUI(Gtk.Window):
         if platform() != Platforms.Windows:
             num_threads_box = Gtk.HBox(homogeneous=False, spacing=box_spacing)
             self.suite_option_num_threads = Gtk.SpinButton()
-            self.suite_option_num_threads.set_range(1, 8)
+            # Determine max available threads
+            n_threads_max = cpu_count()
+            if n_threads_max is None:
+                # If couldn't be determined, assume 8 as default
+                n_threads_max = 8  # pragma: no cover -- I cant imagine a way to get cpu_count to fail
+            self.suite_option_num_threads.set_range(1, n_threads_max)
             self.suite_option_num_threads.set_increments(1, 4)
             self.suite_option_num_threads.spin(Gtk.SpinType.PAGE_FORWARD, 1)
             self.suite_option_num_threads.connect("value-changed", self.suite_option_handler_num_threads)
