@@ -360,3 +360,31 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(1, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_nbsp(self):
+        # This table has a numeric difference.
+        # It also has a row full of `<td>&nbsp;</td>` to separate between bulk
+        # of table and the total row.
+        # nbsp won't be decoded nicely by ascii, and it would throw an error:
+        # ```
+        # UnicodeEncodeError: 'ascii' codec can't encode character u'\xa0'
+        # in position 0: ordinal not in range(128)
+        # ```
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_nbsp_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_nbsp_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(8, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(72, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
