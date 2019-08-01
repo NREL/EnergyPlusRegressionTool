@@ -209,8 +209,16 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                 tdtag = Tag(soup, name='td', attrs=[("class", "big")])
                 tdtag.append('ColumnHeadingDifference')
             elif h == 'DummyPlaceholder' or h == 'Subcategory':
+                # Some tables such as the Source Energy End Use Components
+                # have a blank row full of `<td>&nbsp;</td>` which won't be
+                # decoded nicely
                 tdtag = Tag(soup, name='td')
-                tdtag.append((str(hdict[h][i])))
+                val = hdict[h][i]
+                try:
+                    tdtag.append(str(val))
+                except Exception:  # pragram: no cover
+                    val = val.encode('ascii', 'ignore').decode('ascii')
+                    tdtag.append(str(val))
             else:
                 (diff, which) = hdict[h][i]
                 tdtag = Tag(soup, name='td', attrs=[('class', which)])
