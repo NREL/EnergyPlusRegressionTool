@@ -249,6 +249,18 @@ class SuiteRunner:
                         os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
                     )
 
+                if 'SolarShadingTest_Shading_Data.csv' in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
+                        os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
+                    )
+
+                if 'LocalEnvData.csv' in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
+                        os.path.join(test_run_directory, 'LocalEnvData.csv')
+                    )
+
                 if 'report variable dictionary' in idf_text:
                     idf_text = idf_text.replace('report variable dictionary', '')
 
