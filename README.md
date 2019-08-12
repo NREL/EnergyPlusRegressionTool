@@ -24,7 +24,7 @@ These can be rolled upstream into the CI code, but must be done with much more c
 
 This tool is written to be functional on all three major platforms, but Windows and Mac have known issues.
 On Windows the multiprocessing code does not work, causing the runs to be executed serially, which means a long testing time.
-On Mac the results tab is currently not showing the results files, making it fairly useless, at least until I write the results to file, in which case they _could_ be processed externally.
+On Mac there are a number of theme icons missing, causing the results tab to appear to be empty after a run, when in fact the icons are there just not rendered.
 
 In general, this tool works amazingly well on Ubuntu 18.04.
 And it is super easy to set up an EnergyPlus build development environment on Ubuntu.
