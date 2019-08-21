@@ -216,7 +216,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                 val = hdict[h][i]
                 try:
                     tdtag.append(str(val))
-                except Exception:  # pragram: no cover
+                except Exception:  # pragma: no cover
                     val = val.encode('ascii', 'ignore').decode('ascii')
                     tdtag.append(str(val))
             else:
