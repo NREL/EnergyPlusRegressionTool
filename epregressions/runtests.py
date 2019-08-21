@@ -249,6 +249,18 @@ class SuiteRunner:
                         os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
                     )
 
+                if 'SolarShadingTest_Shading_Data.csv' in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
+                        os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
+                    )
+
+                if 'LocalEnvData.csv' in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
+                        os.path.join(test_run_directory, 'LocalEnvData.csv')
+                    )
+
                 if 'report variable dictionary' in idf_text:
                     idf_text = idf_text.replace('report variable dictionary', '')
 
@@ -399,7 +411,8 @@ class SuiteRunner:
             "DElight input generated",
             "(idf)=",
             "(user input)=",
-            "(input file)="
+            "(input file)=",
+            "ReadVars Run Time"
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
@@ -425,6 +438,202 @@ class SuiteRunner:
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS
+
+    @staticmethod
+    def diff_glhe_files(file_a, file_b, diff_file):
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.read()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.read()
+        # return early if the files match
+        if txt1 == txt2:
+            return TextDifferences.EQUAL
+        # if they don't match as a string, they could still match in terms of values, need to parse into objects
+        json_1 = json.loads(txt1)
+        json_2 = json.loads(txt2)
+        if json_1 == json_2:
+            return TextDifferences.EQUAL
+        # ok, looks like there are actually diffs, time to parse through them
+        # first, the highest level should be a dict with equal keys
+        diffs = []
+        names_ok = True
+        if not len(json_1.keys()) == len(json_2.keys()):
+            diffs.append("GLHE Object count doesn't match")
+            names_ok = False
+        elif not sorted(json_1.keys()) == sorted(json_2.keys()):
+            diffs.append("GLHE Object names don't match")
+            names_ok = False
+        if names_ok:
+            # then it's OK to continue diff-ing
+            for glhe_name in json_1.keys():
+                glhe_in_file_1 = json_1[glhe_name]
+                glhe_in_file_2 = json_2[glhe_name]
+                try:
+                    pd1 = glhe_in_file_1['Phys Data']
+                    pd2 = glhe_in_file_2['Phys Data']
+                    keys_to_search = [
+                        "BH Diameter",
+                        "BH Length",
+                        "BH Top Depth",
+                        "Flow Rate",
+                        "Grout k",
+                        "Grout rhoCp",
+                        "Max Simulation Years",
+                        "Pipe Diameter",
+                        "Pipe Thickness",
+                        "Pipe k",
+                        "Pipe rhoCP",
+                        "Soil k",
+                        "Soil rhoCp",
+                        "U-tube Dist"
+                    ]
+                    for key in keys_to_search:
+                        if (key in pd1 and key not in pd2) or (key not in pd1 and key in pd2):
+                            diffs.append("Phys Data key differences for GLHE object named \"%s\"" % glhe_name)
+                        elif not pd1[key] == pd2[key]:
+                            diffs.append("Different Phys Data values in GLHE object named \"%s\"; field: \"%s\"" % (
+                                glhe_name, key
+                            ))
+                    boreholes_1 = pd1['BH Data']
+                    boreholes_2 = pd2['BH Data']
+                    for borehole_name in boreholes_1.keys():
+                        bh_in_file_1 = boreholes_1[borehole_name]
+                        bh_in_file_2 = boreholes_2[borehole_name]
+                        if not bh_in_file_1['X-Location'] == bh_in_file_2['X-Location']:
+                            diffs.append("Borehole X location difference for GLHE \"%s\", borehole \"%s\"" % (
+                                glhe_name, borehole_name
+                            ))
+                        if not bh_in_file_1['Y-Location'] == bh_in_file_2['Y-Location']:
+                            diffs.append("Borehole Y location difference for GLHE \"%s\", borehole \"%s\"" % (
+                                glhe_name, borehole_name
+                            ))
+                    response_factors_1 = glhe_in_file_1['Response Factors']
+                    response_factors_2 = glhe_in_file_2['Response Factors']
+                    gfnc_1 = response_factors_1['GFNC']
+                    gfnc_2 = response_factors_2['GFNC']
+                    lntts_1 = response_factors_1['LNTTS']
+                    lntts_2 = response_factors_2['LNTTS']
+                    time_1 = response_factors_1['time']
+                    time_2 = response_factors_2['time']
+                    counts_match = True
+                    if not len(gfnc_1) == len(gfnc_2):
+                        diffs.append("Mismatched GFNC count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if not len(lntts_1) == len(lntts_2):
+                        diffs.append("Mismatched LNTTS count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if not len(time_1) == len(time_2):
+                        diffs.append("Mismatched TIME count for GLHE \"%s\"" % glhe_name)
+                        counts_match = False
+                    if counts_match:
+                        for i in range(len(gfnc_1)):
+                            if not gfnc_1[i] == gfnc_2[i]:
+                                diffs.append("GFNC value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                            if not lntts_1[i] == lntts_2[i]:
+                                diffs.append("LNTTS value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                            if not time_1[i] == time_2[i]:
+                                diffs.append("TIME value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
+                except KeyError:
+                    diffs.append("Key error in GLHE object named \"%s\"; something doesn't match" % glhe_name)
+        with io.open(diff_file, 'w', encoding='utf-8') as out_file:
+            my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
+            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
+                my_json_str = my_json_str.decode("utf-8")
+            out_file.write(my_json_str)
+        return TextDifferences.DIFFS
+
+    @staticmethod
+    def diff_json_time_series(file_a, file_b, diff_file):  # eventually we will handle the threshold dict here
+        resulting_diff_type = "All Equal"
+        num_values_checked = 0
+        num_big_diffs = 0
+        num_small_diffs = 0
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.read()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.read()
+        # return early if the files match
+        if txt1 == txt2:
+            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
+        # if they don't match as a string, they could still match in terms of values, need to parse into objects
+        json_1 = json.loads(txt1)
+        json_2 = json.loads(txt2)
+        if json_1 == json_2:
+            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
+        # ok, looks like there are actually diffs, time to parse through them
+        diffs = []
+        resulting_diff_type = "All Equal"
+        num_values_checked = 0
+        num_big_diffs = 0
+        num_small_diffs = 0
+        try:
+            columns_1 = json_1['Cols']
+            columns_2 = json_2['Cols']
+            report_freq_1 = json_1['ReportFrequency']
+            report_freq_2 = json_2['ReportFrequency']
+            rows_1 = json_1['Rows']
+            rows_2 = json_2['Rows']
+            time_stamps_1 = [list(row.keys())[0] for row in rows_1]
+            time_stamps_2 = [list(row.keys())[0] for row in rows_2]
+            ok_to_continue = True
+            if not columns_1 == columns_2:
+                diffs.append("Column mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not report_freq_1 == report_freq_2:
+                diffs.append("Report frequency mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not len(rows_1) == len(rows_2):
+                diffs.append("Row count mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            elif not time_stamps_1 == time_stamps_2:
+                diffs.append("Timestamp mismatch in JSON time-series output, numerics not checked")
+                resulting_diff_type = "Big Diffs"
+                num_values_checked = 1
+                num_big_diffs = 1
+                ok_to_continue = False
+            if ok_to_continue:
+                num_rows = len(rows_1)
+                for row_num in range(num_rows):
+                    this_row_1 = rows_1[row_num]
+                    this_row_2 = rows_2[row_num]
+                    this_time_stamp = list(this_row_1.keys())[0]
+                    this_row_data_1 = this_row_1[this_time_stamp]
+                    this_row_data_2 = this_row_2[this_time_stamp]
+                    num_values = len(this_row_data_1)
+                    for col_num in range(num_values):
+                        num_values_checked += 1
+                        value_1 = this_row_data_1[col_num]
+                        value_2 = this_row_data_2[col_num]
+                        if not value_1 == value_2:
+                            f_1 = float(value_1)
+                            f_2 = float(value_2)
+                            if abs(f_1 - f_2) > 0.00001:
+                                resulting_diff_type = 'Big Diffs'
+                                num_big_diffs += 1
+                            else:
+                                if 'Big' not in resulting_diff_type:
+                                    resulting_diff_type = 'Small Diffs'
+                                num_small_diffs += 1
+        except KeyError:
+            diffs.append("JSON key problem in JSON time-series output, numerics not checked")
+            resulting_diff_type = "Big Diffs"
+            num_values_checked = 1
+            num_big_diffs = 1
+        with io.open(diff_file, 'w', encoding='utf-8') as out_file:
+            my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
+            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
+                my_json_str = my_json_str.decode("utf-8")
+            out_file.write(my_json_str)
+        return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
 
     def process_diffs_for_one_case(self, this_entry, ci_mode=False):
 
@@ -549,7 +758,6 @@ class SuiteRunner:
                 join(out_dir, 'epluszsz.csv.percdiff.csv'),
                 join(out_dir, 'epluszsz.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ZSZ)
-
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
@@ -559,6 +767,13 @@ class SuiteRunner:
                 join(out_dir, 'eplusssz.csv.percdiff.csv'),
                 join(out_dir, 'eplusssz.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.SSZ)
+
+        # Do sorta-math-diff JSON diff
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_hourly.json'):
+            this_entry.add_math_differences(MathDifferences(self.diff_json_time_series(
+                join(case_result_dir_1, 'eplusout_hourly.json'),
+                join(case_result_dir_2, 'eplusout_hourly.json'),
+                join(out_dir, 'eplusout_hourly.diffs.json'))), MathDifferences.JSON)
 
         # Do Tabular (HTML) Diffs
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):
@@ -627,6 +842,53 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.delightout'),
                 join(case_result_dir_2, 'eplusout.delightout'),
                 join(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DL_OUT)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'readvars.audit'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'readvars.audit'),
+                join(case_result_dir_2, 'readvars.audit'),
+                join(out_dir, 'readvars.audit.diff'))), TextDifferences.READ_VARS_AUDIT)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.edd'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.edd'),
+                join(case_result_dir_2, 'eplusout.edd'),
+                join(out_dir, 'eplusout.edd.diff'))), TextDifferences.EDD)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.wrl'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.wrl'),
+                join(case_result_dir_2, 'eplusout.wrl'),
+                join(out_dir, 'eplusout.wrl.diff'))), TextDifferences.WRL)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sln'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.sln'),
+                join(case_result_dir_2, 'eplusout.sln'),
+                join(out_dir, 'eplusout.sln.diff'))), TextDifferences.SLN)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sci'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.sci'),
+                join(case_result_dir_2, 'eplusout.sci'),
+                join(out_dir, 'eplusout.sci.diff'))), TextDifferences.SCI)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmap.csv'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusmap.csv'),
+                join(case_result_dir_2, 'eplusmap.csv'),
+                join(out_dir, 'eplusmap.csv.diff'))), TextDifferences.MAP)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dfs'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.dfs'),
+                join(case_result_dir_2, 'eplusout.dfs'),
+                join(out_dir, 'eplusout.dfs.diff'))), TextDifferences.DFS)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusscreen.csv'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusscreen.csv'),
+                join(case_result_dir_2, 'eplusscreen.csv'),
+                join(out_dir, 'eplusscreen.csv.diff'))), TextDifferences.SCREEN)
+
+        # sorta textual diff, the GLHE json file
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.glhe'):
+            this_entry.add_text_differences(TextDifferences(self.diff_glhe_files(
+                join(case_result_dir_1, 'eplusout.glhe'),
+                join(case_result_dir_2, 'eplusout.glhe'),
+                join(out_dir, 'eplusout.glhe.diff'))), TextDifferences.GLHE)
 
         # return the updated entry
         return this_entry

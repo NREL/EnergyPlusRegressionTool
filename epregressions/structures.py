@@ -38,6 +38,15 @@ class TextDifferences:
     SHD = 9
     DL_IN = 10
     DL_OUT = 11
+    READ_VARS_AUDIT = 12
+    EDD = 13
+    WRL = 14
+    SLN = 15
+    SCI = 16
+    MAP = 17
+    DFS = 18
+    SCREEN = 19
+    GLHE = 20
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -65,6 +74,7 @@ class MathDifferences:
     MTR = 2
     ZSZ = 3
     SSZ = 4
+    JSON = 5
 
     def __init__(self, args_from_math_diff):
         self.diff_type = args_from_math_diff[0]
@@ -165,6 +175,16 @@ class TestEntry:
         self.shd_diffs = None
         self.dl_in_diffs = None
         self.dl_out_diffs = None
+        self.readvars_audit_diffs = None
+        self.edd_diffs = None
+        self.wrl_diffs = None
+        self.sln_diffs = None
+        self.sci_diffs = None
+        self.map_diffs = None
+        self.dfs_diffs = None
+        self.screen_diffs = None
+        self.glhe_diffs = None
+        self.json_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -178,6 +198,8 @@ class TestEntry:
             self.zsz_diffs = diffs
         elif diff_type == MathDifferences.SSZ:
             self.ssz_diffs = diffs
+        elif diff_type == MathDifferences.JSON:
+            self.json_diffs = diffs
 
     def add_text_differences(self, diffs, diff_type):
         if diff_type == TextDifferences.AUD:
@@ -202,6 +224,24 @@ class TestEntry:
             self.dl_in_diffs = diffs
         elif diff_type == TextDifferences.DL_OUT:
             self.dl_out_diffs = diffs
+        elif diff_type == TextDifferences.READ_VARS_AUDIT:
+            self.readvars_audit_diffs = diffs
+        elif diff_type == TextDifferences.EDD:
+            self.edd_diffs = diffs
+        elif diff_type == TextDifferences.WRL:
+            self.wrl_diffs = diffs
+        elif diff_type == TextDifferences.SLN:
+            self.sln_diffs = diffs
+        elif diff_type == TextDifferences.SCI:
+            self.sci_diffs = diffs
+        elif diff_type == TextDifferences.MAP:
+            self.map_diffs = diffs
+        elif diff_type == TextDifferences.DFS:
+            self.dfs_diffs = diffs
+        elif diff_type == TextDifferences.SCREEN:
+            self.screen_diffs = diffs
+        elif diff_type == TextDifferences.GLHE:
+            self.glhe_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -246,6 +286,26 @@ class TestEntry:
                 response['dl_in_diffs'] = self.dl_in_diffs.to_dict()
             if self.dl_out_diffs:
                 response['dl_out_diffs'] = self.dl_out_diffs.to_dict()
+            if self.readvars_audit_diffs:
+                response['readvars_audit_diffs'] = self.readvars_audit_diffs.to_dict()
+            if self.edd_diffs:
+                response['edd_diffs'] = self.edd_diffs.to_dict()
+            if self.wrl_diffs:
+                response['wrl_diffs'] = self.wrl_diffs.to_dict()
+            if self.sln_diffs:
+                response['sln_diffs'] = self.sln_diffs.to_dict()
+            if self.sci_diffs:
+                response['sci_diffs'] = self.sci_diffs.to_dict()
+            if self.map_diffs:
+                response['map_diffs'] = self.map_diffs.to_dict()
+            if self.dfs_diffs:
+                response['dfs_diffs'] = self.dfs_diffs.to_dict()
+            if self.screen_diffs:
+                response['screen_diffs'] = self.screen_diffs.to_dict()
+            if self.glhe_diffs:
+                response['glhe_diffs'] = self.glhe_diffs.to_dict()
+            if self.json_diffs:
+                response['json_diffs'] = self.json_diffs.to_dict()
         return response
 
 
@@ -296,7 +356,8 @@ class CompletedStructure:
             this_entry.eso_diffs: "eso",
             this_entry.mtr_diffs: "mtr",
             this_entry.zsz_diffs: "zsz",
-            this_entry.ssz_diffs: "ssz"
+            this_entry.ssz_diffs: "ssz",
+            this_entry.json_diffs: "json"
         }
         for diff in math_diff_hash:
             file_type = math_diff_hash[diff]
@@ -334,6 +395,15 @@ class CompletedStructure:
             this_entry.err_diffs: "err",
             this_entry.dl_in_diffs: "delightin",
             this_entry.dl_out_diffs: "delightout",
+            this_entry.readvars_audit_diffs: "readvars_audit",
+            this_entry.edd_diffs: "edd",
+            this_entry.wrl_diffs: "wrl",
+            this_entry.sln_diffs: "sln",
+            this_entry.sci_diffs: "sci",
+            this_entry.map_diffs: "map",
+            this_entry.dfs_diffs: "dfs",
+            this_entry.screen_diffs: "screen",
+            this_entry.glhe_diffs: "glhe",
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

@@ -1,0 +1,54 @@
+{
+  "GHLE 1": {
+    "Phys Data": {
+      "BH Data": {
+        "BH 1": {
+          "X-Location": 9999.0,
+          "Y-Location": 0.0
+        },
+        "BH 2": {
+          "X-Location": 0.0,
+          "Y-Location": 5.0
+        },
+        "BH 3": {
+          "X-Location": 5.0,
+          "Y-Location": -9999999
+        },
+        "BH 4": {
+          "X-Location": 5.0,
+          "Y-Location": 5.0
+        }
+      },
+      "BH Diameter": 0.114,
+      "BH Top Depth": 1.0,
+      "Flow Rate": 0.00100944,
+      "Grout k": 120000000000000,
+      "Grout rhoCp": 3900000.0,
+      "Max Simulation Years": 1.0,
+      "Pipe Diameter": 0.03341,
+      "Pipe Thickness": 0.002984,
+      "Pipe k": 0.3895,
+      "Pipe rhoCP": 1770000.0,
+      "Soil k": 2.5,
+      "Soil rhoCp": 2500000.0,
+      "U-tube Dist": 0.04913
+    },
+    "Response Factors": {
+      "GFNC": [
+        -3.825046277704238,
+         1600,
+        6.495588983283869
+      ],
+      "LNTTS": [
+        -14.614018254182046,
+        67664,
+        -3.5
+      ],
+      "time": [
+        500.0,
+        1212,
+        33552648.247020558
+      ]
+    }
+  }
+}
