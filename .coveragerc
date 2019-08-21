@@ -7,3 +7,4 @@ omit =
     */.pyenv/*
     */virtualenv/*
     */virtualenvs/*
+    epregressions/try_treeview.py
