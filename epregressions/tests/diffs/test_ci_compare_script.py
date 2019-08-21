@@ -204,6 +204,16 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('eplusout.err', 'base err output', 'mod err output')
         self._write_files_to_both_folders('eplusout.delightin', 'base delightin output', 'mod delightin output')
         self._write_files_to_both_folders('eplusout.delightout', 'base delightout output', 'mod delightout output')
+        self._write_files_to_both_folders('readvars.audit', 'base readvars audit output', 'mod readvars audit output')
+        self._write_files_to_both_folders('eplusout.edd', 'base edd output', 'mod edd output')
+        self._write_files_to_both_folders('eplusout.wrl', 'base wrl output', 'mod wrl output')
+        self._write_files_to_both_folders('eplusout.sln', 'base sln output', 'mod sln output')
+        self._write_files_to_both_folders('eplusout.sci', 'base sci output', 'mod sci output')
+        self._write_files_to_both_folders('eplusmap.csv', 'base map output', 'mod map output')
+        self._write_files_to_both_folders('eplusout.dfs', 'base dfs output', 'mod dfs output')
+        self._write_files_to_both_folders('eplusscreen.csv', 'base screen output', 'mod screen output')
+        self._write_files_to_both_folders('eplusout.glhe', '{"glhe_1":{}}', '{"glhe 2":{}}')
+        self._write_files_to_both_folders('eplusout_hourly.json', '{"hi":{}}', '{"bye":{}}')
         with captured_output() as (out, err):
             # should fail if we don't have any .end files
             main_function(
@@ -233,6 +243,16 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 'SSZ big diffs',
                 'ZSZ big diffs',
                 'Table big diffs',
+                'ReadvarsAudit diffs',
+                'EDD diffs',
+                'WRL diffs',
+                'SLN diffs',
+                'SCI diffs',
+                'MAP diffs',
+                'DFS diffs',
+                'SCREEN diffs',
+                'GLHE diffs',
+                'JSON big diffs',
                 '[decent_ci:test_result:warn]'
             ]
             output = out.getvalue().strip()

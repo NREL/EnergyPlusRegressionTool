@@ -111,6 +111,42 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("ERR diffs.")
 
+    if entry.readvars_audit_diffs and (entry.readvars_audit_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("ReadvarsAudit diffs.")
+
+    if entry.edd_diffs and (entry.edd_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("EDD diffs.")
+
+    if entry.wrl_diffs and (entry.wrl_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("WRL diffs.")
+
+    if entry.sln_diffs and (entry.sln_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SLN diffs.")
+
+    if entry.sci_diffs and (entry.sci_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SCI diffs.")
+
+    if entry.map_diffs and (entry.map_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("MAP diffs.")
+
+    if entry.dfs_diffs and (entry.dfs_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("DFS diffs.")
+
+    if entry.screen_diffs and (entry.screen_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("SCREEN diffs.")
+
+    if entry.glhe_diffs and (entry.glhe_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("GLHE diffs")
+
     # numeric diff
     if entry.eso_diffs:
         has_diffs, has_small_diffs = process_diffs("ESO", entry.eso_diffs, has_diffs, has_small_diffs)
@@ -142,6 +178,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     # numeric diff
     if entry.zsz_diffs:
         has_diffs, has_small_diffs = process_diffs("ZSZ", entry.zsz_diffs, has_diffs, has_small_diffs)
+
+    # numeric diff
+    if entry.json_diffs:
+        has_diffs, has_small_diffs = process_diffs("JSON", entry.json_diffs, has_diffs, has_small_diffs)
 
     if entry.table_diffs:
         if entry.table_diffs.big_diff_count > 0:
