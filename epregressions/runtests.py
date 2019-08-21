@@ -412,7 +412,8 @@ class SuiteRunner:
             "(idf)=",
             "(user input)=",
             "(input file)=",
-            "ReadVars Run Time"
+            "ReadVars Run Time",
+            "EnergyPlus Program Version"
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
