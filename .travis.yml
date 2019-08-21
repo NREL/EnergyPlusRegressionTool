@@ -1,7 +1,5 @@
 os: linux
 language: python
-virtualenv:
-  system_site_packages: true
 
 addons:
   apt:
@@ -20,13 +18,15 @@ install:
 matrix:
   include:
   - name: "2.7 Unit Test"
-    python: "2.7"
+    python: 2.7
     env: TEST_COMMAND=test
+    virtualenv:
+      system_site_packages: true
   - name: "3.4 Unit Tests"
-    python: "3.4"
+    python: 3.4
     env: TEST_COMMAND=test
   - name: "3.4 Code Quality"
-    python: "3.4"
+    python: 3.4
     env: TEST_COMMAND=flake8
 
 script:
