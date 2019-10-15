@@ -333,7 +333,7 @@ class SuiteRunner:
                             this_entry.basename, epw_path
                         )
                     )
-                    epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
+                    epw_path = os.path.join(build_tree['weather_dir'], self.default_weather_filename)
 
             energy_plus_runs.append(
                 (
