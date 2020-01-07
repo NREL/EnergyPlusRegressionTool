@@ -327,11 +327,11 @@ class SuiteRunner:
             py = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.py'
             if os.path.exists(py):
                 shutil.copy(
-                    py, 
+                    py,
                     os.path.join(
-                        build_tree['build_dir'], 
-                        this_test_dir, 
-                        this_entry.basename, 
+                        build_tree['build_dir'],
+                        this_test_dir,
+                        this_entry.basename,
                         this_entry.basename + '.py'
                     )
                 )
