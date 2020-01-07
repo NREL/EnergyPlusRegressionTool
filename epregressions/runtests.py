@@ -323,6 +323,19 @@ class SuiteRunner:
             if os.path.exists(mvi):
                 shutil.copy(mvi, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.mvi'))
 
+            # pick up the corresponding python plugin file, for now this is just the idf basename with .py extension
+            py = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.py'
+            if os.path.exists(py):
+                shutil.copy(
+                    py,
+                    os.path.join(
+                        build_tree['build_dir'],
+                        this_test_dir,
+                        this_entry.basename,
+                        this_entry.basename + '.py'
+                    )
+                )
+
             epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
             if this_entry.epw:
                 epw_path = os.path.join(build_tree['weather_dir'], this_entry.epw + '.epw')
@@ -333,7 +346,7 @@ class SuiteRunner:
                             this_entry.basename, epw_path
                         )
                     )
-                    epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
+                    epw_path = os.path.join(build_tree['weather_dir'], self.default_weather_filename)
 
             energy_plus_runs.append(
                 (

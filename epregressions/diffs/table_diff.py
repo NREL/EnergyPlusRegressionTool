@@ -329,10 +329,10 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
     if not os.path.exists(inputfile2):
         return 'unable to open file <%s>' % inputfile2, 0, 0, 0, 0, 0, 0, 0, 0
 
-    with open(inputfile1) as f_1:
-        txt1 = f_1.read()
-    with open(inputfile2) as f_2:
-        txt2 = f_2.read()
+    with open(inputfile1, 'rb') as f_1:
+        txt1 = f_1.read().decode('utf-8', errors='ignore')
+    with open(inputfile2, 'rb') as f_2:
+        txt2 = f_2.read().decode('utf-8', errors='ignore')
 
     pagetitle = '%s vs %s' % (os.path.basename(inputfile1), os.path.basename(inputfile2))
 
