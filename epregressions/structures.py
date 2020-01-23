@@ -6,6 +6,7 @@ class ForceRunType:
     DD = "A"
     ANNUAL = "B"
     NONE = "C"
+    REVDD = "D"
 
 
 class ReportingFreq:

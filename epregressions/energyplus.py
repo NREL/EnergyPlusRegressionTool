@@ -129,6 +129,10 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = ""
+        elif run_type == ForceRunType.REVDD:
+            os.environ["DDONLY"] = "Y"
+            os.environ["REVERSEDD"] = "Y"
+            os.environ["FULLANNUALRUN"] = ""
         else:
             pass
             # nothing

@@ -96,6 +96,9 @@ class SuiteRunner:
             self.test_output_dir = "Tests-DDOnly"
         elif self.force_run_type == ForceRunType.NONE:
             self.test_output_dir = "Tests"
+        elif self.force_run_type == ForceRunType.REVDD:
+            self.test_output_dir = "Tests-REVDDOnly"
+
         i = datetime.now()
         self.test_output_dir += i.strftime('_%Y%m%d_%H%M%S')
 
@@ -1050,6 +1053,8 @@ if __name__ == "__main__":  # pragma: no cover
             run_type = ForceRunType.DD
         elif args.f == 'Annual':
             run_type = ForceRunType.ANNUAL
+        elif args.f == 'REVERSEDD':
+            run_type = ForceRunType.REVDD
 
     # For ALL runs use BuildA
     base = CMakeCacheMakeFileBuildDirectory()
