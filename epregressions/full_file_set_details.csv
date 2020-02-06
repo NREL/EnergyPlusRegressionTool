@@ -31,6 +31,8 @@ Input_file_name_(no_extension),Weather_file_name_(no_extension),External_Interfa
 5ZoneAirCooledWithDOASAirLoop.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
 5ZoneAirCooledWithSlab.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
 5ZoneAirCooled_UniformLoading.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
+5ZoneAirCooled_AirBoundaries.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
+5ZoneAirCooled_AirBoundaries_Daylighting.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
 5ZoneAirCooled_VRPSizing.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
 5ZoneAirCooled_VRPSizing_MaxZd.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
 5ZoneAirCooled_ZoneAirMassFlowBalance.idf,USA_IL_Chicago-OHare.Intl.AP.725300_TMY3,
