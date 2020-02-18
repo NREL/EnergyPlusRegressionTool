@@ -1031,13 +1031,10 @@ if __name__ == "__main__":  # pragma: no cover
       1: Arguments can be passed from the command line in the usage here, or
       2: An instance of the SuiteRunner class can be constructed, more useful for UIs or scripting"""
     )
-    parser.add_argument('a_src', action="store", help='Path to case a\'s source repository root')
     parser.add_argument('a_build', action="store", help='Path to case a\'s build directory')
-    parser.add_argument('b_src', action="store", help='Path to case b\'s source repository root')
     parser.add_argument('b_build', action="store", help='Path to case b\'s build directory')
     parser.add_argument('idf_list_file', action='store', help='Path to the file containing the list of IDFs to run')
-    parser.add_argument('-a', action="store_true", help='Use this flag to run case a files')
-    parser.add_argument('-b', action="store_true", help='Use this flag to run case b files')
+    parser.add_argument('output_file', action='store', help='Path to output regression summary json file')
     parser.add_argument('-f', choices=['DD', 'Annual'], help='Force a specific run type', default=None)
     parser.add_argument('-j', action="store", dest="j", type=int, default=1, help='Number of processors to use')
     parser.add_argument('-t', action='store_true', default=False, help='Use this flag to run in test mode')
@@ -1095,4 +1092,6 @@ if __name__ == "__main__":  # pragma: no cover
     Runner = SuiteRunner(RunConfig, entries)
 
     # Run it
-    Runner.run_test_suite()
+    response = Runner.run_test_suite()
+
+    print(response.to_json_summary(args.output_file))
