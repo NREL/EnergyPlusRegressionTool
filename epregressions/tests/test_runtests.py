@@ -1824,6 +1824,12 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = os.path.join(self.temp_base_build_dir, 'eio.diff')
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
 
+    def test_err_diff_equal_with_ignored_differences(self):
+        base_eio = os.path.join(self.resources, 'eplusout_base.err')
+        mod_eio = os.path.join(self.resources, 'eplusout_mod.err')
+        diff_file = os.path.join(self.temp_base_build_dir, 'err.diff')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
+
     def test_glhe_diff(self):
         base_glhe = os.path.join(self.resources, 'eplusout_base.glhe')
         # case 1 they are equal
