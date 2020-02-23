@@ -426,7 +426,8 @@ class SuiteRunner:
             "(user input)=",
             "(input file)=",
             "ReadVars Run Time",
-            "EnergyPlus Program Version"
+            "EnergyPlus Program Version",
+            "PythonPlugin: Class"
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
@@ -684,7 +685,7 @@ class SuiteRunner:
             [status_case2, runtime_case2] = self.process_end_file(end_path)
 
         # one quick check here for expect-fatal tests
-        if this_entry.basename == 'EMSTestMathAndKill':
+        if this_entry.basename == 'EMSTestMathAndKill' or this_entry.basename == 'PythonPluginTestMathAndKill':
             if status_case1 == EndErrSummary.STATUS_FATAL and status_case2 == EndErrSummary.STATUS_FATAL:
                 # this is actually what we expect, so add a success result, print a message, and get out
                 this_entry.add_summary_result(
@@ -694,7 +695,7 @@ class SuiteRunner:
                         EndErrSummary.STATUS_SUCCESS,
                         runtime_case2
                     ))
-                self.my_print("EMSTestMathAndKill Fatal-ed as expected, continuing with no diff checking on it")
+                self.my_print("TestMathAndKill Fatal-ed as expected, continuing with no diff checking on it")
                 return this_entry
 
         # add the initial end/err summary to the entry
