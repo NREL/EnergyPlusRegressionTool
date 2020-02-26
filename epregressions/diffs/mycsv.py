@@ -141,8 +141,9 @@ def getlist(fname):
             break
     if onecolumn:
         mat = transpose2d(mat)[0]
-
-    # trim extraneous whitespace from csv headers
-    mat[0] = [x.strip() for x in mat[0]]
+        mat[0] = mat[0].strip()
+    else:
+        # trim extraneous whitespace from csv headers
+        mat[0] = [x.strip() for x in mat[0]]
 
     return mat

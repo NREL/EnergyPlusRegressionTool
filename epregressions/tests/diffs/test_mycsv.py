@@ -153,3 +153,24 @@ class TestGetList(unittest.TestCase):
         self.assertEqual(3, len(response))
         for row in response:
             self.assertIsInstance(row, list)
+
+    def test_get_list_one_column_with_extra_whitespace(self):
+        csv_string = 'header_col_1 \n2_1\n2_2\n31\n32\n'
+        response = getlist(csv_string)
+        self.assertIsInstance(response, list)
+        self.assertEqual(5, len(response))
+        for row in response:
+            self.assertIsInstance(row, str)
+
+        self.assertEqual(response[0], 'header_col_1')
+
+    def test_get_list_two_columns_with_extra_whitespace(self):
+        csv_string = 'header_col_1 ,header_col_2 \n2_1,2_2\n31,32\n'
+        response = getlist(csv_string)
+        self.assertIsInstance(response, list)
+        self.assertEqual(3, len(response))
+        for row in response:
+            self.assertIsInstance(row, list)
+
+        self.assertEqual(response[0][0], 'header_col_1')
+        self.assertEqual(response[0][1], 'header_col_2')
