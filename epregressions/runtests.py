@@ -644,7 +644,10 @@ class SuiteRunner:
             num_values_checked = 1
             num_big_diffs = 1
         with io.open(diff_file, 'w', encoding='utf-8') as out_file:
-            my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
+            my_json_str = json.dumps(
+                {'diffs': diffs, 'num_big_diffs': num_big_diffs, 'num_small_diffs': num_small_diffs},
+                ensure_ascii=False
+            )
             if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
                 my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)

@@ -17,3 +17,6 @@ class BaseBuildDirectoryStructure(object):
 
     def get_build_tree(self):
         raise NotImplementedError('Must implement get_build_tree() in derived classes')
+
+    def get_idf_directory(self):
+        raise NotImplementedError()
