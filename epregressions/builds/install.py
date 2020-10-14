@@ -25,6 +25,11 @@ class EPlusInstallDirectory(BaseBuildDirectoryStructure):
         # For an E+ install, the source directory is kinda just the root repo
         self.source_directory = build_directory
 
+    def get_idf_directory(self):
+        if not self.build_directory:
+            raise Exception('Build directory has not been set with set_build_directory()')
+        return os.path.join(self.source_directory, 'ExampleFiles')
+
     def verify(self):
         results = []
         if not self.build_directory:

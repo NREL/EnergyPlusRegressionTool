@@ -3,9 +3,13 @@ import json
 
 
 class ForceRunType:
-    DD = "A"
-    ANNUAL = "B"
-    NONE = "C"
+    DD = "Force Design-day-only simulations"
+    ANNUAL = "Force Annual simulations"
+    NONE = "Don\'t force anything"
+
+    @staticmethod
+    def get_all():
+        return [ForceRunType.DD, ForceRunType.ANNUAL, ForceRunType.NONE]
 
 
 class ReportingFreq:
@@ -17,6 +21,14 @@ class ReportingFreq:
     RUN_PERIOD = "RunPeriod"
     ENVIRONMENT = "Environment"
     ANNUAL = "Annual"
+
+    @staticmethod
+    def get_all():
+        return [
+            ReportingFreq.DETAILED, ReportingFreq.TIME_STEP, ReportingFreq.HOURLY,
+            ReportingFreq.DAILY, ReportingFreq.MONTHLY, ReportingFreq.RUN_PERIOD,
+            ReportingFreq.ENVIRONMENT, ReportingFreq.ANNUAL
+        ]
 
 
 class ResultsLists:
