@@ -12,3 +12,6 @@ nose==1.3.7
 
 # to generate documentation
 Sphinx==3.2.1
+
+# for packaging
+pyinstaller

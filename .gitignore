@@ -16,3 +16,5 @@ epregressions/tests/diffs/results.json
 .DS_Store
 results.json
 .eggs
+build
+dist

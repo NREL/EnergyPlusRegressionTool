@@ -78,9 +78,7 @@ class SuiteRunner:
 
         # Main test configuration here
         self.build_tree_a = run_config.buildA.get_build_tree()
-        self.run_case_a = run_config.buildA.run
         self.build_tree_b = run_config.buildB.get_build_tree()
-        self.run_case_b = run_config.buildB.run
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
@@ -98,9 +96,6 @@ class SuiteRunner:
             self.test_output_dir = "Tests"
         i = datetime.now()
         self.test_output_dir += i.strftime('_%Y%m%d_%H%M%S')
-
-        # Filename specification, not path specific
-        self.ep_in_filename = "in.idf"
 
         # For files that don't have a specified weather file, use Chicago
         self.default_weather_filename = "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
@@ -121,20 +116,17 @@ class SuiteRunner:
             self.my_cancelled()
             return
 
-        num_builds = 2
-        self.my_starting(num_builds, len(self.entries))
+        self.my_starting(len(self.entries))
 
         # run the energyplus script
-        if self.run_case_a:
-            self.run_build(self.build_tree_a)
-            if self.id_like_to_stop_now:  # pragma: no cover
-                self.my_cancelled()
-                return
-        if self.run_case_b:
-            self.run_build(self.build_tree_b)
-            if self.id_like_to_stop_now:  # pragma: no cover
-                self.my_cancelled()
-                return
+        self.run_build(self.build_tree_a)
+        if self.id_like_to_stop_now:  # pragma: no cover
+            self.my_cancelled()
+            return
+        self.run_build(self.build_tree_b)
+        if self.id_like_to_stop_now:  # pragma: no cover
+            self.my_cancelled()
+            return
         self.my_simulationscomplete()
 
         response = self.diff_logs_for_build()
@@ -202,101 +194,19 @@ class SuiteRunner:
             os.mkdir(test_run_directory)
 
             # establish the absolute path to the idf or imf, and append .idf or .imf as necessary
-            idf_base = os.path.join(build_tree['test_files_dir'], this_entry.basename)
-            idf_base = idf_base.strip()
-            idf_path = idf_base + ".idf"
-            imf_path = idf_base + ".imf"
+            full_input_file_path = os.path.join(build_tree['test_files_dir'], this_entry.name_relative_to_testfiles_dir)
 
             parametric_file = False
-            if os.path.exists(idf_path):
+            if not os.path.exists(full_input_file_path):
+                self.my_print(f"Input file does not exist: {full_input_file_path}")
+                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
+                continue
 
-                # copy the idf into the test directory, renaming to in.idf
-                shutil.copy(idf_path, os.path.join(test_run_directory, self.ep_in_filename))
-
-                # read in the entire text of the idf to do some special operations;
-                # could put in one line, but the with block ensures the file handle is closed
-                idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, self.ep_in_filename))
-
-                # if the file requires the window 5 data set file, bring it into the test run directory
-                if 'Window5DataFile.dat' in idf_text:
-                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    shutil.copy(os.path.join(build_tree['data_sets_dir'], 'Window5DataFile.dat'),
-                                os.path.join(test_run_directory, 'datasets'))
-                    idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
-
-                # if the file requires the TDV data set file, bring it
-                #  into the test run directory, right now I think it's broken
-                if 'DataSets\\TDV' in idf_text or 'DataSets\\\\TDV' in idf_text:
-                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
-                    tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
-                    src_files = os.listdir(tdv_dir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(tdv_dir, file_name)
-                        if os.path.isfile(full_file_name):
-                            shutil.copy(
-                                full_file_name,
-                                os.path.join(test_run_directory, 'datasets', 'TDV')
-                            )
-                    idf_text = idf_text.replace(
-                        '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
-                        os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
-                    )
-
-                if 'HybridZoneModel_TemperatureData.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
-                        os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
-                    )
-
-                if 'SolarShadingTest_Shading_Data.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
-                        os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
-                    )
-
-                if 'LocalEnvData.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
-                        os.path.join(test_run_directory, 'LocalEnvData.csv')
-                    )
-
-                if 'report variable dictionary' in idf_text:
-                    idf_text = idf_text.replace('report variable dictionary', '')
-
-                if 'Parametric:' in idf_text:
-                    parametric_file = True
-
-                # if the file requires the FMUs data set file, bring it
-                #  into the test run directory, right now I think it's broken
-                if 'ExternalInterface:' in idf_text:
-                    self.my_print('Skipping an FMU based file as this is not set up to run yet')
-                    continue
-                    # os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
-                    # source_dir = os.path.join('datasets', 'FMUs')
-                    # src_files = os.listdir(source_dir)
-                    # for file_name in src_files:
-                    #     full_file_name = os.path.join(source_dir, file_name)
-                    #     if os.path.isfile(full_file_name):
-                    #         shutil.copy(
-                    #             full_file_name,
-                    #             os.path.join(test_run_directory, 'datasets', 'FMUs')
-                    #         )
-
-                # rewrite the idf with the (potentially) modified idf text
-                with io.open(
-                    os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, self.ep_in_filename),
-                    'w',
-                    encoding='utf-8'
-                ) as f_i:
-                    f_i.write("%s\n" % idf_text)
-
-            elif os.path.exists(imf_path):
-
-                shutil.copy(
-                    imf_path, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.imf')
-                )
+            # copy macro files if it is an imf
+            if full_input_file_path.endswith('.idf'):
+                ep_in_filename = "in.idf"
+            elif full_input_file_path.endswith('.imf'):
+                ep_in_filename = "in.imf"
                 # find the rest of the imf files and copy them into the test directory
                 source_files = os.listdir(build_tree['test_files_dir'])
                 for file_name in source_files:
@@ -305,15 +215,92 @@ class SuiteRunner:
                         shutil.copy(
                             full_file_name, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename)
                         )
-
             else:
-
-                # if the file doesn't exist, just move along
-                self.my_print("Input file doesn't exist in either idf or imf form:")
-                self.my_print("   IDF: %s" % idf_path)
-                self.my_print("   IMF: %s" % imf_path)
+                self.my_print(f"Could not determine file extension, must be idf or imf: {full_input_file_path}")
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
                 continue
+
+            # copy the input file into the test directory, renaming to in.idf or in.imf
+            shutil.copy(full_input_file_path, os.path.join(test_run_directory, ep_in_filename))
+
+            # read in the entire text of the idf to do some special operations;
+            # could put in one line, but the with block ensures the file handle is closed
+            idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, ep_in_filename))
+
+            # if the file requires the window 5 data set file, bring it into the test run directory
+            if 'Window5DataFile.dat' in idf_text:
+                os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                shutil.copy(os.path.join(build_tree['data_sets_dir'], 'Window5DataFile.dat'),
+                            os.path.join(test_run_directory, 'datasets'))
+                idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
+
+            # if the file requires the TDV data set file, bring it
+            #  into the test run directory, right now I think it's broken
+            if 'DataSets\\TDV' in idf_text or 'DataSets\\\\TDV' in idf_text:
+                os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
+                tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
+                src_files = os.listdir(tdv_dir)
+                for file_name in src_files:
+                    full_file_name = os.path.join(tdv_dir, file_name)
+                    if os.path.isfile(full_file_name):
+                        shutil.copy(
+                            full_file_name,
+                            os.path.join(test_run_directory, 'datasets', 'TDV')
+                        )
+                idf_text = idf_text.replace(
+                    '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
+                    os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
+                )
+
+            if 'HybridZoneModel_TemperatureData.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
+                    os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
+                )
+
+            if 'SolarShadingTest_Shading_Data.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
+                    os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
+                )
+
+            if 'LocalEnvData.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
+                    os.path.join(test_run_directory, 'LocalEnvData.csv')
+                )
+
+            if 'report variable dictionary' in idf_text:
+                idf_text = idf_text.replace('report variable dictionary', '')
+
+            if 'Parametric:' in idf_text:
+                parametric_file = True
+
+            # if the file requires the FMUs data set file, bring it
+            #  into the test run directory, right now I think it's broken
+            if 'ExternalInterface:' in idf_text:
+                self.my_print('Skipping an FMU based file as this is not set up to run yet')
+                continue
+                # os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
+                # source_dir = os.path.join('datasets', 'FMUs')
+                # src_files = os.listdir(source_dir)
+                # for file_name in src_files:
+                #     full_file_name = os.path.join(source_dir, file_name)
+                #     if os.path.isfile(full_file_name):
+                #         shutil.copy(
+                #             full_file_name,
+                #             os.path.join(test_run_directory, 'datasets', 'FMUs')
+                #         )
+
+            # rewrite the idf with the (potentially) modified idf text
+            with io.open(
+                os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, ep_in_filename),
+                'w',
+                encoding='utf-8'
+            ) as f_i:
+                f_i.write("%s\n" % idf_text)
 
             rvi = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.rvi'
             if os.path.exists(rvi):
@@ -592,25 +579,25 @@ class SuiteRunner:
             time_stamps_2 = [list(row.keys())[0] for row in rows_2]
             ok_to_continue = True
             if not columns_1 == columns_2:
-                diffs.append("Column mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Column mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not report_freq_1 == report_freq_2:
-                diffs.append("Report frequency mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Report frequency mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not len(rows_1) == len(rows_2):
-                diffs.append("Row count mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Row count mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not time_stamps_1 == time_stamps_2:
-                diffs.append("Timestamp mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Timestamp mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
@@ -639,7 +626,7 @@ class SuiteRunner:
                                     resulting_diff_type = 'Small Diffs'
                                 num_small_diffs += 1
         except KeyError:
-            diffs.append("JSON key problem in JSON time-series output, numerics not checked")
+            diffs.append("JSON key problem in JSON time-series output, numeric data not checked")
             resulting_diff_type = "Big Diffs"
             num_values_checked = 1
             num_big_diffs = 1
@@ -954,7 +941,8 @@ class SuiteRunner:
         completed_structure = CompletedStructure(
             self.build_tree_a['source_dir'], self.build_tree_a['build_dir'],
             self.build_tree_b['source_dir'], self.build_tree_b['build_dir'],
-            os.path.join(self.build_tree_a['build_dir'], self.test_output_dir)
+            os.path.join(self.build_tree_a['build_dir'], self.test_output_dir),
+            os.path.join(self.build_tree_b['build_dir'], self.test_output_dir)
         )
         for this_entry in self.entries:
             try:
@@ -988,13 +976,12 @@ class SuiteRunner:
         else:  # pragma: no cover
             print(msg)
 
-    def my_starting(self, number_of_builds, number_of_cases_per_build):
+    def my_starting(self, number_of_cases_per_build):
         if self.starting_callback:
-            self.starting_callback(number_of_builds, number_of_cases_per_build)
+            self.starting_callback(number_of_cases_per_build)
         else:  # pragma: no cover
             self.my_print(
                 "Starting runtests, # builds = %i, # cases per build = %i" % (
-                    number_of_builds,
                     number_of_cases_per_build
                 )
             )
@@ -1018,7 +1005,7 @@ class SuiteRunner:
 
     def my_diffcompleted(self, case_name):
         if self.diff_completed_callback:
-            self.diff_completed_callback(case_name)
+            self.diff_completed_callback()
         else:  # pragma: no cover
             self.my_print("Completed diffing case: %s" % case_name)
 

@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+from typing import Set
 
 
 class KnownBuildTypes:
@@ -33,7 +35,13 @@ def autodetect_build_dir_type(build_dir: str) -> str:
 class BaseBuildDirectoryStructure(object):
     def __init__(self):
         self.build_directory = None
-        self.run = None
+
+    @staticmethod
+    def get_idfs_in_dir(idf_dir: Path) -> Set[Path]:
+        idf_path = Path(idf_dir)
+        all_idfs_absolute_path = list(idf_path.rglob('*.idf'))
+        all_idfs_relative_path = set([idf.relative_to(idf_path) for idf in all_idfs_absolute_path])
+        return all_idfs_relative_path
 
     def set_build_directory(self, build_directory):
         raise NotImplementedError('Must implement set_build_directory(str) in derived classes')

@@ -1,7 +1,10 @@
 from datetime import datetime
 import os
 from pathlib import Path
+from platform import system
 import random
+import subprocess
+import sys
 from threading import Thread
 from tkinter import (
     Tk, ttk,  # Core pieces
@@ -13,49 +16,50 @@ from tkinter import (
     END, LEFT, TOP,  # relative directions (RIGHT, TOP)
     filedialog, simpledialog,  # system dialogs
 )
-from typing import Set
+from typing import Union
 
 from pubsub import pub
 
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
+    CompletedStructure,
     ForceRunType,
     ReportingFreq,
     TestEntry,
 )
-from epregressions.builds.base import KnownBuildTypes, autodetect_build_dir_type
+from epregressions.builds.base import KnownBuildTypes, autodetect_build_dir_type, BaseBuildDirectoryStructure
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
 from epregressions.builds.install import EPlusInstallDirectory
 
 
 class ResultsTreeRoots:
-    AllFiles = "All Files Run"
-    Case1Success = "Case 1 Successful Runs"
-    Case1Fail = "Case 1 Failed Runs"
-    Case2Success = "Case 2 Successful Runs"
-    Case2Fail = "Case 2 Failed Runs"
-    AllCompared = "All Files Compared"
-    BigMathDiff = "Big Math Diffs"
-    SmallMathDiff = "Small Math Diffs"
-    BigTableDiff = "Big Table Diffs"
-    SmallTableDiff = "Small Table Diffs"
-    TextDiff = "Text Diffs"
+    NumRun = "Cases run"
+    Success1 = "Case 1 Successful runs"
+    NotSuccess1 = "Case 1 Unsuccessful run"
+    Success2 = "Case 2 Successful runs"
+    NotSuccess2 = "Case 2 Unsuccessful run"
+    FilesCompared = "Files compared"
+    BigMath = "Files with BIG mathdiffs"
+    SmallMath = "Files with small mathdiffs"
+    BigTable = "Files with BIG tablediffs"
+    SmallTable = "Files with small tablediffs"
+    Textual = "Files with textual diffs"
 
     @staticmethod
     def get_all():
         return [
-            ResultsTreeRoots.AllFiles,
-            ResultsTreeRoots.Case1Success,
-            ResultsTreeRoots.Case1Fail,
-            ResultsTreeRoots.Case2Success,
-            ResultsTreeRoots.Case2Fail,
-            ResultsTreeRoots.AllCompared,
-            ResultsTreeRoots.BigMathDiff,
-            ResultsTreeRoots.SmallMathDiff,
-            ResultsTreeRoots.BigTableDiff,
-            ResultsTreeRoots.SmallTableDiff,
-            ResultsTreeRoots.TextDiff,
+            ResultsTreeRoots.NumRun,
+            ResultsTreeRoots.Success1,
+            ResultsTreeRoots.NotSuccess1,
+            ResultsTreeRoots.Success2,
+            ResultsTreeRoots.NotSuccess2,
+            ResultsTreeRoots.FilesCompared,
+            ResultsTreeRoots.BigMath,
+            ResultsTreeRoots.SmallMath,
+            ResultsTreeRoots.BigTable,
+            ResultsTreeRoots.SmallTable,
+            ResultsTreeRoots.Textual,
         ]
 
 
@@ -69,13 +73,6 @@ class PubSubMessageTypes:
     CANCELLED = '70'
 
 
-def dummy_get_idfs_in_dir(idf_dir: Path) -> Set[Path]:
-    idf_path = Path(idf_dir)
-    all_idfs_absolute_path = list(idf_path.rglob('*.idf'))
-    all_idfs_relative_path = set([idf.relative_to(idf_path) for idf in all_idfs_absolute_path])
-    return all_idfs_relative_path
-
-
 class MyApp(Frame):
 
     def __init__(self):
@@ -83,13 +80,13 @@ class MyApp(Frame):
         Frame.__init__(self, self.root)
 
         # high level GUI configuration
-        self.root.geometry('800x600')
+        self.root.geometry('1000x600')
         self.root.resizable(width=1, height=1)
         self.root.option_add('*tearOff', False)  # keeps file menus from looking weird
 
         # members related to the background thread and operator instance
         self.long_thread = None
-        self.background_operator = None
+        self.background_operator: Union[None, SuiteRunner] = None
 
         # tk variables we can access later
         self.label_string = StringVar()
@@ -106,9 +103,9 @@ class MyApp(Frame):
         self.run_button = None
         self.stop_button = None
         self.build_dir_1_label = None
-        self.build_dir_1_var.set('/eplus/repos/1eplus/builds')  # "<Select build dir 1>")
+        self.build_dir_1_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
         self.build_dir_2_label = None
-        self.build_dir_2_var.set('/eplus/repos/1eplus/builds')  # "<Select build dir 2>")
+        self.build_dir_2_var.set('/Users/elee/eplus/repos/3eplus/builds/r')  # "<Select build dir 2>")
         self.progress = None
         self.log_message_listbox = None
         self.results_tree = None
@@ -256,15 +253,14 @@ class MyApp(Frame):
         # set up a tree-view for the results
         frame_results = Frame(main_notebook)
         scrollbar = Scrollbar(frame_results)
-        self.results_tree = ttk.Treeview(frame_results, columns=("Base File", "Mod File", "Diff File"))
+        self.results_tree = ttk.Treeview(frame_results, columns=("Base File", "Mod File"))
+        self.results_tree.bind('<Double-1>', self.results_double_click)
         self.results_tree.heading("#0", text="Results")
         self.results_tree.column('#0', minwidth=200, width=200)
         self.results_tree.heading("Base File", text="Base File")
         self.results_tree.column("Base File", minwidth=100, width=100)
         self.results_tree.heading("Mod File", text="Mod File")
         self.results_tree.column("Mod File", minwidth=100, width=100)
-        self.results_tree.heading("Diff File", text="Diff File")
-        self.results_tree.column("Diff File", minwidth=100, width=100)
         self.build_results_tree()
         self.results_tree.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
@@ -290,6 +286,42 @@ class MyApp(Frame):
     def run(self):
         self.root.mainloop()
 
+    def results_double_click(self, event):
+        cur_item = self.results_tree.item(self.results_tree.focus())
+        col = self.results_tree.identify_column(event.x)
+        cell_value = 'unknown'
+        if col == '#0':
+            cell_value = cur_item['text']
+        elif col == '#1':
+            cell_value = cur_item['values'][2]  # hidden column with base directory
+        elif col == '#2':
+            cell_value = cur_item['values'][3]  # hidden column with mod directory
+        self.open_file_browser_to_directory(cell_value)
+
+    @staticmethod
+    def open_file_browser_to_directory(dir_to_open):
+        this_platform = system()
+        p = None
+        if this_platform == 'Linux':
+            try:
+                p = subprocess.Popen(['xdg-open', dir_to_open])
+            except Exception as this_exception:  # pragma: no cover - not covering bad directories
+                print("Could not open file:")
+                print(this_exception)
+        elif this_platform == 'Windows':  # pragma: no cover - only testing on Linux
+            try:
+                p = subprocess.Popen(['start', dir_to_open], shell=True)
+            except Exception as this_exception:
+                print("Could not open file:")
+                print(this_exception)
+        elif this_platform == 'Darwin':  # pragma: no cover - only testing on Linux
+            try:
+                p = subprocess.Popen(['open', dir_to_open])
+            except Exception as this_exception:
+                print("Could not open file:")
+                print(this_exception)
+        return p
+
     def build_idf_listing(self, initialize=False, desired_selected_idfs=None):
         # clear any existing ones
         self.active_idf_listbox.delete(0, END)
@@ -299,11 +331,25 @@ class MyApp(Frame):
         self.valid_idfs_in_listing = False
         path_1 = Path(self.build_dir_1_var.get())
         path_2 = Path(self.build_dir_2_var.get())
-        if self.build_1 and path_1.exists() and self.build_2 and path_2.exists():
+        if path_1.exists() and path_2.exists():
+            if not self.build_1:
+                status = self.try_to_set_build_1_to_dir(self.build_dir_1_var.get())
+                if not status:
+                    self.full_idf_listbox.insert(END, "Cannot update master list master list")
+                    self.full_idf_listbox.insert(END, "Build folder path #1 is invalid")
+                    self.full_idf_listbox.insert(END, "Select build folders to fill listing")
+                    return
+            if not self.build_2:
+                status = self.try_to_set_build_2_to_dir(self.build_dir_2_var.get())
+                if not status:
+                    self.full_idf_listbox.insert(END, "Cannot update master list master list")
+                    self.full_idf_listbox.insert(END, "Build folder path #2 is invalid")
+                    self.full_idf_listbox.insert(END, "Select build folders to fill listing")
+                    return
             idf_dir_1 = self.build_1.get_idf_directory()
-            idfs_dir_1 = dummy_get_idfs_in_dir(idf_dir_1)
+            idfs_dir_1 = BaseBuildDirectoryStructure.get_idfs_in_dir(idf_dir_1)
             idf_dir_2 = self.build_2.get_idf_directory()
-            idfs_dir_2 = dummy_get_idfs_in_dir(idf_dir_2)
+            idfs_dir_2 = BaseBuildDirectoryStructure.get_idfs_in_dir(idf_dir_2)
             common_idfs = idfs_dir_1.intersection(idfs_dir_2)
             if len(common_idfs) == 0:
                 self.full_idf_listbox.insert(END, "No common IDFs found between build folders")
@@ -332,25 +378,39 @@ class MyApp(Frame):
             ...
             # add things to the listbox
 
-    def build_results_tree(self, results=None):
+    def build_results_tree(self, results: CompletedStructure = None):
         self.results_tree.delete(*self.results_tree.get_children())
-        for root in ResultsTreeRoots.get_all():
+        if not results:
+            return
+        root_and_files = {
+            ResultsTreeRoots.NumRun: results.all_files,
+            ResultsTreeRoots.Success1: results.success_case_a,
+            ResultsTreeRoots.NotSuccess1: results.failure_case_a,
+            ResultsTreeRoots.Success2: results.success_case_b,
+            ResultsTreeRoots.NotSuccess2: results.failure_case_b,
+            ResultsTreeRoots.FilesCompared: results.total_files_compared,
+            ResultsTreeRoots.BigMath: results.big_math_diffs,
+            ResultsTreeRoots.SmallMath: results.small_math_diffs,
+            ResultsTreeRoots.BigTable: results.big_table_diffs,
+            ResultsTreeRoots.SmallTable: results.small_table_diffs,
+            ResultsTreeRoots.Textual: results.text_diffs
+        }
+        for root, these_results in root_and_files.items():
             self.tree_folders[root] = self.results_tree.insert(
-                parent="", index=END, text=root, values=("", "", "")
+                parent="", index=END, text=f"{root} ({len(these_results.descriptions)})", values=("", "")
             )
-            if results:
-                self.results_tree.insert(
-                    parent=self.tree_folders[root], index=END, text="Pretend",
-                    values=("These", "Are", "Real")
-                )
-            else:
-                self.results_tree.insert(
-                    parent=self.tree_folders[root], index=END, text="Run test for results",
-                    values=("", "", "")
-                )
+            for base_name, result_list in these_results.descriptions.items():
+                dir_1 = os.path.join(results.results_dir_a, base_name)
+                dir_2 = os.path.join(results.results_dir_b, base_name)
+                for result in result_list:
+                    self.results_tree.insert(
+                        parent=self.tree_folders[root], index=END, text=result,
+                        values=("Click to see base run results", "Click to see mod run results", dir_1, dir_2)
+                    )
 
     def add_to_log(self, message):
         self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
+        self.label_string.set(message)
 
     def clear_log(self):
         self.log_message_listbox.delete(0, END)
@@ -466,14 +526,10 @@ class MyApp(Frame):
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
 
-    def client_build_dir_1(self):
-        selected_dir = filedialog.askdirectory()
-        if not selected_dir:
-            return
+    def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
-            simpledialog.messagebox.showerror("Could not determine build type!")
-            return
+            return False
         elif probable_build_dir_type == KnownBuildTypes.Installation:
             self.build_1 = EPlusInstallDirectory()
             self.build_1.set_build_directory(selected_dir)
@@ -483,17 +539,25 @@ class MyApp(Frame):
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.build_1 = CMakeCacheMakeFileBuildDirectory()
             self.build_1.set_build_directory(selected_dir)
-        self.build_dir_1_var.set(selected_dir)
-        self.build_idf_listing()
+        return True
 
-    def client_build_dir_2(self):
+    def client_build_dir_1(self):
         selected_dir = filedialog.askdirectory()
         if not selected_dir:
             return
+        if not os.path.exists(selected_dir):
+            return
+        status = self.try_to_set_build_1_to_dir(selected_dir)
+        if not status:
+            simpledialog.messagebox.showerror("Could not determine build type for build 1!")
+            return
+        self.build_dir_1_var.set(selected_dir)
+        self.build_idf_listing()
+
+    def try_to_set_build_2_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
-            simpledialog.messagebox.showerror("Could not determine build type!")
-            return
+            return False
         elif probable_build_dir_type == KnownBuildTypes.Installation:
             self.build_2 = EPlusInstallDirectory()
             self.build_2.set_build_directory(selected_dir)
@@ -503,6 +567,18 @@ class MyApp(Frame):
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.build_2 = CMakeCacheMakeFileBuildDirectory()
             self.build_2.set_build_directory(selected_dir)
+        return True
+
+    def client_build_dir_2(self):
+        selected_dir = filedialog.askdirectory()
+        if not selected_dir:
+            return
+        if not os.path.exists(selected_dir):
+            return
+        status = self.try_to_set_build_2_to_dir(selected_dir)
+        if not status:
+            simpledialog.messagebox.showerror("Could not determine build type for build 2!")
+            return
         self.build_dir_2_var.set(selected_dir)
         self.build_idf_listing()
 
@@ -520,15 +596,19 @@ class MyApp(Frame):
             messagebox.showerror("Build folder 1 problem", "Select a valid build folder 1 prior to running")
             return
         build_1_valid = self.build_1.verify()
-        if any([not b[2] for b in build_1_valid]):
-            messagebox.showerror("Build folder 1 problem", "Problem with build 1!")
+        build_1_problem_files = [b[1] for b in build_1_valid if not b[2]]
+        if len(build_1_problem_files):
+            missing_files = '\n'.join(build_1_problem_files)
+            messagebox.showerror("Build folder 1 problem", f"Missing files:\n{missing_files}")
             return
         if not self.build_2:
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
         build_2_valid = self.build_2.verify()
-        if any([not b[2] for b in build_2_valid]):
-            messagebox.showerror("Build folder 2 problem", "Problem with build 2!")
+        build_2_problem_files = [b[1] for b in build_2_valid if not b[2]]
+        if len(build_2_problem_files):
+            missing_files = '\n'.join(build_2_problem_files)
+            messagebox.showerror("Build folder 2 problem", f"Missing files:\n{missing_files}")
             return
         run_configuration = TestRunConfiguration(
             force_run_type=self.run_period_option.get(),
@@ -540,7 +620,7 @@ class MyApp(Frame):
         idfs_to_run = list()
         for this_file in self.active_idf_listbox.get(0, END):
             idfs_to_run.append(
-                TestEntry(os.path.splitext(this_file), None)
+                TestEntry(this_file, None)
             )
         if len(idfs_to_run) == 0:
             messagebox.showwarning("Nothing to run", "No IDFs were activated, so nothing to run")
@@ -567,46 +647,54 @@ class MyApp(Frame):
         self.add_to_log(msg)
 
     @staticmethod
-    def starting_listener():
-        pub.sendMessage(PubSubMessageTypes.STARTING, ...)
+    def starting_listener(number_of_cases_per_build):
+        pub.sendMessage(
+            PubSubMessageTypes.STARTING,
+            number_of_cases_per_build=number_of_cases_per_build
+        )
 
-    def starting_handler(self):
-        ...
+    def starting_handler(self, number_of_cases_per_build):
+        self.progress['maximum'] = 3 * number_of_cases_per_build
+        self.progress['value'] = 0
 
     @staticmethod
-    def case_completed_listener():
-        pub.sendMessage(PubSubMessageTypes.CASE_COMPLETE, ...)
+    def case_completed_listener(test_case_completed_instance):
+        pub.sendMessage(PubSubMessageTypes.CASE_COMPLETE, test_case_completed_instance=test_case_completed_instance)
 
-    def case_completed_handler(self):
-        ...
-        # self.add_to_log(object_completed)
-        # self.progress['value'] = percent_complete
-        # self.label_string.set(f"Hey, status update: {str(status)}")
+    def case_completed_handler(self, test_case_completed_instance):
+        self.progress['value'] += 1
+        if test_case_completed_instance.run_success:
+            message = "Completed %s : %s, Success" % (
+                test_case_completed_instance.run_directory, test_case_completed_instance.case_name)
+            self.add_to_log(message)
+        else:
+            message = "Completed %s : %s, Failed" % (
+                test_case_completed_instance.run_directory, test_case_completed_instance.case_name)
+            self.add_to_log(message)
 
     @staticmethod
     def runs_complete_listener():
-        pub.sendMessage(PubSubMessageTypes.SIMULATIONS_DONE, ...)
+        pub.sendMessage(PubSubMessageTypes.SIMULATIONS_DONE)
 
     def runs_complete_handler(self):
-        ...
+        self.add_to_log("Simulation runs complete")
 
     @staticmethod
     def diff_complete_listener():
-        pub.sendMessage(PubSubMessageTypes.DIFF_COMPLETE, ...)
+        pub.sendMessage(PubSubMessageTypes.DIFF_COMPLETE)
 
     def diff_complete_handler(self):
-        ...
+        self.progress['value'] += 1
 
     @staticmethod
-    def done_listener():
-        pub.sendMessage(PubSubMessageTypes.ALL_DONE, ...)
+    def done_listener(results):
+        pub.sendMessage(PubSubMessageTypes.ALL_DONE, results=results)
 
-    def done_handler(self):
-        ...
-        # self.add_to_log("All done, finished")
-        #         self.label_string.set("Hey, all done!")
-        #         self.build_results_tree(results)
-        #         self.client_done()
+    def done_handler(self, results: CompletedStructure):
+        self.add_to_log("All done, finished")
+        self.label_string.set("Hey, all done!")
+        self.build_results_tree(results)
+        self.client_done()
 
     @staticmethod
     def cancelled_listener():
@@ -620,13 +708,13 @@ class MyApp(Frame):
     def client_stop(self):
         self.add_to_log("Attempting to cancel")
         self.label_string.set("Attempting to cancel...")
-        self.background_operator.please_stop()
+        self.background_operator.interrupt_please()
 
     def client_exit(self):
         if self.long_thread:
             messagebox.showerror("Uh oh!", "Cannot exit program while operations are running; abort them then exit")
             return
-        exit()
+        sys.exit()
 
     def client_done(self):
         self.set_gui_status_for_run(False)
