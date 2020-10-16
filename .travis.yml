@@ -38,7 +38,7 @@ jobs:
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
-    script: flake8 my_app
+    script: flake8 epregressions
 
 deploy:
   provider: releases

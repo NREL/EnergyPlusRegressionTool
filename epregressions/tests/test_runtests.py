@@ -978,7 +978,7 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "num_severe": 0,
                     "end_state": "success",
                     "eso_results": "base",
-                    "extra_data": "DataSets\TDV"
+                    "extra_data": r"DataSets\TDV"
                 }
             }
         )
@@ -996,7 +996,7 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "num_severe": 1,
                     "end_state": "success",
                     "eso_results": "base",
-                    "extra_data": "DataSets\TDV"
+                    "extra_data": r"DataSets\TDV"
                 }
             }
         )

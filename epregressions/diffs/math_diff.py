@@ -181,8 +181,8 @@ def dict_of_dicts2dict_of_lists(dict_of_dicts, key_order, list_labels):
     dict_of_lists = {}
     for key in key_order:
         dict_of_lists[key] = []
-        for l in list_labels:
-            dict_of_lists[key].append(dict_of_dicts[key][l])
+        for ll in list_labels:
+            dict_of_lists[key].append(dict_of_dicts[key][ll])
     return dict_of_lists
 
 
