@@ -405,7 +405,9 @@ class MyApp(Frame):
                 for result in result_list:
                     self.results_tree.insert(
                         parent=self.tree_folders[root], index=END, text=result,
-                        values=("Click to see base run results", "Click to see mod run results", dir_1, dir_2)
+                        values=(
+                            "Double click to see base run results", "Double click to see mod run results", dir_1, dir_2
+                        )
                     )
 
     def add_to_log(self, message):

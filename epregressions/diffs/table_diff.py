@@ -517,18 +517,18 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
     # Write error file
     err_txt = err_soup.prettify()
-    with open(err_file, 'w') as f_out:
-        f_out.write(err_txt)
+    with open(err_file, 'wb') as f_out:
+        f_out.write(err_txt.encode('utf-8', errors='ignore'))
 
     # Only write absolute and relative diff files if any tables were actually different
     if count_of_tables_diff > 0:
         abs_diff_txt = abs_diff_soup.prettify()
-        with open(abs_diff_file, 'w') as f_abs:
-            f_abs.write(abs_diff_txt)
+        with open(abs_diff_file, 'wb') as f_abs:
+            f_abs.write(abs_diff_txt.encode('utf-8', errors='ignore'))
 
         rel_diff_txt = rel_diff_soup.prettify()
-        with open(rel_diff_file, 'w') as f_rel:
-            f_rel.write(rel_diff_txt)
+        with open(rel_diff_file, 'wb') as f_rel:
+            f_rel.write(rel_diff_txt.encode('utf-8', errors='ignore'))
 
     if summary_file:
         if not os.path.exists(summary_file):
