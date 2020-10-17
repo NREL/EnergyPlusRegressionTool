@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 So we are going to replicate just a few of the core functions of E+ in this binary...in a super silly way
