@@ -1,6 +1,8 @@
 import json
 import os
+from platform import system
 import shutil
+from subprocess import check_call
 import tempfile
 import unittest
 
@@ -31,18 +33,55 @@ class TestTestSuiteRunner(unittest.TestCase):
         os.makedirs(products_dir)
         read_vars_dir = os.path.join(target_source_dir, 'bin', 'EPMacro', 'Linux')
         os.makedirs(read_vars_dir)
-        products_map = {
-            os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
-            os.path.join(self.resources, 'dummy.basement.py'): os.path.join(products_dir, 'Basement'),
-            os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
-            os.path.join(self.resources, 'dummy.energyplus.py'): os.path.join(products_dir, 'energyplus'),
-            os.path.join(self.resources, 'dummy.expandobjects.py'): os.path.join(products_dir, 'ExpandObjects'),
-            os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(products_dir, 'ParametricPreprocessor'),
-            os.path.join(self.resources, 'dummy.readvars.py'): os.path.join(products_dir, 'ReadVarsESO'),
-            os.path.join(self.resources, 'dummy.slab.py'): os.path.join(products_dir, 'Slab'),
-            os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
-            os.path.join(self.resources, 'dummy.epmacro.py'): os.path.join(read_vars_dir, 'EPMacro'),
-        }
+        if system() == 'Windows':
+            # if we are on windows, we need to prepackage up the python scripts as exe files for them to run
+            # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
+            # variables and run them all.  Also we don't want to run them for every single test, just once if the dist/
+            # folder hasn't been created yet.
+            dist_folder = os.path.join(self.resources, 'dist')
+            if not os.path.exists(dist_folder):
+                # find pyinstaller -- it should be available in path I think
+                pyinstaller = "pyinstaller.exe"
+                # pyinstaller = r"C:\EnergyPlus\repos\EnergyPlusRegressionTool\venv\Scripts\pyinstaller.exe"
+                # run it on all these
+                conversions = [
+                    ['dummy.basement.py', 'basement'],
+                    ['dummy.energyplus.py', 'energyplus'],
+                    ['dummy.expandobjects.py', 'expandobjects'],
+                    ['dummy.parametric.py', 'parametric'],
+                    ['dummy.readvars.py', 'readvars'],
+                    ['dummy.slab.py', 'slab'],
+                    ['dummy.epmacro.py', 'epmacro'],
+                ]
+                working_dir = self.resources
+                for conv in conversions:
+                    cmd = [pyinstaller, '--onefile', '-n', conv[1], conv[0]]
+                    check_call(cmd, cwd=working_dir)
+            products_map = {
+                os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
+                os.path.join(dist_folder, 'basement.exe'): os.path.join(products_dir, 'Basement.exe'),
+                os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
+                os.path.join(dist_folder, 'energyplus.exe'): os.path.join(products_dir, 'energyplus.exe'),
+                os.path.join(dist_folder, 'expandobjects.exe'): os.path.join(products_dir, 'ExpandObjects.exe'),
+                os.path.join(dist_folder, 'parametric.exe'): os.path.join(products_dir, 'ParametricPreprocessor.exe'),
+                os.path.join(dist_folder, 'readvars.exe'): os.path.join(products_dir, 'ReadVarsESO.exe'),
+                os.path.join(dist_folder, 'slab.exe'): os.path.join(products_dir, 'Slab.exe'),
+                os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
+                os.path.join(dist_folder, 'epmacro.exe'): os.path.join(read_vars_dir, 'EPMacro.exe'),
+            }
+        else:
+            products_map = {
+                os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
+                os.path.join(self.resources, 'dummy.basement.py'): os.path.join(products_dir, 'Basement'),
+                os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
+                os.path.join(self.resources, 'dummy.energyplus.py'): os.path.join(products_dir, 'energyplus'),
+                os.path.join(self.resources, 'dummy.expandobjects.py'): os.path.join(products_dir, 'ExpandObjects'),
+                os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(products_dir, 'ParametricPreprocessor'),
+                os.path.join(self.resources, 'dummy.readvars.py'): os.path.join(products_dir, 'ReadVarsESO'),
+                os.path.join(self.resources, 'dummy.slab.py'): os.path.join(products_dir, 'Slab'),
+                os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
+                os.path.join(self.resources, 'dummy.epmacro.py'): os.path.join(read_vars_dir, 'EPMacro'),
+            }
         for source in products_map:
             shutil.copy(source, products_map[source])
         testfiles_dir = os.path.join(target_source_dir, 'testfiles')
