@@ -25,3 +25,5 @@ dist
 /epregressions/tests/resources/slab.spec
 /epregressions/tests/resources/energyplus.spec
 /epregressions/tests/resources/basement.spec
+deploy
+eplus_regression_runner.spec
