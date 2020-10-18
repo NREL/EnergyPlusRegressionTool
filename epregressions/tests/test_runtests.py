@@ -76,7 +76,9 @@ class TestTestSuiteRunner(unittest.TestCase):
                 os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
                 os.path.join(self.resources, 'dummy.energyplus.py'): os.path.join(products_dir, 'energyplus'),
                 os.path.join(self.resources, 'dummy.expandobjects.py'): os.path.join(products_dir, 'ExpandObjects'),
-                os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(products_dir, 'ParametricPreprocessor'),
+                os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(
+                    products_dir, 'ParametricPreprocessor'
+                ),
                 os.path.join(self.resources, 'dummy.readvars.py'): os.path.join(products_dir, 'ReadVarsESO'),
                 os.path.join(self.resources, 'dummy.slab.py'): os.path.join(products_dir, 'Slab'),
                 os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
