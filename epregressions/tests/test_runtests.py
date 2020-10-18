@@ -55,7 +55,7 @@ class TestTestSuiteRunner(unittest.TestCase):
                 ]
                 working_dir = self.resources
                 for conv in conversions:
-                    cmd = [pyinstaller, '--onefile', '-n', conv[1], conv[0]]
+                    cmd = [pyinstaller, '--onefile', '--log-level=WARN', '-n', conv[1], conv[0]]
                     check_call(cmd, cwd=working_dir)
             products_map = {
                 os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
