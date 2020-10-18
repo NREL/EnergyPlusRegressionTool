@@ -4,7 +4,7 @@ BUILD_CONFIG=$1
 
 VERSION_STRING=`grep VERSION epregressions/__init__.py | cut -d= -f2 | xargs`
 
-rm -r deploy
+rm -rf deploy
 
 case ${BUILD_CONFIG} in
 
