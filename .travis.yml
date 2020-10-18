@@ -20,7 +20,7 @@ jobs:
     name: Mac 10.15 Tests
     osx_image: xcode11.4
     before_script: pip3 install --user -r requirements.txt
-    script: /Users/travis/Library/Python/3.7/bin/nosetests
+    script: "/Users/travis/Library/Python/3.7/bin/nosetests"
     before_deploy: scripts/build_mac.sh
   - os: windows
     language: cpp
@@ -39,15 +39,15 @@ jobs:
     python: 3.6
     before_script: pip3 install -r requirements.txt
     script: flake8 epregressions
-
 deploy:
   provider: releases
   api_key:
-    secure: CLIdXPJ0YjPIZQ6Iv1/BnjfzQu16aOBjrVdJ+K0aiHBiCeHO2yIvd3UzgjQeIFa7vNY5iyElJskTaTmOOOK5NwpaLtHTl59BGOQUk4ltqS5W+WdAdHZhcllk7g2NMB1Lpke9oeLWInnp5qWvJ8bner9INsMFbblnbrqkbWLK2qRbe/SWMASrI53cSwstn/LH3ZA0yA2a9lm6C4dT2+wdVpgvqJBi2PiBdIxgyzwkaOYNEbMoOH8Bk0xPpejwU0Yfs97P0r0oVWRTbziUOWyeGj2IN/W/sR55CdYfu11OYpvvBm+Pydwv5YKr2ew4dwt0Jjg7Nd4RNvHEXn76yUnG3Dv1V3MNRJa462UKiMnj8gwQI6MRqzZtft/ayJ7I22rGdEL19Wgl86ut1ufBmbEJR8aq0Kl5WLld+kl0/NNHeWizq9664WpPWqWsU8aqw21w1Zvje7d2ludWBWwbAadF+ICU8Qop30PxqFdDY4W/VTwlLAng4Me8CJLlFOfwNBDXg2JEL2hQJ/iVcZUYzre0STZZvC2LLKgWZ4l81GeLR+ofk25FRa0NX9zf3Mf7qAP6MHOCtp/LA3x5M7/1kqNW0gDsg8wTFy6akiYVemdnYTlhU8FnDSvklye7Gc5Y7Vdiw0qGmLpL8tXkIGfFnbWCT0e8DHpnWco7N0jCDhDbVDI=
+    secure: dtm5qvOwBnYI37k0X5bQ1tJweOs5UTV65vv1vGa+TaU8eAE1KHmTIhNedZg7aRWYSpLRz/hdhGPjVBxid7VIvtIqFI4HX6wJ9Mf6aFL6uoFM5mUhtBrBo7TkcYG+oSQ5eftCDVO0449iKi0mzXgfl5szNXns1/VthK15+MGBQr12hNu+l0aWG3gWyweUnpJ3x4nORXU01v3yLTl+4J/UNOBzJvziXNub/7idF+v//hsoesLJuwKUjUBRmCackTFEiO/t9Atr4fMbI9Fksd+8TBaYplwz6ZwqKKtI1itrAe9af2PRTic7ZWmLI36U5KrGkH6yERFY2MAOgwHmirlkKfPknW1zLxaBMtgimdMhM9iVhNShC6+D1OpwFxiQEleQvS7ASFGLHeBuK2YK5QTH/4e9j1hGcaIrBg/J3JCPr9EYcqS2shUu0DxOyfQzI/M5vWDcY/suwZb0hijqXYDg9T+qIxdmlzV7RFwj6cSsVKvpLJSoAgZmoEAruze+iCp4jKdP/mEyvslbcLYt4MeGv8BydcX6jaLTgqMFYg3cZuWKATT6KVc6DaaL+Ptc5kIhw7GHMfkFyVe9lRAKiDDvvV1VIrnSyYcJ1m+i5XdSe5/IeCMuj0aTx1iTa0gi4CoKLIdWYvAbbGGjj9s8VT7nxH4c4WPosKabPyM1pt7MDPk=
   file_glob: true
   file: deploy/*
+  skip_cleanup: true
+  overwrite: true
   on:
     tags: true
     repo: NREL/EnergyPlusRegressionTool
-  skip_cleanup: true
-  overwrite: true
+  skip_cleanup: 'true'
