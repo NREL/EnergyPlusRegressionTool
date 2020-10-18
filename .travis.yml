@@ -22,16 +22,19 @@ jobs:
     before_script: pip3 install --user -r requirements.txt
     script: /Users/travis/Library/Python/3.7/bin/nosetests
     before_deploy: scripts/build_mac.sh
-  - os: windows
-    language: cpp
-    name: Windows Tests
-    before_script:
-    - choco install 7zip
-    - choco install python --version 3.6.8
-    - pip3 install -r requirements.txt
-    script: nosetests
-    before_deploy: scripts/build_windows.sh
-    env: PATH=/c/Python36:/c/Python36/Scripts:$PATH
+# Windows is being particularly wonky about the shebang lines used in the mock EnergyPlus binaries
+# I'll try to come up with a good solution, because I think it will work if that is fixed
+# For now just disabling again
+#  - os: windows
+#    language: cpp
+#    name: Windows Tests
+#    before_script:
+#    - choco install 7zip
+#    - choco install python --version 3.6.8
+#    - pip3 install -r requirements.txt
+#    script: nosetests
+#    before_deploy: scripts/build_windows.sh
+#    env: PATH=/c/Python36:/c/Python36/Scripts:$PATH
   - os: linux
     dist: bionic
     name: Flake8
