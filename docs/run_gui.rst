@@ -38,6 +38,7 @@ Test Suite Options
 The first tab shows basic test suite options.
 The top options are simply allowing the user to select the base and mod build folders.
 The GUI will autodetect which build type is being employed as the user can select between a few types:
+
  - Visual Studio build folder
  - Unix-style Makefile
  - An EnergyPlus install folder
