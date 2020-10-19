@@ -66,5 +66,5 @@ deploy:
   on:
     tags: true
     distributions: sdist bdist_wheel
-    repo: Myoldmopar/EnergyPlusRegressionTool
+    repo: NREL/EnergyPlusRegressionTool
 

@@ -1,6 +1,6 @@
 import codecs
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 from epregressions import VERSION
 
@@ -11,7 +11,7 @@ with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_fil
 setup(
     name='EnergyPlusRegressionTool',
     version=VERSION,
-    packages=['epregressions'],
+    packages=find_packages(exclude=['test', 'tests', 'test.*']),
     url='https://github.com/NREL/EnergyPlusRegressionTool',
     license='',
     author='Edwin Lee',
@@ -23,7 +23,7 @@ setup(
     tests_require=['nose'],
     keywords='energyplus',
     include_package_data=True,
-    install_requires=['pubsub=4.0.3', 'beautifulsoup4==4.9.3'],
+    install_requires=['PyPubSub==4.0.3', 'beautifulsoup4==4.9.3'],
     entry_points={
         'console_scripts': [
             'eplus_regression_runner=epregressions.runner:main_gui',
