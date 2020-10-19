@@ -221,7 +221,8 @@ epw_map = {
     "CoolingTower_VariableSpeed_CondEntTempReset.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "CoolingTower_VariableSpeed_CondEntTempReset_MultipleTowers.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "CoolingTower_VariableSpeed_IdealCondEntTempSetpoint.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
-    "CoolingTower_VariableSpeed_IdealCondEntTempSetpoint_MultipleTowers.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
+    "CoolingTower_VariableSpeed_IdealCondEntTempSetpoint_MultipleTowers.idf":
+        "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "CoolingTower_VariableSpeed.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "CoolingTower_VariableSpeed_MultiCell.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "CoolingTowerWetBulbRangeOp.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
@@ -374,7 +375,8 @@ epw_map = {
     "HeatPumpWaterHeater.idf": "USA_FL_Miami.Intl.AP.722020_TMY3.epw",
     "HeatPumpWaterHeaterStratified.idf": "USA_FL_Miami.Intl.AP.722020_TMY3.epw",
     "HeatPumpWaterToAirEquationFit.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
-    "HeatPumpWaterToAirEquationFit_WaterHeatingDesuperheater_StratifiedTank.idf": "USA_FL_Miami.Intl.AP.722020_TMY3.epw",
+    "HeatPumpWaterToAirEquationFit_WaterHeatingDesuperheater_StratifiedTank.idf":
+        "USA_FL_Miami.Intl.AP.722020_TMY3.epw",
     "HeatPumpWaterToAir.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "HeatPumpWaterToAirWithAntifreezeAndLatentModel2.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "HeatPumpWaterToAirWithAntifreezeAndLatentModel.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
@@ -670,7 +672,8 @@ epw_map = {
     "UnitHeaterAuto.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "UnitHeaterGasElec.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "UnitHeater.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
-    "UnitVent5ZoneAuto-CycFan2-Variable-MinOAOn-Annual-SelectMonths-Detailed.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
+    "UnitVent5ZoneAuto-CycFan2-Variable-MinOAOn-Annual-SelectMonths-Detailed.idf":
+        "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "UnitVent5ZoneAuto.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "UnitVent5ZoneFixedOANoCoilOpt.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",
     "UnitVent5Zone.idf": "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw",

@@ -39,8 +39,15 @@ jobs:
     python: 3.6
     before_script: pip3 install -r requirements.txt
     script: flake8 epregressions
+  - os: linux
+    dist: focal
+    name: PyPi Packaging
+    language: python
+    python: 3.6
+    before_script: pip3 install -r requirements.txt
+    script: python3 setup.py bdist_wheel sdist
 deploy:
-  provider: releases
+- provider: releases
   api_key:
     secure: dtm5qvOwBnYI37k0X5bQ1tJweOs5UTV65vv1vGa+TaU8eAE1KHmTIhNedZg7aRWYSpLRz/hdhGPjVBxid7VIvtIqFI4HX6wJ9Mf6aFL6uoFM5mUhtBrBo7TkcYG+oSQ5eftCDVO0449iKi0mzXgfl5szNXns1/VthK15+MGBQr12hNu+l0aWG3gWyweUnpJ3x4nORXU01v3yLTl+4J/UNOBzJvziXNub/7idF+v//hsoesLJuwKUjUBRmCackTFEiO/t9Atr4fMbI9Fksd+8TBaYplwz6ZwqKKtI1itrAe9af2PRTic7ZWmLI36U5KrGkH6yERFY2MAOgwHmirlkKfPknW1zLxaBMtgimdMhM9iVhNShC6+D1OpwFxiQEleQvS7ASFGLHeBuK2YK5QTH/4e9j1hGcaIrBg/J3JCPr9EYcqS2shUu0DxOyfQzI/M5vWDcY/suwZb0hijqXYDg9T+qIxdmlzV7RFwj6cSsVKvpLJSoAgZmoEAruze+iCp4jKdP/mEyvslbcLYt4MeGv8BydcX6jaLTgqMFYg3cZuWKATT6KVc6DaaL+Ptc5kIhw7GHMfkFyVe9lRAKiDDvvV1VIrnSyYcJ1m+i5XdSe5/IeCMuj0aTx1iTa0gi4CoKLIdWYvAbbGGjj9s8VT7nxH4c4WPosKabPyM1pt7MDPk=
   file_glob: true
@@ -50,4 +57,14 @@ deploy:
   on:
     tags: true
     repo: NREL/EnergyPlusRegressionTool
-  skip_cleanup: 'true'
+- provider: pypi
+  user: Myoldmopar
+  skip_cleanup: true
+  skip_upload_docs: true
+  password:
+    secure: Lq1qVjiySMngcCxLxhY/WXEmSm0Jn/l1/gUCSaR5bK2aJ5cPccIbMzMntDS0skAggEcFfW8DdH+a1auWlcB7WeYS9ES6E0gz6MamcZIUlHUi2kdzK7OT5mRVI+NTmPEkDJPs9LpmPU5aNV98yWJAVKXtJFcra6WgZYBFuvMVZjJj/wxrC94HkMVDyg9phPw5AKIwwxXWNcuRgEmP4HxrnDjHYCe7xVazaTE5ZyPB89mGrpP/dpsu9DD8fQDv2AO6uiUrk6KW/vQBsevD3s46HMh70dOKbgJRCnE7FOQGyavhSHCtLS+hw2zxni7B/F9X1qMd6uxoyRWkmh/qio35P1Je/q2YLjSt9Zy01qg3qXb4aG9K3cd/o0FV+kCgnqVNmnfHQyXcezwjT6h2BvMtADQfLmc5+uqntUOEB/OAgSuRLQRE4AhGkstYKngiZ/5o/9EyoiVjbFEMynUe3k2hWkfaBeeScFzTJenX5WbFGPnmDrgBcLTCVqpqyqLB2wYpGipeBtD5Df0oDJk93fEd31JmErPhzxfX1e4uACD7zE+Tkc9mT4pkMX/BB6AcV8cZGxwdF6NibEVcefTv3lViIMIppYMqixvvhWCXQEvtS1JGg9Iw78bMLdy1QqQKzwR7kkhexPTrrc0L8WhXyCKWFFivRSz12epy9I0KmIhCVEk=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: Myoldmopar/EnergyPlusRegressionTool
+

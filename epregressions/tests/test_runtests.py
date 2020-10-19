@@ -267,7 +267,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('subdir/my_file.idf', 'my_weather')]
+        entries = [TestEntry(os.path.join('subdir', 'my_file.idf'), 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
