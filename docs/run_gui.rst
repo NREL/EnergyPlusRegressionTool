@@ -10,10 +10,17 @@ in the sections of this chapter.
 Starting the Program
 --------------------
 
-The GUI can be started by clicking on the Python script called
-``MainWindow.py``. Based on your setup, it may spawn a terminal window
-first, then show the GUI itself. When the GUI launches, it should look
-like that shown in this figure.
+Starting the GUI program will depend on how the package is installed/downloaded.
+
+- Downloaded binary from Github release page:
+  - In this case, the user will simply run the downloaded binary
+- In the future, a pip installation will be available:
+  - In this case, a binary will be installed with the package that will allow running the GUI
+- Cloned the repo for development:
+  - In this case, the user will run the `eplus_regression_runner` script at the root of the repo
+
+In some cases, a command window is launched prior to showing the graphical interface.
+This can be ignored.  When the GUI launches, it should look similar to this figure.
 
 .. figure:: Images/ScreenShotFirstOpen.png
    :alt: Screenshot of the GUI immediately after launch
@@ -21,77 +28,41 @@ like that shown in this figure.
 
    Screenshot of the GUI immediately after launch
 
-At this point, several things have already happened in the program. The
-basic launch procedure follows:
-
-* Initialized file list builder arguments for GUI operation
-* Initialized test suite engine arguments for GUI operation
-* Build the GUI itself
-* Load settings from a previously auto-saved settings file if one exists
-* Fill the GUI with settings data
-* Start a timer to autosave GUI settings every 5 minutes
-* Build the file list using the backend build\_files\_to\_run script
-
+At this point, the program is ready for user interaction to start a run.
 While using the program, the user has the ability to load and save
 settings files as they desire, using the File menu.
-
-Selecting Input Files
----------------------
-
-The input files are selected from the main screen. Input files selection
-options are analogous to those found when using the command line arguments.
-The GUI provides buttons to randomly select <n> files, select all, etc.
-Another useful way to select files is to use the “Click to enter list” button.
-This will spawn a dialog where a user can paste in a simple list of files,
-one per line, and the GUI will select only those files for running. This is
-useful because once a suite run is complete, the user has the ability to copy
-a list of files from the results tab that, for example, showed out of range
-differences in the table output. The user can copy this list, rebuild
-EnergyPlus, and then select only these specific diff files for running in the
-next suite. Another useful way to select files is to verify from a folder.
-This is convenient if a selected folder only contains a specific set of input
-files to run. By selecting a folder, the GUI will deselect all files first, then
-re-add any files that are found in the selected folder.
 
 Test Suite Options
 ------------------
 
-The options for running the test suite are on the main screen as well.
-The options for running the test suite are quite similar to those in the
-command line section, however a little simpler. In the command line section,
-the user must explicitly specify build folders and the accompanying source folders.
-The GUI has the ability to "mine out" the source directory from an existing
-build directory.  The check mark on each case says whether those files need
-to be re-run or if the outputs are already there.  On Ubuntu, there is a
-spinner that allows the user to select the number of threads to use when
-running simulations. On Windows, due to a known issue, this is not
-exposed, and the test suite will only run a single thread in GUI mode.
-There is then an option to select a
-minimum reporting frequency. This is most convenient on large-scale
-testing with annual simulations, as using daily will force E+ to output
-daily variables as the most frequent report, thus reducing the amount of
-data to be processed. The last option allows the user to select a run
-configuration (design day only, annual, etc.). An informational label is
-updated to let the user know where results will be stored.
+The first tab shows basic test suite options.
+The top options are simply allowing the user to select the base and mod build folders.
+The GUI will autodetect which build type is being employed as the user can select between a few types:
+ - Visual Studio build folder
+ - Unix-style Makefile
+ - An EnergyPlus install folder
 
-Verifying File Structure
-------------------------
+The user can then select a few settings:
+ - Number of threads to employ while running simulations
+ - Minimum reporting frequency to limit the amount of output data to process to improve diff speed
+ - Run configuration to specify how the files should be executed (design days only, annual, no forcing)
 
-The GUI provides the ability to pre-validate all the files that will be
-required in the simulation. By clicking “Validate Test Suite
-Structure”, the GUI will use the information in the settings
-to validate many file paths. In this validation process, the GUI checks for the base and mod
-directories, IDD files, executables, input files, and required tools and files.
+Selecting Input Files
+---------------------
+
+The input files are selected on the second tab. The user can
+select files by double clicking them in the top list, and they can be removed
+by double clicking them in the bottom list.  There are also a few selection options
+for selecting a random set, or selecting/deselecting all.
 
 Running & Canceling Test Suite
 ------------------------------
 
-Once files have been selected, test suite options set, and the file
-structure validated, the test suite can be started. A button at
-the bottom allows the user to run the suite. While the suite is running,
-the user can do other things, including save the settings or prepare for
-another test suite. The simulations are run on a separate thread, and on
-Ubuntu it could be many underlying threads. If many threads are run, the
+Once files have been selected and test suite options set, the user can try to
+execute a test suite.  The first step is that the GUI will attempt to validate
+the build folder structure, and stop if a missing file or issue is encountered.
+Once the suite has started, most configuration options are disabled in the GUI.
+During the run, if many threads are run, the
 user may experience lag in this program and the system as a whole. The program
 should still update with messages from the background processes as simulations
 complete. The user may attempt to cancel the suite at any time while it is running.
@@ -162,19 +133,7 @@ Files with textual diffs
     mod runs, including changes to the eplusout.[err, bnd, shd, audit,
     ...] files.
 
-*Right clicking is disabled right now*.
-This tree provides a nice summary of the suite results, but also
-provides a quick way to re-run problem files. By right clicking on any
-of the nodes in the summary, an option is provided to “Copy files from
-this node to the clipboard”. If this is performed, files from the
-currently selected entry (Unsuccessful Runs, for example) will be copied
-to the clipboard. Then back on the IDF selection tab, the user can
-select “Click to enter list”, and paste it directly in. This is a great
-way to re-run problem files after making small fixes.
-
-Another great addition to this summary is the ability to navigate right
-to the diff folder. By expanding the tree down to the third level, where
-files are listed, you can double click on a filename, and the native
-file browser on your system will open to the folder containing the base
-run results and diff files for that case. This has not been tested on
-Macs yet, but works well on Windows and Ubuntu.
+Once the file list is populated, each file line item will have two columns
+where the user can double click that cell and it will open the Files/Explorer/Finder
+window to the appropriate results folder.  The base folder will have the output diff
+files along with the core results.
