@@ -24,7 +24,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.temp_mod_build_dir = tempfile.mkdtemp()
         self.temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
-    def establish_build_folder(self, target_build_dir, target_source_dir, idf_config):
+    def establish_build_folder(self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False):
         with open(os.path.join(target_build_dir, 'CMakeCache.txt'), 'w') as f:
             f.write('HEY\n')
             f.write('CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' % target_source_dir)
@@ -89,7 +89,12 @@ class TestTestSuiteRunner(unittest.TestCase):
         testfiles_dir = os.path.join(target_source_dir, 'testfiles')
         os.makedirs(testfiles_dir)
         json_text = json.dumps(idf_config)
-        with open(os.path.join(testfiles_dir, 'my_file.idf'), 'w') as f:
+        if idf_in_dir:
+            idf_dir = os.path.join(testfiles_dir, 'subdir')
+            os.makedirs(idf_dir)
+        else:
+            idf_dir = testfiles_dir
+        with open(os.path.join(idf_dir, 'my_file.idf'), 'w') as f:
             f.write(json_text)
         with open(os.path.join(testfiles_dir, 'my_file.rvi'), 'w') as f_rvi:
             f_rvi.write('RVI TEXT')
@@ -199,6 +204,103 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have created a run directory for this file, put input files there, and left output files there
         file_results_dir = os.path.join(results_dir, 'my_file')
+        self.assertTrue(os.path.exists(file_results_dir))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.epw')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.idf')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.eso')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.end')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.csv')))
+        # check the diffs
+        self.assertEqual('All Equal', results_for_file.eso_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.mtr_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.ssz_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.zsz_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.aud_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.bnd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dl_in_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dl_out_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dxf_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.eio_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.err_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.mdd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.mtd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.rdd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.shd_diffs.diff_type)
+        # TODO: Check TableDiff
+
+    def test_no_diffs_idf_in_subdirectory(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            True
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            True
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry('subdir/my_file.idf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries)
+        r.add_callbacks(
+            print_callback=TestTestSuiteRunner.dummy_callback,
+            simstarting_callback=TestTestSuiteRunner.dummy_callback,
+            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
+            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
+            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
+            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            cancel_callback=TestTestSuiteRunner.dummy_callback
+        )
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('subdir__my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        # it should have created a test directory and dropped the summaries there
+        results_dir = diff_results.results_dir_a
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
+        # it should have created a run directory for this file, put input files there, and left output files there
+        file_results_dir = os.path.join(results_dir, 'subdir__my_file')
         self.assertTrue(os.path.exists(file_results_dir))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.epw')))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.idf')))
