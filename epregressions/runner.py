@@ -6,9 +6,15 @@
 
 from sys import argv
 
-if len(argv) == 1:  # GUI
+
+def main_gui():
     from epregressions.tk_window import MyApp
     app = MyApp()
     app.run()
-else:  # Non-GUI operation, execute some command
-    ...
+
+
+if __name__ == "__main__":
+    if len(argv) == 1:  # GUI
+        main_gui()
+    else:  # Non-GUI operation, execute some command
+        ...
