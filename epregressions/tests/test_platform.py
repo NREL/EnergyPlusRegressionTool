@@ -1,6 +1,6 @@
 import unittest
 
-from epregressions.platform import platform, exe_extension, Platforms
+from epregressions.ep_platform import platform, exe_extension, Platforms
 
 
 class TestCrossPlatform(unittest.TestCase):

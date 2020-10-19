@@ -1,7 +1,7 @@
 import os
 
 from epregressions.builds.base import BaseBuildDirectoryStructure
-from epregressions.platform import exe_extension
+from epregressions.ep_platform import exe_extension
 
 
 class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):

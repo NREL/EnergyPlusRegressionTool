@@ -51,6 +51,7 @@ jobs:
     python: 3.6
     before_script: pip3 install -r requirements.txt
     script: python3 setup.py bdist_wheel sdist
+
 deploy:
 - provider: releases
   api_key:
@@ -62,12 +63,14 @@ deploy:
   on:
     tags: true
     repo: NREL/EnergyPlusRegressionTool
+    condition: $BUILD != PYPI
 - provider: pypi
   user: Myoldmopar
   skip_cleanup: true
   skip_upload_docs: true
+  username: "__token__"
   password:
-    secure: Lq1qVjiySMngcCxLxhY/WXEmSm0Jn/l1/gUCSaR5bK2aJ5cPccIbMzMntDS0skAggEcFfW8DdH+a1auWlcB7WeYS9ES6E0gz6MamcZIUlHUi2kdzK7OT5mRVI+NTmPEkDJPs9LpmPU5aNV98yWJAVKXtJFcra6WgZYBFuvMVZjJj/wxrC94HkMVDyg9phPw5AKIwwxXWNcuRgEmP4HxrnDjHYCe7xVazaTE5ZyPB89mGrpP/dpsu9DD8fQDv2AO6uiUrk6KW/vQBsevD3s46HMh70dOKbgJRCnE7FOQGyavhSHCtLS+hw2zxni7B/F9X1qMd6uxoyRWkmh/qio35P1Je/q2YLjSt9Zy01qg3qXb4aG9K3cd/o0FV+kCgnqVNmnfHQyXcezwjT6h2BvMtADQfLmc5+uqntUOEB/OAgSuRLQRE4AhGkstYKngiZ/5o/9EyoiVjbFEMynUe3k2hWkfaBeeScFzTJenX5WbFGPnmDrgBcLTCVqpqyqLB2wYpGipeBtD5Df0oDJk93fEd31JmErPhzxfX1e4uACD7zE+Tkc9mT4pkMX/BB6AcV8cZGxwdF6NibEVcefTv3lViIMIppYMqixvvhWCXQEvtS1JGg9Iw78bMLdy1QqQKzwR7kkhexPTrrc0L8WhXyCKWFFivRSz12epy9I0KmIhCVEk=
+    secure: "aec5eRMyUdV0BuDfamO9PfiEG0lYmWsL8KpmDNVi7XVYAw+CVa2q5IqRjO1YBslOKVylTnwtTAIbPStYIRjoFac1lxvRXHGvGEE2YUURJqMiztYVHzTcDAsJXOH6JXTkI+4zQbiemTOqMLee8p2xwX6tpdTseQzMcWF9EIjLfiml4l89zdueYJW5ODp4g4LI6kMEe45TI26Mynxnr4MhUF8N7TCItWQFIa6DNHQ+3rysbHEoAiht27lzKvdhdBlVMs3vS/+/A3GMJ1HGf6avkBBp2JsFM1yDFLbCDVsiFMziqO7F8m3H8w0kTr6jgjkfafjLk71kuT9ZCd8wXgUP85nEKNUig50WkSsWfgftXcIWA8wmXo2PN2lwWpEYlvOUSsTAFMpyBfXi1jeeDrLVgalHS0yHpPkZ3VYj1rSOCOnZ+032Lshy+SQO75nJNovvIFZHmFxN4a2DI+YYTZYHvI1FzNtYmwTenCQTT08QonbOfFtvrl4sEMapGenmr3npIELJXL6TqWK93BtVcb39usBJZbIuOTiz6ZN4Cel7rAynVo1jmFSfZ8lg8H4WMDN3pWTCD0slwhOHSRydMsEIhDLVb7dNOqhOQnuLBaf9Y5XNcVaJS69seqFOYB0bSvRF8SKXRBSpIsxAcFGz6xyUlyqts2aaDRe/zAZYK6rBrIM="
   on:
     tags: true
     distributions: sdist bdist_wheel
