@@ -18,17 +18,16 @@ def autodetect_build_dir_type(build_dir: str) -> str:
         example_files_dir = os.path.join(build_dir, 'ExampleFiles')
         if os.path.exists(example_files_dir):
             return KnownBuildTypes.Installation
-
-    # ok, at this point we have a cache file, read it to find the generator
-    with open(cmake_cache_file, 'r') as f_cache:
-        for this_line in f_cache.readlines():
-            if 'CMAKE_GENERATOR:INTERNAL=' in this_line:
-                tokens = this_line.strip().split('=')
-                generator_name = tokens[1]
-                if "Visual Studio" in generator_name:
-                    return KnownBuildTypes.VisualStudio
-                elif 'Makefile' in generator_name:
-                    return KnownBuildTypes.Makefile
+    else:  # we have a cache file, read it to find the generator
+        with open(cmake_cache_file, 'r') as f_cache:
+            for this_line in f_cache.readlines():
+                if 'CMAKE_GENERATOR:INTERNAL=' in this_line:
+                    tokens = this_line.strip().split('=')
+                    generator_name = tokens[1]
+                    if "Visual Studio" in generator_name:
+                        return KnownBuildTypes.VisualStudio
+                    elif 'Makefile' in generator_name:
+                        return KnownBuildTypes.Makefile
     return KnownBuildTypes.Unknown
 
 

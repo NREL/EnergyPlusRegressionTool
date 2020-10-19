@@ -178,7 +178,10 @@ class TestEntry:
     def __init__(self, name_relative_to_testfiles_dir, epw):
         self.name_relative_to_testfiles_dir = name_relative_to_testfiles_dir
         self.basename = os.path.splitext(name_relative_to_testfiles_dir.replace(os.path.sep, '__'))[0]
-        self.epw = epw
+        if epw.endswith('.epw'):
+            self.epw = epw[:-4]
+        else:  # the basename was passed in already
+            self.epw = epw
         self.summary_result = None
         self.eso_diffs = None
         self.mtr_diffs = None

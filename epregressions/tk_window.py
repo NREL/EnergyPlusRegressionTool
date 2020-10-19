@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import reduce
 import os
 from pathlib import Path
 from platform import system
@@ -20,6 +21,7 @@ from typing import Union
 
 from pubsub import pub
 
+from epregressions.epw_map import get_epw_for_idf
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
     CompletedStructure,
@@ -396,8 +398,9 @@ class MyApp(Frame):
             ResultsTreeRoots.Textual: results.text_diffs
         }
         for root, these_results in root_and_files.items():
+            num_items = sum([len(y) for _, y in these_results.descriptions.items()])
             self.tree_folders[root] = self.results_tree.insert(
-                parent="", index=END, text=f"{root} ({len(these_results.descriptions)})", values=("", "")
+                parent="", index=END, text=f"{root} ({num_items})", values=("", "")
             )
             for base_name, result_list in these_results.descriptions.items():
                 dir_1 = os.path.join(results.results_dir_a, base_name)
@@ -551,7 +554,9 @@ class MyApp(Frame):
             return
         status = self.try_to_set_build_1_to_dir(selected_dir)
         if not status:
-            simpledialog.messagebox.showerror("Could not determine build type for build 1!")
+            simpledialog.messagebox.showerror(
+                "Build folder problem", f"Could not determine build type for build 1: {selected_dir}!"
+            )
             return
         self.build_dir_1_var.set(selected_dir)
         self.build_idf_listing()
@@ -621,8 +626,10 @@ class MyApp(Frame):
         )
         idfs_to_run = list()
         for this_file in self.active_idf_listbox.get(0, END):
+            # using build 1 as the basis for getting a weather file # TODO: Allow different EPWs for build 1, 2
+            potential_epw = get_epw_for_idf(self.build_1.source_directory, this_file)
             idfs_to_run.append(
-                TestEntry(this_file, None)
+                TestEntry(this_file, potential_epw)
             )
         if len(idfs_to_run) == 0:
             messagebox.showwarning("Nothing to run", "No IDFs were activated, so nothing to run")
