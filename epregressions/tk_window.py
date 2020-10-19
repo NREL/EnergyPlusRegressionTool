@@ -1,5 +1,5 @@
 from datetime import datetime
-from functools import reduce
+from json import dumps, load as load_json_from_file
 import os
 from pathlib import Path
 from platform import system
@@ -17,7 +17,7 @@ from tkinter import (
     END, LEFT, TOP,  # relative directions (RIGHT, TOP)
     filedialog, simpledialog,  # system dialogs
 )
-from typing import Union
+from typing import List, Union
 
 from pubsub import pub
 
@@ -128,6 +128,7 @@ class MyApp(Frame):
         self.run_button_color = '#008000'
         self.build_1 = None
         self.build_2 = None
+        self.last_results = None
 
         # initialize the GUI
         self.init_window()
@@ -150,6 +151,8 @@ class MyApp(Frame):
         menu = Menu(self.root)
         self.root.config(menu=menu)
         file_menu = Menu(menu)
+        file_menu.add_command(label="Open Project", command=self.client_open)
+        file_menu.add_command(label="Save Project", command=self.client_save)
         file_menu.add_command(label="Exit", command=self.client_exit)
         menu.add_cascade(label="File", menu=file_menu)
 
@@ -288,6 +291,60 @@ class MyApp(Frame):
     def run(self):
         self.root.mainloop()
 
+    def client_open(self):
+        open_load_file = filedialog.askopenfile(filetypes=(('ept (json) files', '.ept'),))
+        if not open_load_file:
+            return
+        try:
+            data = load_json_from_file(open_load_file)
+        except Exception as e:
+            simpledialog.messagebox.showerror("Load Error", "Could not load file contents as JSON!")
+            print(e)
+            return
+        try:
+            self.num_threads_spinner.insert(0, data['threads'])
+            self.run_period_option.set(data['config'])
+            self.reporting_frequency.set(data['report_freq'])
+            status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
+            if status:
+                self.build_dir_1_var.set(data['build_1_build_dir'])
+            status = self.try_to_set_build_1_to_dir(data['build_2_build_dir'])
+            if status:
+                self.build_dir_2_var.set(data['build_2_build_dir'])
+            self.build_idf_listing(False, data['idfs'])
+        except Exception as e:
+            simpledialog.messagebox.showerror("Load Error", "Could not load data from project file")
+            print(e)
+            return
+
+    def client_save(self):
+        open_save_file = filedialog.asksaveasfile(defaultextension='.ept')
+        if not open_save_file:
+            return
+        potential_num_threads = self.num_threads_spinner.get()
+        try:
+            num_threads = int(potential_num_threads)
+        except ValueError:
+            messagebox.showerror("Invalid Configuration", "Number of threads must be an integer")
+            return
+        idfs = []
+        for this_file in self.active_idf_listbox.get(0, END):
+            idfs.append(this_file)
+        these_results = {}
+        if self.last_results:
+            these_results = self.last_results
+        json_object = {
+            'config': self.run_period_option.get(),
+            'report_freq': self.reporting_frequency.get(),
+            'threads': num_threads,
+            'idfs': idfs,
+            'build_1_build_dir': self.build_1.build_directory,
+            'build_2_build_dir': self.build_2.build_directory,
+            'last_results': these_results,
+        }
+        open_save_file.write(dumps(json_object, indent=2))
+        open_save_file.close()
+
     def results_double_click(self, event):
         cur_item = self.results_tree.item(self.results_tree.focus())
         col = self.results_tree.identify_column(event.x)
@@ -324,7 +381,16 @@ class MyApp(Frame):
                 print(this_exception)
         return p
 
-    def build_idf_listing(self, initialize=False, desired_selected_idfs=None):
+    def build_idf_listing(self, initialize=False, desired_selected_idfs: List[str] = None):
+        # if we don't have a specific list, then try to save any already selected ones first
+
+        if desired_selected_idfs:
+            desired_selected_idfs = set(desired_selected_idfs)
+        else:
+            desired_selected_idfs = set()
+            for this_file in self.active_idf_listbox.get(0, END):
+                desired_selected_idfs.add(this_file)
+
         # clear any existing ones
         self.active_idf_listbox.delete(0, END)
         self.full_idf_listbox.delete(0, END)
@@ -376,9 +442,10 @@ class MyApp(Frame):
             self.full_idf_listbox.insert(END, "Both build folders are invalid")
             self.full_idf_listbox.insert(END, "Select build folders to fill listing")
 
-        if desired_selected_idfs is None:
-            ...
-            # add things to the listbox
+        all_idfs_in_full_list = set(self.full_idf_listbox.get(0, END))
+        common_idfs = all_idfs_in_full_list.intersection(desired_selected_idfs)
+        for idf in sorted(common_idfs):
+            self.active_idf_listbox.insert(END, idf)
 
     def build_results_tree(self, results: CompletedStructure = None):
         self.results_tree.delete(*self.results_tree.get_children())
