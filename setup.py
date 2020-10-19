@@ -23,6 +23,7 @@ setup(
     tests_require=['nose'],
     keywords='energyplus',
     include_package_data=True,
+    install_requires=['pubsub=4.0.3', 'beautifulsoup4==4.9.3'],
     entry_points={
         'console_scripts': [
             'eplus_regression_runner=epregressions.runner:main_gui',
