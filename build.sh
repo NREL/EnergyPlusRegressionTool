@@ -30,7 +30,7 @@ case ${BUILD_CONFIG} in
     ;;
 
   Windows)
-    python3.exe setup.py sdist bdist_wheel --dist-dir dist_pypi
+    python.exe setup.py sdist bdist_wheel --dist-dir dist_pypi
     pyinstaller --onefile --add-data "epregressions/diffs/math_diff.config;epregressions/diffs" epregressions/runner.py
     mkdir deploy
     /C/Program\ Files/7-zip/7z.exe a deploy/EnergyPlusRegressionTool-"${VERSION_STRING}"-Windows.zip ./dist/*
