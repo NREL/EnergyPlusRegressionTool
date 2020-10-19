@@ -1,16 +1,18 @@
 jobs:
   include:
   - os: linux
-    dist: bionic
     name: Ubuntu 18.04 Tests
+    env: BUILD=UBUNTU18
+    dist: bionic
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
     script: nosetests
     before_deploy: ./build.sh Ubuntu18
   - os: linux
-    dist: focal
     name: Ubuntu 20.04 Tests
+    env: BUILD=UBUNTU20
+    dist: focal
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
@@ -18,30 +20,33 @@ jobs:
     before_deploy: ./build.sh Ubuntu20
   - os: osx
     name: Mac 10.15 Tests
+    env: BUILD=MAC
     osx_image: xcode11.4
     before_script: pip3 install --user -r requirements.txt
     script: "/Users/travis/Library/Python/3.7/bin/nosetests"
     before_deploy: ./build.sh Mac
   - os: windows
-    language: cpp
     name: Windows Tests
+    env: BUILD=WINDOWS PATH=/c/Python36:/c/Python36/Scripts:$PATH
+    language: cpp
     before_script:
     - choco install 7zip
     - choco install python --version 3.6.8
     - pip3 install -r requirements.txt
     script: nosetests
     before_deploy: ./build.sh Windows
-    env: PATH=/c/Python36:/c/Python36/Scripts:$PATH
   - os: linux
-    dist: bionic
     name: Flake8
+    env: BUILD=FLAKE8
+    dist: bionic
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
     script: flake8 epregressions
   - os: linux
-    dist: focal
     name: PyPi Packaging
+    dist: focal
+    env: BUILD=PYPI
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
@@ -67,4 +72,4 @@ deploy:
     tags: true
     distributions: sdist bdist_wheel
     repo: NREL/EnergyPlusRegressionTool
-
+    condition: $BUILD = PYPI

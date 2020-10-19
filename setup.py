@@ -16,7 +16,7 @@ setup(
     license='',
     author='Edwin Lee',
     author_email='',
-    description='A Python 3 library for evaluating regressions between EnergyPlus builds with a PyGTK-based GUI.',
+    description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     test_suite='nose.collector',
@@ -29,4 +29,5 @@ setup(
             'eplus_regression_runner=epregressions.runner:main_gui',
         ],
     },
+    python_requires='>=3.5',
 )
