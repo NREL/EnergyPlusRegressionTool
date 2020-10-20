@@ -7,6 +7,7 @@ import random
 import subprocess
 import sys
 from threading import Thread
+from time import sleep
 from tkinter import (
     Tk, ttk,  # Core pieces
     Button, Frame, Label, LabelFrame, Listbox, Menu, OptionMenu, Scrollbar, Spinbox,  # Widgets
@@ -98,6 +99,7 @@ class MyApp(Frame):
         self.run_period_option.set(ForceRunType.NONE)
         self.reporting_frequency = StringVar()
         self.reporting_frequency.set(ReportingFreq.HOURLY)
+        self.num_threads_var = StringVar()
 
         # widgets that we might want to access later
         self.build_dir_1_button = None
@@ -105,9 +107,23 @@ class MyApp(Frame):
         self.run_button = None
         self.stop_button = None
         self.build_dir_1_label = None
-        self.build_dir_1_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
+        if system() == 'Windows':
+            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64r')  # "<Select build dir 1>")
+        elif system() == 'Mac':
+            self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+        elif system() == 'Linux':
+            self.build_dir_1_var.set('/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+        else:
+            self.build_dir_1_var.set("<Select build dir 1>")
         self.build_dir_2_label = None
-        self.build_dir_2_var.set('/Users/elee/eplus/repos/3eplus/builds/r')  # "<Select build dir 2>")
+        if system() == 'Windows':
+            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64r')  # "<Select build dir 1>")
+        elif system() == 'Mac':
+            self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
+        elif system() == 'Linux':
+            self.build_dir_2_var.set('/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
+        else:
+            self.build_dir_2_var.set("<Select build dir 1>")
         self.progress = None
         self.log_message_listbox = None
         self.results_tree = None
@@ -129,9 +145,16 @@ class MyApp(Frame):
         self.build_1 = None
         self.build_2 = None
         self.last_results = None
+        self.auto_saving = False
+        self.manually_saving = False
+        self.save_interval = 10000  # ms, so 1 minute
 
         # initialize the GUI
         self.init_window()
+
+        # try to auto-load the last settings, and kick off the auto-save feature
+        self.client_open(auto_open=True)
+        self.root.after(self.save_interval, self.auto_save)
 
         # wire up the background thread
         pub.subscribe(self.print_handler, PubSubMessageTypes.PRINT)
@@ -176,7 +199,7 @@ class MyApp(Frame):
         group_run_options = LabelFrame(pane_run, text="Run Options")
         group_run_options.pack(fill=X, padx=5)
         Label(group_run_options, text="Number of threads for suite: ").grid(row=1, column=1, sticky=E)
-        self.num_threads_spinner = Spinbox(group_run_options, from_=1, to_=48)  # validate later
+        self.num_threads_spinner = Spinbox(group_run_options, from_=1, to_=48, textvariable=self.num_threads_var)
         self.num_threads_spinner.grid(row=1, column=2, sticky=W)
         Label(group_run_options, text="Test suite run configuration: ").grid(row=2, column=1, sticky=E)
         self.run_period_option_menu = OptionMenu(group_run_options, self.run_period_option, *ForceRunType.get_all())
@@ -291,18 +314,26 @@ class MyApp(Frame):
     def run(self):
         self.root.mainloop()
 
-    def client_open(self):
-        open_load_file = filedialog.askopenfile(filetypes=(('ept (json) files', '.ept'),))
+    # noinspection PyBroadException
+    def client_open(self, auto_open=False):
+        if auto_open:
+            open_file = os.path.join(os.path.expanduser("~"), ".regression-auto-save.ept")
+            if not os.path.exists(open_file):
+                return
+            open_load_file = open(open_file)
+        else:
+            open_load_file = filedialog.askopenfile(filetypes=(('ept (json) files', '.ept'),))
         if not open_load_file:
             return
         try:
             data = load_json_from_file(open_load_file)
-        except Exception as e:
+        except Exception:
+            if auto_open:
+                return  # just quietly move along
             simpledialog.messagebox.showerror("Load Error", "Could not load file contents as JSON!")
-            print(e)
             return
         try:
-            self.num_threads_spinner.insert(0, data['threads'])
+            self.num_threads_var.set(data['threads'])
             self.run_period_option.set(data['config'])
             self.reporting_frequency.set(data['report_freq'])
             status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
@@ -312,38 +343,73 @@ class MyApp(Frame):
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
             self.build_idf_listing(False, data['idfs'])
-        except Exception as e:
+            self.add_to_log("Project settings loaded")
+        except Exception:
+            if auto_open:
+                return  # quietly leave
             simpledialog.messagebox.showerror("Load Error", "Could not load data from project file")
-            print(e)
-            return
 
-    def client_save(self):
-        open_save_file = filedialog.asksaveasfile(defaultextension='.ept')
-        if not open_save_file:
-            return
-        potential_num_threads = self.num_threads_spinner.get()
+    def auto_save(self):
+        if self.manually_saving or self.auto_saving:
+            return  # just try again later
+        self.client_save(auto_save=True)
+        self.root.after(self.save_interval, self.auto_save)
+
+    def client_save(self, auto_save=False):
+        # we shouldn't come into this function from the auto_save if any other saving is going on already
+        if self.auto_saving:
+            # if we get in here from the save menu and we are already trying to auto-save, give it a sec and retry
+            sleep(0.5)
+            if self.auto_saving:
+                # if we are still auto-saving, then just go ahead and warn
+                messagebox.showwarning("Auto-saving was already in process, try again.")
+                return
+        potential_num_threads = self.num_threads_var.get()
+        # noinspection PyBroadException
         try:
             num_threads = int(potential_num_threads)
-        except ValueError:
-            messagebox.showerror("Invalid Configuration", "Number of threads must be an integer")
+            idfs = []
+            for this_file in self.active_idf_listbox.get(0, END):
+                idfs.append(this_file)
+            these_results = {}
+            if self.last_results:
+                these_results = self.last_results.to_json_summary()
+            json_object = {
+                'config': self.run_period_option.get(),
+                'report_freq': self.reporting_frequency.get(),
+                'threads': num_threads,
+                'idfs': idfs,
+                'build_1_build_dir': self.build_1.build_directory,
+                'build_2_build_dir': self.build_2.build_directory,
+                'last_results': these_results,
+            }
+        except Exception as e:
+            # if we hit an exception, our action depends on whether we are manually saving or auto-saving
+            if auto_save:
+                ...  # just return quietly
+                print(e)
+            else:
+                messagebox.showerror(  # issue an error before leaving
+                    "Save Error",
+                    "Could not save the project because some fields are not yet filled in; "
+                    "check inputs including valid build folders"
+                )
             return
-        idfs = []
-        for this_file in self.active_idf_listbox.get(0, END):
-            idfs.append(this_file)
-        these_results = {}
-        if self.last_results:
-            these_results = self.last_results
-        json_object = {
-            'config': self.run_period_option.get(),
-            'report_freq': self.reporting_frequency.get(),
-            'threads': num_threads,
-            'idfs': idfs,
-            'build_1_build_dir': self.build_1.build_directory,
-            'build_2_build_dir': self.build_2.build_directory,
-            'last_results': these_results,
-        }
+        if auto_save:
+            self.auto_saving = True
+            save_file = os.path.join(os.path.expanduser("~"), ".regression-auto-save.ept")
+            open_save_file = open(save_file, 'w')
+        else:
+            self.manually_saving = True
+            open_save_file = filedialog.asksaveasfile(defaultextension='.ept')
+        if not open_save_file:
+            return
         open_save_file.write(dumps(json_object, indent=2))
         open_save_file.close()
+        if auto_save:
+            self.auto_saving = False
+        else:
+            self.manually_saving = False
 
     def results_double_click(self, event):
         cur_item = self.results_tree.item(self.results_tree.focus())
@@ -479,6 +545,7 @@ class MyApp(Frame):
                             "Double click to see base run results", "Double click to see mod run results", dir_1, dir_2
                         )
                     )
+        self.last_results = results
 
     def add_to_log(self, message):
         self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
@@ -660,7 +727,7 @@ class MyApp(Frame):
         if self.long_thread:
             messagebox.showerror("Cannot run another thread, wait for the current to finish -- how'd you get here?!?")
             return
-        potential_num_threads = self.num_threads_spinner.get()
+        potential_num_threads = self.num_threads_var.get()
         try:
             num_threads = int(potential_num_threads)
         except ValueError:

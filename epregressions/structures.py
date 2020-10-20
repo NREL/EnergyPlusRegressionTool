@@ -445,7 +445,7 @@ class CompletedStructure:
             print(this_exception)
             raise this_exception
 
-    def to_json_summary(self, json_file_path):
+    def to_json_summary(self, json_file_path=None):
         output_data = {
             'directories': {
                 'case_a_source': self.case_a_source_dir,
@@ -473,6 +473,9 @@ class CompletedStructure:
             },
             'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
         }
-        output_string = json.dumps(output_data, indent=2)
-        with open(json_file_path, 'w') as json_file:
-            json_file.write(output_string)
+        if json_file_path:
+            output_string = json.dumps(output_data, indent=2)
+            with open(json_file_path, 'w') as json_file:
+                json_file.write(output_string)
+        else:
+            return output_data

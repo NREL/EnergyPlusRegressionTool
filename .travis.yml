@@ -18,6 +18,7 @@ jobs:
     before_script: pip3 install -r requirements.txt
     script: nosetests
     before_deploy: ./build.sh Ubuntu20
+    after_success: coveralls
   - os: osx
     name: Mac 10.15 Tests
     env: BUILD=MAC
