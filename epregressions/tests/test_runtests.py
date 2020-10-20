@@ -959,6 +959,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(TextDifferences.DIFFS, results_for_file.mtd_diffs.diff_type)
         self.assertEqual(TextDifferences.DIFFS, results_for_file.rdd_diffs.diff_type)
         self.assertEqual(TextDifferences.DIFFS, results_for_file.shd_diffs.diff_type)
+        self.assertEqual(TextDifferences.DIFFS, results_for_file.idf_diffs.diff_type)
 
     def test_base_case_but_multi_process(self):
         base = CMakeCacheMakeFileBuildDirectory()

@@ -755,6 +755,11 @@ class SuiteRunner:
                 path_to_table_diff_log)))
 
         # Do Textual Diffs
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'in.idf'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'in.idf'),
+                join(case_result_dir_2, 'in.idf'),
+                join(out_dir, 'in.idf.diff'))), TextDifferences.IDF)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),

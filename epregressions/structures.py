@@ -67,6 +67,7 @@ class TextDifferences:
     DFS = 18
     SCREEN = 19
     GLHE = 20
+    IDF = 21
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -209,6 +210,7 @@ class TestEntry:
         self.screen_diffs = None
         self.glhe_diffs = None
         self.json_diffs = None
+        self.idf_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -266,6 +268,8 @@ class TestEntry:
             self.screen_diffs = diffs
         elif diff_type == TextDifferences.GLHE:
             self.glhe_diffs = diffs
+        elif diff_type == TextDifferences.IDF:
+            self.idf_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -330,6 +334,8 @@ class TestEntry:
                 response['glhe_diffs'] = self.glhe_diffs.to_dict()
             if self.json_diffs:
                 response['json_diffs'] = self.json_diffs.to_dict()
+            if self.idf_diffs:
+                response['idf_diffs'] = self.idf_diffs.to_dict()
         return response
 
 
