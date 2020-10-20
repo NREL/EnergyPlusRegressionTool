@@ -15,7 +15,7 @@ setup(
     url='https://github.com/NREL/EnergyPlusRegressionTool',
     license='',
     author='Edwin Lee',
-    author_email='',
+    author_email='leeed2001 at gmail.com',
     description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',
