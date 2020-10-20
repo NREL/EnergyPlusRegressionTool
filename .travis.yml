@@ -10,13 +10,14 @@ jobs:
     script: nosetests
     before_deploy: ./scripts/build.sh Ubuntu18
   - os: linux
-    name: Ubuntu 20.04 Tests
+    name: Ubuntu 20.04 Tests (with coverage)
     env: BUILD=UBUNTU20
     dist: focal
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
-    script: nosetests
+    script: nosetests --with-coverage --cover-package epregressions
+    after_script: coveralls
     before_deploy: ./scripts/build.sh Ubuntu20
     after_success: coveralls
   - os: osx
