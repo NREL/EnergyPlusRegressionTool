@@ -586,6 +586,8 @@ class MyApp(Frame):
         self.build_idf_listing()
 
     def idf_move_to_active(self, _=None):
+        if self.long_thread:
+            return
         if not self.valid_idfs_in_listing:
             simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
@@ -604,6 +606,8 @@ class MyApp(Frame):
         self.idf_refresh_count_status(currently_selected_idf, True)
 
     def idf_remove_from_active(self, event=None):
+        if self.long_thread:
+            return
         if not self.valid_idfs_in_listing:
             simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
