@@ -12,10 +12,9 @@ import shutil
 import sys
 
 from difflib import unified_diff  # python's own diff library
-from multiprocessing import Process, Queue, freeze_support  # add stuff to either make series calls, or multi-threading
 
 from epregressions.diffs import math_diff, table_diff, thresh_dict as td
-from epregressions import energyplus
+from epregressions.energyplus import ExecutionArguments, execute_energyplus
 from epregressions.structures import (
     ForceRunType,
     TextDifferences,
@@ -26,7 +25,7 @@ from epregressions.structures import (
     ReportingFreq,
     TestEntry
 )
-
+from multiprocessing import Pool
 
 # get the current file path for convenience
 path = os.path.dirname(__file__)
@@ -44,11 +43,10 @@ class TestRunConfiguration:
 
 
 class TestCaseCompleted:
-    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, name_of_thread):
+    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already):
         self.run_directory = run_directory
         self.case_name = case_name
         self.run_success = run_status
-        self.name_of_thread = name_of_thread
         self.muffle_err_msg = error_msg_reported_already
 
 
@@ -99,10 +97,6 @@ class SuiteRunner:
 
         # For files that don't have a specified weather file, use Chicago
         self.default_weather_filename = "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
-
-        # Required to avoid stalls
-        if self.number_of_threads == 1:
-            freeze_support()
 
     def run_test_suite(self):
 
@@ -177,10 +171,6 @@ class SuiteRunner:
         this_test_dir = self.test_output_dir
         local_run_type = self.force_run_type
 
-        # Create queues for threaded operation
-        task_queue = Queue()
-        done_queue = Queue()
-
         # Create a job list
         energy_plus_runs = []
 
@@ -199,7 +189,7 @@ class SuiteRunner:
             parametric_file = False
             if not os.path.exists(full_input_file_path):
                 self.my_print(f"Input file does not exist: {full_input_file_path}")
-                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
+                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
 
             # copy macro files if it is an imf
@@ -217,7 +207,7 @@ class SuiteRunner:
                         )
             else:
                 self.my_print(f"Could not determine file extension, must be idf or imf: {full_input_file_path}")
-                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
+                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
 
             # copy the input file into the test directory, renaming to in.idf or in.imf
@@ -296,9 +286,9 @@ class SuiteRunner:
 
             # rewrite the idf with the (potentially) modified idf text
             with io.open(
-                os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, ep_in_filename),
-                'w',
-                encoding='utf-8'
+                    os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, ep_in_filename),
+                    'w',
+                    encoding='utf-8'
             ) as f_i:
                 f_i.write("%s\n" % idf_text)
 
@@ -336,57 +326,30 @@ class SuiteRunner:
                     epw_path = os.path.join(build_tree['weather_dir'], self.default_weather_filename)
 
             energy_plus_runs.append(
-                (
-                    energyplus.execute_energyplus,
-                    (
-                        build_tree,
-                        this_entry.basename,
-                        test_run_directory,
-                        local_run_type,
-                        self.min_reporting_freq,
-                        parametric_file,
-                        epw_path
-                    )
+                ExecutionArguments(
+                    build_tree,
+                    this_entry.basename,
+                    test_run_directory,
+                    local_run_type,
+                    self.min_reporting_freq,
+                    parametric_file,
+                    epw_path
                 )
             )
 
-        if self.number_of_threads == 1:
-            for task in energy_plus_runs:
-                # Sometime I'll look at how to squash the args down, for now just fill a temp array as needed
-                tmp_array = []
-                for val in task[1]:
-                    tmp_array.append(val)
-                if self.id_like_to_stop_now:  # pragma: no cover
-                    return  # self.my_cancelled() is called in parent function
-                ret = energyplus.execute_energyplus(*tmp_array)
-                self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
-        else:
-            # Submit tasks
-            for task in energy_plus_runs:
-                task_queue.put(task)
+        p = Pool(self.number_of_threads)
+        for run in energy_plus_runs:
+            p.apply_async(self.ep_wrapper, (run,), callback=self.ep_done, error_callback=self.ep_done)
+        p.close()
+        p.join()
 
-            # Start worker processes
-            for i in range(self.number_of_threads):
-                p = Process(target=self.threaded_worker, args=(task_queue, done_queue))
-                p.daemon = True  # this *is* "necessary" to allow cancelling the suite
-                p.start()
+    def ep_wrapper(self, run_args):
+        if self.id_like_to_stop_now:
+            return
+        return execute_energyplus(run_args)
 
-            # Get and print results
-            for i in range(len(energy_plus_runs)):
-                ret = done_queue.get()
-                self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
-
-            # Tell child processes to stop
-            for i in range(self.number_of_threads):
-                task_queue.put('STOP')
-
-    def threaded_worker(self, input_data, output):  # pragma: no cover - even with multiprocess, coverage misses this
-        for func, these_args in iter(input_data.get, 'STOP'):
-            if self.id_like_to_stop_now:
-                print("I'd like to stop now.")
-                return
-            return_val = func(*these_args)
-            output.put(return_val)  # something needs to be put into the output queue for everything to work
+    def ep_done(self, results):
+        self.my_casecompleted(TestCaseCompleted(*results))
 
     @staticmethod
     def both_files_exist(base_path_a, base_path_b, common_relative_path):

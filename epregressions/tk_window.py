@@ -345,7 +345,7 @@ class MyApp(Frame):
             status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-            status = self.try_to_set_build_1_to_dir(data['build_2_build_dir'])
+            status = self.try_to_set_build_2_to_dir(data['build_2_build_dir'])
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
             self.build_idf_listing(False, data['idfs'])
@@ -420,13 +420,12 @@ class MyApp(Frame):
     def results_double_click(self, event):
         cur_item = self.results_tree.item(self.results_tree.focus())
         col = self.results_tree.identify_column(event.x)
-        cell_value = 'unknown'
-        if col == '#0':
-            cell_value = cur_item['text']
-        elif col == '#1':
+        if col == '#1':
             cell_value = cur_item['values'][2]  # hidden column with base directory
         elif col == '#2':
             cell_value = cur_item['values'][3]  # hidden column with mod directory
+        else:
+            return
         self.open_file_browser_to_directory(cell_value)
 
     @staticmethod
@@ -570,6 +569,7 @@ class MyApp(Frame):
     def add_to_log(self, message):
         if self.log_message_listbox:
             self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
+            self.log_message_listbox.yview(END)
         if self.label_string:
             self.label_string.set(message)
 
