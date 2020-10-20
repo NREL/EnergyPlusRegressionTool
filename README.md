@@ -23,10 +23,12 @@ This tool works on all three major platforms: Windows, Mac, and Ubuntu LTS (18.0
 Travis runs tests on all the platforms, and it is regularly used on all three as well.
 
 There are two ways to install this tool:
- - Download a pre-built (by Travis) binary package through a Github release [page](https://github.com/NREL/EnergyPlusRegressionTool/releases/latest).
+ - Download a pre-built (by Travis) binary package 
+   - Downloaded from the Github release [page](https://github.com/NREL/EnergyPlusRegressionTool/releases/latest).
    - The user should not need any extra tools, including Python itself.
    - The downloaded package should be extracted and then the extracted binary should be run directly.
- - Install the library into an existing Python install using Pip (`pip install energyplusregressiontool`).
+ - Install the library into an existing Python install from [Pypi](https://pypi.org/project/EnergyPlusRegressionTool/1.8.7/) 
+   - Download using Pip (`pip install energyplusregressiontool`).
    - Obviously the user will need the existing Python install, but other dependencies are automatically installed by Pip.
    - Once installed into the Python install, there will be a binary available to run: `eplus_regression_runner`. 
 
