@@ -21,13 +21,13 @@ case ${BUILD_CONFIG} in
     ;;
 
   Mac)
-    /Users/travis/Library/Python/3.7/bin/pyinstaller --onefile --add-data "epregressions/diffs/math_diff.config:epregressions/diffs" epregressions/runner.py
+    /Users/travis/Library/Python/3.7/bin/pyinstaller --onefile --noconsole --add-data "epregressions/diffs/math_diff.config:epregressions/diffs" epregressions/runner.py
     mkdir deploy
-    tar -zcvf deploy/EnergyPlusRegressionTool-"${VERSION_STRING}"-Mac.tar.gz -C dist runner
+    tar -zcvf deploy/EnergyPlusRegressionTool-"${VERSION_STRING}"-Mac.tar.gz -C dist runner.app
     ;;
 
   Windows)
-    pyinstaller --onefile --add-data "epregressions/diffs/math_diff.config;epregressions/diffs" epregressions/runner.py
+    pyinstaller --onefile --noconsole --add-data "epregressions/diffs/math_diff.config;epregressions/diffs" epregressions/runner.py
     mkdir deploy
     /C/Program\ Files/7-zip/7z.exe a deploy/EnergyPlusRegressionTool-"${VERSION_STRING}"-Windows.zip ./dist/*
     ;;
