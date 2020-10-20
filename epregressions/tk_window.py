@@ -110,7 +110,7 @@ class MyApp(Frame):
         self.stop_button = None
         self.build_dir_1_label = None
         if system() == 'Windows':
-            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64r')  # "<Select build dir 1>")
+            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64')  # "<Select build dir 1>")
         elif system() == 'Mac':
             self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
         elif system() == 'Linux':
@@ -119,7 +119,7 @@ class MyApp(Frame):
             self.build_dir_1_var.set("<Select build dir 1>")
         self.build_dir_2_label = None
         if system() == 'Windows':
-            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64r')  # "<Select build dir 1>")
+            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64')  # "<Select build dir 1>")
         elif system() == 'Mac':
             self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
         elif system() == 'Linux':
