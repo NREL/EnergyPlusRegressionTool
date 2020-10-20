@@ -151,7 +151,10 @@ def execute_energyplus(e_args: ExecutionArguments):
         # Execute EnergyPlus
         try:
             subprocess.check_call(energyplus, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except Exception:
+        except Exception:  # pragma: no cover
+            ...
+            # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
+            #  here alone, it shows as missing on the coverage...wonky
             return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Execute readvars

@@ -24,7 +24,9 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.temp_mod_build_dir = tempfile.mkdtemp()
         self.temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
-    def establish_build_folder(self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False):
+    def establish_build_folder(
+            self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False, alt_filename=None
+    ):
         with open(os.path.join(target_build_dir, 'CMakeCache.txt'), 'w') as f:
             f.write('HEY\n')
             f.write('CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' % target_source_dir)
@@ -94,7 +96,10 @@ class TestTestSuiteRunner(unittest.TestCase):
             os.makedirs(idf_dir)
         else:
             idf_dir = testfiles_dir
-        with open(os.path.join(idf_dir, 'my_file.idf'), 'w') as f:
+        filename = 'my_file.idf'
+        if alt_filename:
+            filename = alt_filename
+        with open(os.path.join(idf_dir, filename), 'w') as f:
             f.write(json_text)
         with open(os.path.join(testfiles_dir, 'my_file.rvi'), 'w') as f_rvi:
             f_rvi.write('RVI TEXT')
@@ -276,16 +281,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -371,16 +367,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -390,6 +377,65 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should have succeeded in both base and mod cases
         self.assertEqual(EndErrSummary.STATUS_FATAL, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+
+    def test_bad_file_extension(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "fatal",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            alt_filename='my_file.iQf'
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            alt_filename='my_file.iQf'
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry('my_file.iQf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries, mute=True)
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case2)
 
     def test_expect_death_succeeds(self):
         base = CMakeCacheMakeFileBuildDirectory()
@@ -437,16 +483,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -503,16 +540,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -569,16 +597,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -635,16 +654,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -701,16 +711,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -933,16 +934,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))

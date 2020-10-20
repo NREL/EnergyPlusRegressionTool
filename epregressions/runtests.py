@@ -53,7 +53,10 @@ class TestCaseCompleted:
 # the actual main test suite run class
 class SuiteRunner:
 
-    def __init__(self, run_config, these_entries):
+    def __init__(self, run_config, these_entries, mute=False):
+
+        # initialize the master mute button -- this is overridden by registering callbacks
+        self.mute = mute
 
         # initialize callbacks
         self.print_callback = None
@@ -344,7 +347,7 @@ class SuiteRunner:
         p.join()
 
     def ep_wrapper(self, run_args):
-        if self.id_like_to_stop_now:
+        if self.id_like_to_stop_now:  # pragma: no cover -- not going to try to catch this exact moment
             return
         return execute_energyplus(run_args)
 
@@ -929,6 +932,7 @@ class SuiteRunner:
 
     def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
                       diffcompleted_callback, alldone_callback, cancel_callback):
+        self.mute = False
         self.print_callback = print_callback
         self.starting_callback = simstarting_callback
         self.case_completed_callback = casecompleted_callback
@@ -938,6 +942,8 @@ class SuiteRunner:
         self.cancel_callback = cancel_callback
 
     def my_print(self, msg):
+        if self.mute:
+            return
         if self.print_callback:
             self.print_callback(msg)
             # print(msg) #can uncomment to debug
@@ -945,16 +951,20 @@ class SuiteRunner:
             print(msg)
 
     def my_starting(self, number_of_cases_per_build):
+        if self.mute:
+            return
         if self.starting_callback:
             self.starting_callback(number_of_cases_per_build)
         else:  # pragma: no cover
             self.my_print(
-                "Starting runtests, # builds = %i, # cases per build = %i" % (
+                "Starting runtests, # cases per build = %i" % (
                     number_of_cases_per_build
                 )
             )
 
     def my_casecompleted(self, test_case_completed_instance):
+        if self.mute:
+            return
         if self.case_completed_callback:
             self.case_completed_callback(test_case_completed_instance)
         else:  # pragma: no cover
@@ -966,24 +976,32 @@ class SuiteRunner:
             )
 
     def my_simulationscomplete(self):
+        if self.mute:
+            return
         if self.simulations_complete_callback:
             self.simulations_complete_callback()
         else:  # pragma: no cover
             self.my_print("Completed all simulations")
 
     def my_diffcompleted(self, case_name):
+        if self.mute:
+            return
         if self.diff_completed_callback:
             self.diff_completed_callback()
         else:  # pragma: no cover
             self.my_print("Completed diffing case: %s" % case_name)
 
     def my_alldone(self, results):
+        if self.mute:
+            return
         if self.all_done_callback:
             self.all_done_callback(results)
         else:  # pragma: no cover
             self.my_print("Completed runtests")
 
     def my_cancelled(self):  # pragma: no cover
+        if self.mute:
+            return
         if self.cancel_callback:
             self.cancel_callback()
         else:

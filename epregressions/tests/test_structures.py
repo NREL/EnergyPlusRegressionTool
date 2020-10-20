@@ -8,8 +8,22 @@ from epregressions.structures import (
     TableDifferences,
     EndErrSummary,
     TestEntry,
-    CompletedStructure
+    CompletedStructure,
+    ForceRunType,
+    ReportingFreq
 )
+
+
+class TestForceRunType(unittest.TestCase):
+
+    def test_get_all(self):
+        self.assertIsInstance(ForceRunType.get_all(), list)
+
+
+class TestReportingFrequency(unittest.TestCase):
+
+    def test_get_all(self):
+        self.assertIsInstance(ReportingFreq.get_all(), list)
 
 
 class TestTextDifferences(unittest.TestCase):
@@ -199,3 +213,14 @@ class TestCompletedStructure(unittest.TestCase):
             self.assertIn('runs', obj)
             self.assertIn('diffs', obj)
             self.assertIn('results_by_file', obj)
+
+    def test_to_json_object_response(self):
+        c = CompletedStructure('/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2')
+        t = TestEntry('filename', 'weather')
+        t = TestTestEntry.fully_populated_entry_successful(t)
+        c.add_test_entry(t)
+        obj = c.to_json_summary()
+        self.assertIn('directories', obj)
+        self.assertIn('runs', obj)
+        self.assertIn('diffs', obj)
+        self.assertIn('results_by_file', obj)

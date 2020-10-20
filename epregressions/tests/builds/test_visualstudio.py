@@ -65,3 +65,13 @@ class TestVisualStudioBuildMethods(unittest.TestCase):
         self.build.set_build_directory(self.run_dir)
         tree = self.build.get_build_tree()
         self.assertIsInstance(tree, dict)
+
+    def test_get_idf_dir_before_setting_build_directory(self):
+        with self.assertRaises(Exception):
+            self.build.get_idf_directory()
+
+    def test_get_idf_dir(self):
+        self.set_cache_file()
+        self.build.set_build_directory(self.run_dir)
+        idf_dir = self.build.get_idf_directory()
+        self.assertEqual(os.path.join(self.dummy_source_dir, 'testfiles'), idf_dir)
