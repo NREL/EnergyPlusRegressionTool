@@ -19,9 +19,11 @@ from tkinter import (
     filedialog, simpledialog,  # system dialogs
 )
 from typing import List, Union
+import webbrowser
 
 from pubsub import pub
 
+from epregressions import VERSION
 from epregressions.epw_map import get_epw_for_idf
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
@@ -167,17 +169,21 @@ class MyApp(Frame):
 
     def init_window(self):
         # changing the title of our master widget
-        self.root.title("EnergyPlus Regression Tool 2")
+        self.root.title("EnergyPlus Regression Tool")
         self.root.protocol("WM_DELETE_WINDOW", self.client_exit)
 
         # create the menu
         menu = Menu(self.root)
         self.root.config(menu=menu)
         file_menu = Menu(menu)
-        file_menu.add_command(label="Open Project", command=self.client_open)
-        file_menu.add_command(label="Save Project", command=self.client_save)
+        file_menu.add_command(label="Open Project...", command=self.client_open)
+        file_menu.add_command(label="Save Project...", command=self.client_save)
         file_menu.add_command(label="Exit", command=self.client_exit)
         menu.add_cascade(label="File", menu=file_menu)
+        help_menu = Menu(menu)
+        help_menu.add_command(label="Open Documentation...", command=self.open_documentation)
+        help_menu.add_command(label="About...", command=self.about_dialog)
+        menu.add_cascade(label="Help", menu=help_menu)
 
         # main notebook holding everything
         main_notebook = ttk.Notebook(self.root)
@@ -447,6 +453,20 @@ class MyApp(Frame):
                 print(this_exception)
         return p
 
+    @staticmethod
+    def open_documentation():
+        url = 'https://energyplusregressiontool.readthedocs.io/en/latest/'
+        # noinspection PyBroadException
+        try:
+            webbrowser.open_new_tab(url)
+        except Exception:
+            # error message
+            messagebox.showerror("Docs problem", "Could not open documentation in browser")
+
+    @staticmethod
+    def about_dialog():
+        messagebox.showinfo("About", f"EnergyPlus Regression Tool\nVersion: {VERSION}")
+
     def build_idf_listing(self, initialize=False, desired_selected_idfs: List[str] = None):
         # if we don't have a specific list, then try to save any already selected ones first
 
@@ -548,8 +568,10 @@ class MyApp(Frame):
         self.last_results = results
 
     def add_to_log(self, message):
-        self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
-        self.label_string.set(message)
+        if self.log_message_listbox:
+            self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
+        if self.label_string:
+            self.label_string.set(message)
 
     def clear_log(self):
         self.log_message_listbox.delete(0, END)
@@ -668,14 +690,18 @@ class MyApp(Frame):
     def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
+            self.add_to_log("Could not detect build 1 type")
             return False
         elif probable_build_dir_type == KnownBuildTypes.Installation:
+            self.add_to_log("Build 1 type detected as an EnergyPlus Install")
             self.build_1 = EPlusInstallDirectory()
             self.build_1.set_build_directory(selected_dir)
         elif probable_build_dir_type == KnownBuildTypes.VisualStudio:
+            self.add_to_log("Build 1 type detected as a Visual Studio build")
             self.build_1 = CMakeCacheVisualStudioBuildDirectory()
             self.build_1.set_build_directory(selected_dir)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
+            self.add_to_log("Build 1 type detected as a Makefile-style build")
             self.build_1 = CMakeCacheMakeFileBuildDirectory()
             self.build_1.set_build_directory(selected_dir)
         return True
@@ -698,14 +724,18 @@ class MyApp(Frame):
     def try_to_set_build_2_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
+            self.add_to_log("Could not detect build 2 type")
             return False
         elif probable_build_dir_type == KnownBuildTypes.Installation:
+            self.add_to_log("Build 2 type detected as an EnergyPlus Install")
             self.build_2 = EPlusInstallDirectory()
             self.build_2.set_build_directory(selected_dir)
         elif probable_build_dir_type == KnownBuildTypes.VisualStudio:
+            self.add_to_log("Build 2 type detected as a Visual Studio build")
             self.build_2 = CMakeCacheVisualStudioBuildDirectory()
             self.build_2.set_build_directory(selected_dir)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
+            self.add_to_log("Build 2 type detected as a Makefile-style build")
             self.build_2 = CMakeCacheMakeFileBuildDirectory()
             self.build_2.set_build_directory(selected_dir)
         return True

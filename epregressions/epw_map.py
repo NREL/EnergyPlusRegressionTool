@@ -776,6 +776,6 @@ def get_epw_for_idf(repo_source_dir: str, idf: str) -> Union[None, str]:
             return None
     else:
         # it appears we have an e+ install folder, try to look up the value, return None if not found
-        return epw_map.get(idf, default=None)
+        return epw_map.get(idf, None)
     # if something went really awry, just return None to use to the default
     return None
