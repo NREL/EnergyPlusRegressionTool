@@ -50,8 +50,8 @@ class TestVisualStudioBuildMethods(unittest.TestCase):
 
     def test_verify_with_release_folder(self):
         self.set_cache_file()
-        self.build.set_build_directory(self.run_dir)
         os.makedirs(os.path.join(self.run_dir, 'Products', 'Release'))
+        self.build.set_build_directory(self.run_dir)
         check = self.build.verify()
         self.assertIsInstance(check, list)
         self.assertGreaterEqual(len(check), 4)  # there should be some errors
