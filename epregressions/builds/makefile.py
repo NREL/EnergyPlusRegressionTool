@@ -39,53 +39,6 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             raise Exception('Build directory has not been set with set_build_directory()')
         return os.path.join(self.source_directory, 'testfiles')
 
-    def verify(self):
-        results = []
-        if not self.build_directory:
-            raise Exception('Build directory has not been set with set_build_directory()')
-        build_dir = self.build_directory
-        exists = os.path.exists(build_dir)
-        results.append(
-            ["Case %s Build Directory Exists? ", build_dir, exists]
-        )
-        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
-        exists = os.path.exists(cmake_cache_file)
-        results.append(
-            ["Case %s Build CMake Cache? ", cmake_cache_file, exists]
-        )
-        exists = os.path.exists(self.source_directory)
-        results.append(
-            ["Case %s Source Directory Exists? ", self.source_directory, exists]
-        )
-        test_files_dir = os.path.join(self.source_directory, 'testfiles')
-        exists = os.path.exists(test_files_dir)
-        results.append(
-            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
-        )
-        data_sets_dir = os.path.join(self.source_directory, 'datasets')
-        exists = os.path.exists(data_sets_dir)
-        results.append(
-            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
-        )
-        products_dir = os.path.join(self.build_directory, 'Products')
-        exists = os.path.exists(products_dir)
-        results.append(
-            ["Case %s Products Directory Exists? ", products_dir, exists]
-        )
-        energy_plus_exe = os.path.join(
-            self.build_directory, 'Products', 'energyplus' + exe_extension()
-        )
-        exists = os.path.exists(energy_plus_exe)
-        results.append(
-            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
-        )
-        basement_exe = os.path.join(self.build_directory, 'Products', 'Basement' + exe_extension())
-        exists = os.path.exists(basement_exe)
-        results.append(
-            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
-        )
-        return results
-
     def get_build_tree(self):
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
