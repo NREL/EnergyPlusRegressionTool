@@ -1,3 +1,4 @@
 [report]
 omit =
+  epregressions/runner.py
   epregressions/tk_window.py

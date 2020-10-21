@@ -4,6 +4,8 @@
 # if no command line args are given, it is gui operation
 # but don't try to import any Tk/Gui stuff unless we are doing GUI operation
 
+# TODO: Add unit test coverage once we start adding more entry points, remove from omission block in .coveragerc
+
 from sys import argv
 
 
