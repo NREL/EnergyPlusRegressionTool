@@ -43,10 +43,6 @@ class TestBaseBuildMethods(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.base_build.set_build_directory('hello')
 
-    def test_verify_abstract(self):
-        with self.assertRaises(NotImplementedError):
-            self.base_build.verify()
-
     def test_get_build_tree_abstract(self):
         with self.assertRaises(NotImplementedError):
             self.base_build.get_build_tree()
@@ -54,6 +50,10 @@ class TestBaseBuildMethods(unittest.TestCase):
     def test_get_idf_directory(self):
         with self.assertRaises(NotImplementedError):
             self.base_build.get_idf_directory()
+
+    def test_verify_without_setting_build_dir(self):
+        with self.assertRaises(Exception):
+            self.base_build.verify()
 
     def test_get_idfs(self):
         temp_idf_dir = tempfile.mkdtemp()
