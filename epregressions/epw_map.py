@@ -758,7 +758,8 @@ def get_epw_for_idf(repo_source_dir: str, idf: str) -> Union[None, str]:
         cmake_lists = os.path.join(test_files_dir, 'CMakeLists.txt')
         if os.path.exists(cmake_lists):
             # it appears we can look up the IDF in this file
-            lines = open(cmake_lists).readlines()
+            with open(cmake_lists) as f_cmake:
+                lines = f_cmake.readlines()
             for line in lines:
                 cleaned = line.strip()
                 if cleaned.startswith('#'):

@@ -35,7 +35,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         os.makedirs(products_dir)
         read_vars_dir = os.path.join(target_source_dir, 'bin', 'EPMacro', 'Linux')
         os.makedirs(read_vars_dir)
-        if system() == 'Windows':
+        if system() == 'Windows':  # pragma: no cover  -- not running coverage results on Travis on Windows
             # if we are on windows, we need to prepackage up the python scripts as exe files for them to run
             # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
             # variables and run them all.  Also we don't want to run them for every single test, just once if the dist/

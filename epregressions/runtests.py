@@ -346,8 +346,8 @@ class SuiteRunner:
         p.close()
         p.join()
 
-    def ep_wrapper(self, run_args):
-        if self.id_like_to_stop_now:  # pragma: no cover -- not going to try to catch this exact moment
+    def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
+        if self.id_like_to_stop_now:
             return
         return execute_energyplus(run_args)
 

@@ -1,0 +1,3 @@
+[report]
+omit =
+  epregressions/tk_window.py
