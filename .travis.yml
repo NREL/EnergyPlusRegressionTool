@@ -16,7 +16,7 @@ jobs:
     language: python
     python: 3.6
     before_script: pip3 install -r requirements.txt
-    script: nosetests --with-coverage --cover-html --cover-package epregressions
+    script: nosetests --with-coverage --cover-package epregressions  # --cover-html for local html results
     after_script: coveralls
     before_deploy: ./scripts/build.sh Ubuntu20
     after_success: coveralls
