@@ -145,8 +145,8 @@ class SuiteRunner:
             self.my_print('Could not write results summary file: ' + str(this_exception))
 
         self.my_print("Test suite complete for directories:")
-        self.my_print("\t%s" % self.build_tree_a['build_dir'])
-        self.my_print("\t%s" % self.build_tree_b['build_dir'])
+        self.my_print(" --build-1--> %s" % self.build_tree_a['build_dir'])
+        self.my_print(" --build-2--> %s" % self.build_tree_b['build_dir'])
         self.my_print("Test suite complete")
 
         self.my_alldone(response)

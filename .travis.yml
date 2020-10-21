@@ -60,20 +60,20 @@ deploy:
     secure: dtm5qvOwBnYI37k0X5bQ1tJweOs5UTV65vv1vGa+TaU8eAE1KHmTIhNedZg7aRWYSpLRz/hdhGPjVBxid7VIvtIqFI4HX6wJ9Mf6aFL6uoFM5mUhtBrBo7TkcYG+oSQ5eftCDVO0449iKi0mzXgfl5szNXns1/VthK15+MGBQr12hNu+l0aWG3gWyweUnpJ3x4nORXU01v3yLTl+4J/UNOBzJvziXNub/7idF+v//hsoesLJuwKUjUBRmCackTFEiO/t9Atr4fMbI9Fksd+8TBaYplwz6ZwqKKtI1itrAe9af2PRTic7ZWmLI36U5KrGkH6yERFY2MAOgwHmirlkKfPknW1zLxaBMtgimdMhM9iVhNShC6+D1OpwFxiQEleQvS7ASFGLHeBuK2YK5QTH/4e9j1hGcaIrBg/J3JCPr9EYcqS2shUu0DxOyfQzI/M5vWDcY/suwZb0hijqXYDg9T+qIxdmlzV7RFwj6cSsVKvpLJSoAgZmoEAruze+iCp4jKdP/mEyvslbcLYt4MeGv8BydcX6jaLTgqMFYg3cZuWKATT6KVc6DaaL+Ptc5kIhw7GHMfkFyVe9lRAKiDDvvV1VIrnSyYcJ1m+i5XdSe5/IeCMuj0aTx1iTa0gi4CoKLIdWYvAbbGGjj9s8VT7nxH4c4WPosKabPyM1pt7MDPk=
   file_glob: true
   file: deploy/*
-  skip_cleanup: true
+  skip_cleanup: true  # remove later when Travis DPL2 becomes default, it will default to not cleaning up
   overwrite: true
   on:
     tags: true
     repo: NREL/EnergyPlusRegressionTool
     condition: $BUILD != PYPI
 - provider: pypi
-  skip_cleanup: true
-  skip_upload_docs: true
+  skip_cleanup: true  # remove later when Travis DPL2 becomes default, it will default to not cleaning up
+  upload_docs: false
   username: Myoldmopar
+  distributions: sdist bdist_wheel
   password:
     secure: "OuBZMCgJ3LZerXhE/Zvp3Qy6adpkyRo0GKR+ZSt28ggna3T3Ejd2y+GNdeJxqx05UCPfSJVuH4bqs0ILDXf8TzwyAWCRhQvZNZOR/vhWMha/zvx5czGrqUEgm+YdmxUsCTIUBIoFdn5He1C4e5qQ49Epn5o0EK6OrBfYoTu/hT5sP054WByX3u2VPL31gtQ9wyOOG85bBY2obl7tA0M/rdP2Xg28PyxhdSQLbfIz28r7ud/8+jfuFoDD2MWYrr97lPD4vVuf7tUWfSnRf5sVS+i0brOQI0g48nTuKd7WLYEqRj0jEDxAAaBwt3ZS90EH4Y7164TIjT2GwfmTB65Ev6QNeKlLX9JjyVSjOdjglKXFrcDPXqgvVxCJ36ds37q2iUaqIqIKFePamWp5cfHV/7VT4hEasc28G9HM6KXtLIjm+85fRn+v2/5+R7l4Pv6En+b9BkrTKu5GU/DvV7/BMMhS/4I5CBar1B7oeFQh6XmWtSWv3oglwb5nGzp1j9HHy0Uhda0FXLlHEOdvToeabpHnCoOMLK4Un+QPBwjrve+DOVUkD1Iy9a4CpE4cV3v5C+JYiKYOPRtt08CVAot7/gTZUAzARJZDFOd4IjvT7fhxU+OhDpxzh3IA5iXijqaqm/4geWzzS3cJrnASUuarE9TpysispFRQW7GEVE20GXw="
   on:
     tags: true
-    distributions: sdist bdist_wheel
     repo: NREL/EnergyPlusRegressionTool
     condition: $BUILD = PYPI
