@@ -12,7 +12,7 @@ from platform import system
 import shutil
 import sys
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, 'frozen', False):  # pragma: no cover -- not covering frozen apps in unit tests
     frozen = True
 else:
     frozen = False
@@ -353,7 +353,7 @@ class SuiteRunner:
         # class and add some extra stuff in there, but I could not figure out how to integrate that along with the
         # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
         # multithreaded.
-        if frozen and system() == 'Windows':
+        if frozen and system() == 'Windows':  # pragma: no cover -- not covering frozen apps in unit tests
             for run in energy_plus_runs:
                 ep_return = self.ep_wrapper(run)
                 self.ep_done(ep_return)
