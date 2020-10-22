@@ -8,8 +8,14 @@ from datetime import datetime
 import io
 import json
 import os
+from platform import system
 import shutil
 import sys
+
+if getattr(sys, 'frozen', False):
+    frozen = True
+else:
+    frozen = False
 
 from difflib import unified_diff  # python's own diff library
 
@@ -340,11 +346,23 @@ class SuiteRunner:
                 )
             )
 
-        p = Pool(self.number_of_threads)
-        for run in energy_plus_runs:
-            p.apply_async(self.ep_wrapper, (run,), callback=self.ep_done, error_callback=self.ep_done)
-        p.close()
-        p.join()
+        # So...on Windows, pyinstaller freezes the application, and then multiprocessing vomits on this.
+        # If you are running this from code, say from a Pip install, it works fine.  It's merely the combination of
+        # freezing _plus_ multiprocessing.  Apparently the tool needs to run multiprocessing.freeze_support(), which I
+        # tried, but that wasn't sufficient.  There is also a hack you can do to override the multiprocessing.Process
+        # class and add some extra stuff in there, but I could not figure out how to integrate that along with the
+        # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
+        # multithreaded.
+        if frozen and system() == 'Windows':
+            for run in energy_plus_runs:
+                ep_return = self.ep_wrapper(run)
+                self.ep_done(ep_return)
+        else:  # for all other applications, run them in a multiprocessing pool
+            p = Pool(self.number_of_threads)
+            for run in energy_plus_runs:
+                p.apply_async(self.ep_wrapper, (run,), callback=self.ep_done, error_callback=self.ep_done)
+            p.close()
+            p.join()
 
     def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
