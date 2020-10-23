@@ -24,7 +24,6 @@ class ExecutionArguments:
 
 # noinspection PyBroadException
 def execute_energyplus(e_args: ExecutionArguments):
-
     # setup a few paths
     energyplus = e_args.build_tree['energyplus']
     basement = e_args.build_tree['basement']
@@ -39,7 +38,6 @@ def execute_energyplus(e_args: ExecutionArguments):
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
-
     try:
 
         new_idd_path = os.path.join(e_args.test_run_directory, 'Energy+.idd')
@@ -66,14 +64,18 @@ def execute_energyplus(e_args: ExecutionArguments):
             with open('in.imf', 'w') as f:
                 for line in newlines:
                     f.write(line)
-            macro_run = subprocess.Popen(epmacro, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            macro_run = subprocess.Popen(
+                epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             macro_run.communicate()
             os.rename('out.idf', 'in.idf')
 
         # Run Preprocessor -- after EPMacro?
         if e_args.this_parametric_file:
-            parametric_run = subprocess.Popen(parametric + ' in.idf', shell=True, stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE)
+            parametric_run = subprocess.Popen(
+                parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             parametric_run.communicate()
             candidate_files = glob.glob('in-*.idf')
             if len(candidate_files) > 0:
@@ -85,7 +87,9 @@ def execute_energyplus(e_args: ExecutionArguments):
                 return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Run ExpandObjects and process as necessary
-        expand_objects_run = subprocess.Popen(expandobjects, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        expand_objects_run = subprocess.Popen(
+            expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         expand_objects_run.communicate()
         if os.path.exists('expanded.idf'):
             if os.path.exists('in.idf'):
@@ -97,7 +101,8 @@ def execute_energyplus(e_args: ExecutionArguments):
                 basement_environment = os.environ.copy()
                 basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
                 basement_run = subprocess.Popen(
-                    basement, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=basement_environment
+                    basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, env=basement_environment
                 )
                 basement_run.communicate()
                 with open('EPObjects.TXT') as f:
@@ -113,7 +118,9 @@ def execute_energyplus(e_args: ExecutionArguments):
 
             if os.path.exists('GHTIn.idf'):
                 shutil.copy(slabidd, e_args.test_run_directory)
-                slab_run = subprocess.Popen(slab, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                slab_run = subprocess.Popen(
+                    slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 slab_run.communicate()
                 with open('SLABSurfaceTemps.TXT') as f:
                     append_text = f.read()
@@ -150,7 +157,9 @@ def execute_energyplus(e_args: ExecutionArguments):
 
         # Execute EnergyPlus
         try:
-            subprocess.check_call(energyplus, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.check_call(
+                energyplus, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         except Exception:  # pragma: no cover
             ...
             # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
@@ -159,17 +168,27 @@ def execute_energyplus(e_args: ExecutionArguments):
 
         # Execute readvars
         if os.path.exists('in.rvi'):
-            csv_run = subprocess.Popen(readvars + ' in.rvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            csv_run = subprocess.Popen(
+                readvars + ' in.rvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         else:
-            csv_run = subprocess.Popen(readvars, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            csv_run = subprocess.Popen(
+                readvars, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         csv_run.communicate()
         if os.path.exists('in.mvi'):
-            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            mtr_run = subprocess.Popen(
+                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         else:
             with open('in.mvi', 'w') as f:
                 f.write("eplusout.mtr\n")
                 f.write("eplusmtr.csv\n")
-            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            mtr_run = subprocess.Popen(
+                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         mtr_run.communicate()
 
         os.remove(new_idd_path)

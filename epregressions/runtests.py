@@ -354,6 +354,7 @@ class SuiteRunner:
         # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
         # multithreaded.
         if frozen and system() == 'Windows':  # pragma: no cover -- not covering frozen apps in unit tests
+            self.my_print("Ignoring num_threads on frozen Windows instance, just running with one thread.")
             for run in energy_plus_runs:
                 ep_return = self.ep_wrapper(run)
                 self.ep_done(ep_return)
@@ -367,6 +368,7 @@ class SuiteRunner:
     def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
             return
+        self.my_print("EP STARTING!?")
         return execute_energyplus(run_args)
 
     def ep_done(self, results):
