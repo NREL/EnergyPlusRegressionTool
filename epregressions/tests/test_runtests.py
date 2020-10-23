@@ -25,7 +25,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
     def establish_build_folder(
-            self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False, alt_filename=None
+            self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False, alt_filename=None, py_file=False
     ):
         with open(os.path.join(target_build_dir, 'CMakeCache.txt'), 'w') as f:
             f.write('HEY\n')
@@ -117,6 +117,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             f_macro_extra.write('##MACROTEXT')
         with open(os.path.join(testfiles_dir, 'EMSTestMathAndKill.idf'), 'w') as f_kill:
             f_kill.write(json_text)
+        if py_file:
+            with open(os.path.join(idf_dir, "my_file.py"), 'w') as f:
+                f.write("hello")
         weather_dir = os.path.join(target_source_dir, 'weather')
         os.makedirs(weather_dir)
         shutil.copy(os.path.join(self.resources, 'dummy.in.epw'), os.path.join(weather_dir, 'my_weather.epw'))
@@ -152,7 +155,8 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "eso_results": "base",
                     "txt_results": "base"
                 }
-            }
+            },
+            py_file=True
         )
         base.set_build_directory(self.temp_base_build_dir)
         base.run = True
@@ -215,6 +219,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.eso')))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.end')))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.csv')))
+
+        # file in dir A has accompanying python plugin file, so it should be copied in, but not in build B
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'my_file.py')))
+        self.assertFalse(os.path.exists(os.path.join(diff_results.results_dir_b, 'my_file', 'my_file.py')))
+
         # check the diffs
         self.assertEqual('All Equal', results_for_file.eso_diffs.diff_type)
         self.assertEqual('All Equal', results_for_file.mtr_diffs.diff_type)
