@@ -353,7 +353,7 @@ class SuiteRunner:
         # class and add some extra stuff in there, but I could not figure out how to integrate that along with the
         # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
         # multithreaded.
-        if frozen and system() == 'Windows':  # pragma: no cover -- not covering frozen apps in unit tests
+        if frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover -- not covering frozen apps in unit tests
             self.my_print("Ignoring num_threads on frozen Windows instance, just running with one thread.")
             for run in energy_plus_runs:
                 ep_return = self.ep_wrapper(run)
