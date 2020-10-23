@@ -368,7 +368,6 @@ class SuiteRunner:
     def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
             return
-        self.my_print("EP STARTING!?")
         return execute_energyplus(run_args)
 
     def ep_done(self, results):
