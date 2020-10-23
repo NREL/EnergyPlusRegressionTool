@@ -7,6 +7,7 @@
 # TODO: Add unit test coverage once we start adding more entry points, remove from omission block in .coveragerc
 
 from multiprocessing import set_start_method
+from platform import system
 from sys import argv
 
 
@@ -17,7 +18,8 @@ def main_gui():
 
 
 if __name__ == "__main__":
-    set_start_method('forkserver')
+    if system() == 'Darwin':
+        set_start_method('forkserver')
     if len(argv) == 1:  # GUI
         main_gui()
     else:  # Non-GUI operation, execute some command
