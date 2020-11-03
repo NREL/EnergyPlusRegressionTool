@@ -32,6 +32,20 @@ There are two ways to install this tool:
    - Obviously the user will need the existing Python install, but other dependencies are automatically installed by Pip.
    - Once installed into the Python install, there will be a binary available to run: `eplus_regression_runner`. 
 
+### Limitations
+
+There are a couple limitation "gotchas" in here, however.  A couple statements ahead of this:
+ - When we create the standalone installer, we use `pyinstaller` to _freeze_ the program and all dependencies.
+ - When we run EnergyPlus, we have to run in multiple processes, not just multiple threads, because of thread-unsafety within EnergyPlus itself.
+ 
+There is an issue with the combination of these two things that cause the program to not work well on Windows and Mac.
+If you try to freeze the program but use the multiprocessing library to create child instances, it fails.
+There are notes on the web about how to remedy this by calling special functions at the entry of the code, but I could not get them to work fully.
+So for now, if you use the frozen downloadable version of the program on Windows or Mac, it will not run EnergyPlus in multiple processes.
+
+However, if you install the library into a Python install using Pip, the program is never frozen using `pyinstaller`, and seems to work just fine across platforms even with multiprocessing.
+The best install path is to run in that fashion, but if you cannot, you can download the frozen version and just accept the single process for now.
+
 ## Development
 
 For setting up a development environment to do _work_ on this tool, the steps are pretty minimal:
