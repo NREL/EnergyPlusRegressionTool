@@ -46,6 +46,7 @@ box_spacing = 2
 force_none = "Don't force anything"
 force_dd = "Force design day simulations only"
 force_annual = "Force annual run-period simulations"
+force_revdd = "Force reverse design day simulations only"
 
 
 class IDFListViewColumnIndex:
@@ -350,6 +351,8 @@ class RegressionGUI(Gtk.Window):
                     self.force_run_type = ForceRunType.DD
                 elif run_config_option == "ANNUAL":
                     self.force_run_type = ForceRunType.ANNUAL
+                elif run_config_option == "REVERSEDD":
+                    self.force_run_type = ForceRunType.REVDD
             if 'reportfreq' in suite_data:
                 self.report_frequency = suite_data['reportfreq']
             if 'numthreads' in suite_data:
@@ -375,6 +378,8 @@ class RegressionGUI(Gtk.Window):
                 self.run_type_combo_box.set_active(1)
             elif self.force_run_type == ForceRunType.ANNUAL:
                 self.run_type_combo_box.set_active(2)
+            elif self.force_run_type == ForceRunType.REVDD:
+                self.run_type_combo_box.set_active(3)
         if self.report_frequency:
             if self.report_frequency == ReportingFreq.DETAILED:
                 self.report_frequency_combo_box.set_active(0)
@@ -460,6 +465,8 @@ class RegressionGUI(Gtk.Window):
             output_object['suiteoptions']['runconfig'] = "DDONLY"
         elif self.force_run_type == ForceRunType.ANNUAL:
             output_object['suiteoptions']['runconfig'] = "ANNUAL"
+        elif self.force_run_type == ForceRunType.REVDD:
+            output_object['suiteoptions']['runconfig'] = "REVERSEDD"
         output_object['suiteoptions']['reportfreq'] = self.report_frequency
         output_object['suiteoptions']['numthreads'] = self.num_threads_to_run
 
@@ -634,6 +641,7 @@ class RegressionGUI(Gtk.Window):
         self.run_type_combo_box.append_text(force_none)
         self.run_type_combo_box.append_text(force_dd)
         self.run_type_combo_box.append_text(force_annual)
+        self.run_type_combo_box.append_text(force_revdd)
         self.run_type_combo_box.connect("changed", self.suite_option_handler_force_run_type)
         alignment = Gtk.Alignment(xalign=0.0, yalign=0.5, xscale=1.0, yscale=0.0)
         alignment.add(self.run_type_combo_box)
@@ -1436,6 +1444,8 @@ class RegressionGUI(Gtk.Window):
             self.force_run_type = ForceRunType.DD
         elif text == force_annual:
             self.force_run_type = ForceRunType.ANNUAL
+        elif text == force_revdd:
+            self.force_run_type = ForceRunType.REVDD
         else:
             # error
             widget.set_active(0)
@@ -1542,6 +1552,10 @@ class RegressionGUI(Gtk.Window):
         elif current_config == ForceRunType.ANNUAL:
             self.suite_dir_struct_info.set_markup(
                 "A 'Tests-Annual' dir will be created in each run directory. Comparison results will be in run dir 1."
+            )
+        elif current_config == ForceRunType.REVDD:
+            self.suite_dir_struct_info.set_markup(
+                "A 'Tests-REVDDOnly' dir will be created in each run directory. Comparison results will be in run dir 1."
             )
         else:
             pass  # gonna go ahead and say this won't happen
