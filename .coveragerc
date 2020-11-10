@@ -1,10 +1,4 @@
-[run]
-source =
-    epregressions
+[report]
 omit =
-    /usr/*
-    .tox/*
-    */.pyenv/*
-    */virtualenv/*
-    */virtualenvs/*
-    epregressions/try_treeview.py
+  epregressions/runner.py
+  epregressions/tk_window.py

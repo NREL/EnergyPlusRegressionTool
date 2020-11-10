@@ -1,6 +1,8 @@
 import json
 import os
+from platform import system
 import shutil
+from subprocess import check_call
 import tempfile
 import unittest
 
@@ -22,7 +24,9 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.temp_mod_build_dir = tempfile.mkdtemp()
         self.temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
 
-    def establish_build_folder(self, target_build_dir, target_source_dir, idf_config):
+    def establish_build_folder(
+            self, target_build_dir, target_source_dir, idf_config, idf_in_dir=False, alt_filename=None, py_file=False
+    ):
         with open(os.path.join(target_build_dir, 'CMakeCache.txt'), 'w') as f:
             f.write('HEY\n')
             f.write('CMAKE_HOME_DIRECTORY:INTERNAL=%s\n' % target_source_dir)
@@ -31,24 +35,71 @@ class TestTestSuiteRunner(unittest.TestCase):
         os.makedirs(products_dir)
         read_vars_dir = os.path.join(target_source_dir, 'bin', 'EPMacro', 'Linux')
         os.makedirs(read_vars_dir)
-        products_map = {
-            os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
-            os.path.join(self.resources, 'dummy.basement.py'): os.path.join(products_dir, 'Basement'),
-            os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
-            os.path.join(self.resources, 'dummy.energyplus.py'): os.path.join(products_dir, 'energyplus'),
-            os.path.join(self.resources, 'dummy.expandobjects.py'): os.path.join(products_dir, 'ExpandObjects'),
-            os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(products_dir, 'ParametricPreprocessor'),
-            os.path.join(self.resources, 'dummy.readvars.py'): os.path.join(products_dir, 'ReadVarsESO'),
-            os.path.join(self.resources, 'dummy.slab.py'): os.path.join(products_dir, 'Slab'),
-            os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
-            os.path.join(self.resources, 'dummy.epmacro.py'): os.path.join(read_vars_dir, 'EPMacro'),
-        }
+        if system() == 'Windows':  # pragma: no cover  -- not running coverage results on Travis on Windows
+            # if we are on windows, we need to prepackage up the python scripts as exe files for them to run
+            # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
+            # variables and run them all.  Also we don't want to run them for every single test, just once if the dist/
+            # folder hasn't been created yet.
+            dist_folder = os.path.join(self.resources, 'dist')
+            if not os.path.exists(dist_folder):
+                # find pyinstaller -- it should be available in path I think
+                pyinstaller = "pyinstaller.exe"
+                # pyinstaller = r"C:\EnergyPlus\repos\EnergyPlusRegressionTool\venv\Scripts\pyinstaller.exe"
+                # run it on all these
+                conversions = [
+                    ['dummy.basement.py', 'basement'],
+                    ['dummy.energyplus.py', 'energyplus'],
+                    ['dummy.expandobjects.py', 'expandobjects'],
+                    ['dummy.parametric.py', 'parametric'],
+                    ['dummy.readvars.py', 'readvars'],
+                    ['dummy.slab.py', 'slab'],
+                    ['dummy.epmacro.py', 'epmacro'],
+                ]
+                working_dir = self.resources
+                for conv in conversions:
+                    cmd = [pyinstaller, '--onefile', '--log-level=WARN', '-n', conv[1], conv[0]]
+                    check_call(cmd, cwd=working_dir)
+            products_map = {
+                os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
+                os.path.join(dist_folder, 'basement.exe'): os.path.join(products_dir, 'Basement.exe'),
+                os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
+                os.path.join(dist_folder, 'energyplus.exe'): os.path.join(products_dir, 'energyplus.exe'),
+                os.path.join(dist_folder, 'expandobjects.exe'): os.path.join(products_dir, 'ExpandObjects.exe'),
+                os.path.join(dist_folder, 'parametric.exe'): os.path.join(products_dir, 'ParametricPreprocessor.exe'),
+                os.path.join(dist_folder, 'readvars.exe'): os.path.join(products_dir, 'ReadVarsESO.exe'),
+                os.path.join(dist_folder, 'slab.exe'): os.path.join(products_dir, 'Slab.exe'),
+                os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
+                os.path.join(dist_folder, 'epmacro.exe'): os.path.join(read_vars_dir, 'EPMacro.exe'),
+            }
+        else:
+            products_map = {
+                os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
+                os.path.join(self.resources, 'dummy.basement.py'): os.path.join(products_dir, 'Basement'),
+                os.path.join(self.resources, 'dummy.Energy+.idd'): os.path.join(products_dir, 'Energy+.idd'),
+                os.path.join(self.resources, 'dummy.energyplus.py'): os.path.join(products_dir, 'energyplus'),
+                os.path.join(self.resources, 'dummy.expandobjects.py'): os.path.join(products_dir, 'ExpandObjects'),
+                os.path.join(self.resources, 'dummy.parametric.py'): os.path.join(
+                    products_dir, 'ParametricPreprocessor'
+                ),
+                os.path.join(self.resources, 'dummy.readvars.py'): os.path.join(products_dir, 'ReadVarsESO'),
+                os.path.join(self.resources, 'dummy.slab.py'): os.path.join(products_dir, 'Slab'),
+                os.path.join(self.resources, 'dummy.slab.idd'): os.path.join(products_dir, 'SlabGHT.idd'),
+                os.path.join(self.resources, 'dummy.epmacro.py'): os.path.join(read_vars_dir, 'EPMacro'),
+            }
         for source in products_map:
             shutil.copy(source, products_map[source])
         testfiles_dir = os.path.join(target_source_dir, 'testfiles')
         os.makedirs(testfiles_dir)
         json_text = json.dumps(idf_config)
-        with open(os.path.join(testfiles_dir, 'my_file.idf'), 'w') as f:
+        if idf_in_dir:
+            idf_dir = os.path.join(testfiles_dir, 'subdir')
+            os.makedirs(idf_dir)
+        else:
+            idf_dir = testfiles_dir
+        filename = 'my_file.idf'
+        if alt_filename:
+            filename = alt_filename
+        with open(os.path.join(idf_dir, filename), 'w') as f:
             f.write(json_text)
         with open(os.path.join(testfiles_dir, 'my_file.rvi'), 'w') as f_rvi:
             f_rvi.write('RVI TEXT')
@@ -66,6 +117,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             f_macro_extra.write('##MACROTEXT')
         with open(os.path.join(testfiles_dir, 'EMSTestMathAndKill.idf'), 'w') as f_kill:
             f_kill.write(json_text)
+        if py_file:
+            with open(os.path.join(idf_dir, "my_file.py"), 'w') as f:
+                f.write("hello")
         weather_dir = os.path.join(target_source_dir, 'weather')
         os.makedirs(weather_dir)
         shutil.copy(os.path.join(self.resources, 'dummy.in.epw'), os.path.join(weather_dir, 'my_weather.epw'))
@@ -101,7 +155,8 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "eso_results": "base",
                     "txt_results": "base"
                 }
-            }
+            },
+            py_file=True
         )
         base.set_build_directory(self.temp_base_build_dir)
         base.run = True
@@ -124,7 +179,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -153,11 +208,104 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have created a run directory for this file, put input files there, and left output files there
         file_results_dir = os.path.join(results_dir, 'my_file')
+        self.assertTrue(os.path.exists(file_results_dir))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.epw')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.idf')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.eso')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.end')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'eplusout.csv')))
+
+        # file in dir A has accompanying python plugin file, so it should be copied in, but not in build B
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'my_file.py')))
+        self.assertFalse(os.path.exists(os.path.join(diff_results.results_dir_b, 'my_file', 'my_file.py')))
+
+        # check the diffs
+        self.assertEqual('All Equal', results_for_file.eso_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.mtr_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.ssz_diffs.diff_type)
+        self.assertEqual('All Equal', results_for_file.zsz_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.aud_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.bnd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dl_in_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dl_out_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.dxf_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.eio_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.err_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.mdd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.mtd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.rdd_diffs.diff_type)
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.shd_diffs.diff_type)
+        # TODO: Check TableDiff
+
+    def test_no_diffs_idf_in_subdirectory(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            True
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            True
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry(os.path.join('subdir', 'my_file.idf'), 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries, mute=True)
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('subdir__my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        # it should have created a test directory and dropped the summaries there
+        results_dir = diff_results.results_dir_a
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
+        # it should have created a run directory for this file, put input files there, and left output files there
+        file_results_dir = os.path.join(results_dir, 'subdir__my_file')
         self.assertTrue(os.path.exists(file_results_dir))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.epw')))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.idf')))
@@ -219,7 +367,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -228,16 +376,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -247,6 +386,65 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should have succeeded in both base and mod cases
         self.assertEqual(EndErrSummary.STATUS_FATAL, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+
+    def test_bad_file_extension(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "fatal",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            alt_filename='my_file.iQf'
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base"
+                }
+            },
+            alt_filename='my_file.iQf'
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry('my_file.iQf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries, mute=True)
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case2)
 
     def test_expect_death_succeeds(self):
         base = CMakeCacheMakeFileBuildDirectory()
@@ -285,7 +483,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('EMSTestMathAndKill', 'my_weather')]
+        entries = [TestEntry('EMSTestMathAndKill.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -294,16 +492,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -351,7 +540,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -360,16 +549,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -417,7 +597,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -426,16 +606,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -483,7 +654,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -492,16 +663,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -549,7 +711,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -558,16 +720,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -615,7 +768,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -644,7 +797,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have created a run directory for this file, put input files there, and left output files there
@@ -698,7 +851,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -727,7 +880,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have created a run directory for this file, put input files there, and left output files there
@@ -781,7 +934,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -790,16 +943,7 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
+        r = SuiteRunner(config, entries, mute=True)
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
@@ -816,6 +960,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(TextDifferences.DIFFS, results_for_file.mtd_diffs.diff_type)
         self.assertEqual(TextDifferences.DIFFS, results_for_file.rdd_diffs.diff_type)
         self.assertEqual(TextDifferences.DIFFS, results_for_file.shd_diffs.diff_type)
+        self.assertEqual(TextDifferences.DIFFS, results_for_file.idf_diffs.diff_type)
 
     def test_base_case_but_multi_process(self):
         base = CMakeCacheMakeFileBuildDirectory()
@@ -852,7 +997,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather'), TestEntry('my_macro_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather'), TestEntry('my_macro_file.imf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -881,7 +1026,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have created a run directory for this file, put input files there, and left output files there
@@ -930,7 +1075,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -959,7 +1104,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put Window5 dataset files in the run directory
@@ -978,7 +1123,7 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "num_severe": 0,
                     "end_state": "success",
                     "eso_results": "base",
-                    "extra_data": "DataSets\TDV"
+                    "extra_data": r"DataSets\TDV"
                 }
             }
         )
@@ -996,14 +1141,14 @@ class TestTestSuiteRunner(unittest.TestCase):
                     "num_severe": 1,
                     "end_state": "success",
                     "eso_results": "base",
-                    "extra_data": "DataSets\TDV"
+                    "extra_data": r"DataSets\TDV"
                 }
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1032,7 +1177,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1076,7 +1221,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1105,7 +1250,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1149,7 +1294,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1178,7 +1323,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1222,7 +1367,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1251,7 +1396,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1295,7 +1440,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_macro_file', 'my_weather')]
+        entries = [TestEntry('my_macro_file.imf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1324,7 +1469,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put Macro files in the run directory
@@ -1368,7 +1513,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather_DOES_NOT_EXIST')]
+        entries = [TestEntry('my_file.idf', 'my_weather_DOES_NOT_EXIST')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1397,7 +1542,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put an epw files in the run directory
@@ -1441,7 +1586,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1470,7 +1615,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1517,7 +1662,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1546,7 +1691,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
         self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
         # it should have put TDV dataset files in the run directory
@@ -1591,7 +1736,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,
@@ -1655,7 +1800,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.DD,
             single_test_run=False,
@@ -1684,7 +1829,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertIn('DDOnly', results_dir)
 
     def test_both_success_no_diffs_annual(self):
@@ -1722,7 +1867,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file', 'my_weather')]
+        entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.ANNUAL,
             single_test_run=False,
@@ -1751,7 +1896,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
         # it should have created a test directory and dropped the summaries there
-        results_dir = diff_results.results_dir
+        results_dir = diff_results.results_dir_a
         self.assertIn('Annual', results_dir)
 
     def test_file_does_not_exist(self):
@@ -1789,7 +1934,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod.set_build_directory(self.temp_mod_build_dir)
         mod.run = True
 
-        entries = [TestEntry('my_file_DOES_NOT_EXIST', 'my_weather')]
+        entries = [TestEntry('my_file_DOES_NOT_EXIST.idf', 'my_weather')]
         config = TestRunConfiguration(
             force_run_type=ForceRunType.NONE,
             single_test_run=False,

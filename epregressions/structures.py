@@ -1,11 +1,16 @@
 import csv
 import json
+import os
 
 
 class ForceRunType:
-    DD = "A"
-    ANNUAL = "B"
-    NONE = "C"
+    DD = "Force Design-day-only simulations"
+    ANNUAL = "Force Annual simulations"
+    NONE = "Don\'t force anything"
+
+    @staticmethod
+    def get_all():
+        return [ForceRunType.DD, ForceRunType.ANNUAL, ForceRunType.NONE]
 
 
 class ReportingFreq:
@@ -18,11 +23,26 @@ class ReportingFreq:
     ENVIRONMENT = "Environment"
     ANNUAL = "Annual"
 
+    @staticmethod
+    def get_all():
+        return [
+            ReportingFreq.DETAILED, ReportingFreq.TIME_STEP, ReportingFreq.HOURLY,
+            ReportingFreq.DAILY, ReportingFreq.MONTHLY, ReportingFreq.RUN_PERIOD,
+            ReportingFreq.ENVIRONMENT, ReportingFreq.ANNUAL
+        ]
 
-class ResultsLists:
+
+class Results:
     def __init__(self):
-        self.descriptions = []
-        self.base_names = set()
+        self.descriptions = {}
+
+    def add_to_data(self, base_name: str, suffix: str = None):
+        if base_name not in self.descriptions:
+            self.descriptions[base_name] = []
+        if suffix:
+            self.descriptions[base_name].append(f"{base_name} : {suffix}")
+        else:
+            self.descriptions[base_name].append(f"{base_name}")
 
 
 class TextDifferences:
@@ -47,6 +67,7 @@ class TextDifferences:
     DFS = 18
     SCREEN = 19
     GLHE = 20
+    IDF = 21
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -155,9 +176,13 @@ class EndErrSummary:
 
 class TestEntry:
 
-    def __init__(self, name, epw):
-        self.basename = name
-        self.epw = epw
+    def __init__(self, name_relative_to_testfiles_dir, epw):
+        self.name_relative_to_testfiles_dir = name_relative_to_testfiles_dir
+        self.basename = os.path.splitext(name_relative_to_testfiles_dir.replace(os.path.sep, '__'))[0]
+        if epw.endswith('.epw'):
+            self.epw = epw[:-4]
+        else:  # the basename was passed in already
+            self.epw = epw
         self.summary_result = None
         self.eso_diffs = None
         self.mtr_diffs = None
@@ -185,6 +210,7 @@ class TestEntry:
         self.screen_diffs = None
         self.glhe_diffs = None
         self.json_diffs = None
+        self.idf_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -242,6 +268,8 @@ class TestEntry:
             self.screen_diffs = diffs
         elif diff_type == TextDifferences.GLHE:
             self.glhe_diffs = diffs
+        elif diff_type == TextDifferences.IDF:
+            self.idf_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -306,50 +334,49 @@ class TestEntry:
                 response['glhe_diffs'] = self.glhe_diffs.to_dict()
             if self.json_diffs:
                 response['json_diffs'] = self.json_diffs.to_dict()
+            if self.idf_diffs:
+                response['idf_diffs'] = self.idf_diffs.to_dict()
         return response
 
 
 class CompletedStructure:
-    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir, case_b_build_dir, results_dir):
+    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir,
+                 case_b_build_dir, results_dir_a, results_dir_b):
         self.case_a_source_dir = case_a_source_dir
         self.case_a_build_dir = case_a_build_dir
         self.case_b_source_dir = case_b_source_dir
         self.case_b_build_dir = case_b_build_dir
-        self.results_dir = results_dir
+        self.results_dir_a = results_dir_a
+        self.results_dir_b = results_dir_b
         # results by file
         self.entries_by_file = []
         # results by type
-        self.all_files = ResultsLists()
-        self.success_case_a = ResultsLists()
-        self.failure_case_a = ResultsLists()
-        self.success_case_b = ResultsLists()
-        self.failure_case_b = ResultsLists()
-        self.total_files_compared = ResultsLists()
-        self.big_math_diffs = ResultsLists()
-        self.small_math_diffs = ResultsLists()
-        self.big_table_diffs = ResultsLists()
-        self.small_table_diffs = ResultsLists()
-        self.text_diffs = ResultsLists()
+        self.all_files = Results()
+        self.success_case_a = Results()
+        self.failure_case_a = Results()
+        self.success_case_b = Results()
+        self.failure_case_b = Results()
+        self.total_files_compared = Results()
+        self.big_math_diffs = Results()
+        self.small_math_diffs = Results()
+        self.big_table_diffs = Results()
+        self.small_table_diffs = Results()
+        self.text_diffs = Results()
 
     def add_test_entry(self, this_entry):
         self.entries_by_file.append(this_entry)
         # always add the current entry because it was tested
-        self.all_files.descriptions.append("%s" % this_entry.basename)
-        self.all_files.base_names.add(this_entry.basename)
+        self.all_files.add_to_data(this_entry.basename)
 
         # add the entry to the appropriate success/failure bins
         if this_entry.summary_result.simulation_status_case1 == EndErrSummary.STATUS_SUCCESS:
-            self.success_case_a.descriptions.append("%s" % this_entry.basename)
-            self.success_case_a.base_names.add(this_entry.basename)
+            self.success_case_a.add_to_data(this_entry.basename)
         else:
-            self.failure_case_a.descriptions.append("%s" % this_entry.basename)
-            self.failure_case_a.base_names.add(this_entry.basename)
+            self.failure_case_a.add_to_data(this_entry.basename)
         if this_entry.summary_result.simulation_status_case2 == EndErrSummary.STATUS_SUCCESS:
-            self.success_case_b.descriptions.append("%s" % this_entry.basename)
-            self.success_case_b.base_names.add(this_entry.basename)
+            self.success_case_b.add_to_data(this_entry.basename)
         else:
-            self.failure_case_b.descriptions.append("%s" % this_entry.basename)
-            self.failure_case_b.base_names.add(this_entry.basename)
+            self.failure_case_b.add_to_data(this_entry.basename)
 
         # check the math diffs for this entry
         math_diff_hash = {
@@ -362,25 +389,19 @@ class CompletedStructure:
         for diff in math_diff_hash:
             file_type = math_diff_hash[diff]
             if diff:
-                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                self.total_files_compared.base_names.add(this_entry.basename)
+                self.total_files_compared.add_to_data(this_entry.basename, file_type)
                 if diff.count_of_big_diff > 0:
-                    self.big_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.big_math_diffs.base_names.add(this_entry.basename)
+                    self.big_math_diffs.add_to_data(this_entry.basename, file_type)
                 elif diff.count_of_small_diff > 0:
-                    self.small_math_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.small_math_diffs.base_names.add(this_entry.basename)
+                    self.small_math_diffs.add_to_data(this_entry.basename, file_type)
 
         # get tabular diffs
         if this_entry.table_diffs:
-            self.total_files_compared.descriptions.append("%s: table" % this_entry.basename)
-            self.total_files_compared.base_names.add(this_entry.basename)
+            self.total_files_compared.add_to_data(this_entry.basename, "table")
             if this_entry.table_diffs.big_diff_count > 0:
-                self.big_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
-                self.big_table_diffs.base_names.add(this_entry.basename)
+                self.big_table_diffs.add_to_data(this_entry.basename, "table")
             elif this_entry.table_diffs.small_diff_count > 0:
-                self.small_table_diffs.descriptions.append("%s: %s" % (this_entry.basename, "table"))
-                self.small_table_diffs.base_names.add(this_entry.basename)
+                self.small_table_diffs.add_to_data(this_entry.basename, "table")
 
         # check the textual diffs
         text_diff_hash = {
@@ -408,11 +429,9 @@ class CompletedStructure:
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]
             if diff:
-                self.total_files_compared.descriptions.append("%s: %s" % (this_entry.basename, file_type))
+                self.total_files_compared.add_to_data(this_entry.basename, file_type)
                 if diff.diff_type != TextDifferences.EQUAL:
-                    self.total_files_compared.base_names.add(this_entry.basename)  # should just use a set()
-                    self.text_diffs.descriptions.append("%s: %s" % (this_entry.basename, file_type))
-                    self.text_diffs.base_names.add(this_entry.basename)
+                    self.text_diffs.add_to_data(this_entry.basename, file_type)
 
     def to_runtime_summary(self, csv_file_path):
         try:
@@ -432,7 +451,7 @@ class CompletedStructure:
             print(this_exception)
             raise this_exception
 
-    def to_json_summary(self, json_file_path):
+    def to_json_summary(self, json_file_path=None):
         output_data = {
             'directories': {
                 'case_a_source': self.case_a_source_dir,
@@ -441,22 +460,28 @@ class CompletedStructure:
                 'case_b_build': self.case_b_build_dir
             },
             'runs': {
-                'all_files': [x for x in self.all_files.base_names],
-                'success_case_a': [x for x in self.success_case_a.base_names],
-                'failure_case_a': [x for x in self.failure_case_a.base_names],
-                'success_case_b': [x for x in self.success_case_b.base_names],
-                'failure_case_b': [x for x in self.failure_case_b.base_names],
-                'all_files_compared': [x for x in self.total_files_compared.descriptions]
+                'all_files': [x for x in self.all_files.descriptions.keys()],
+                'success_case_a': [x for x in self.success_case_a.descriptions.keys()],
+                'failure_case_a': [x for x in self.failure_case_a.descriptions.keys()],
+                'success_case_b': [x for x in self.success_case_b.descriptions.keys()],
+                'failure_case_b': [x for x in self.failure_case_b.descriptions.keys()],
+                'all_files_compared': [
+                    [y for y in self.total_files_compared.descriptions[x]] for x in
+                    self.total_files_compared.descriptions.keys()
+                ]
             },
             'diffs': {
-                'big_math': [x for x in self.big_math_diffs.descriptions],
-                'small_math': [x for x in self.small_math_diffs.descriptions],
-                'big_table': [x for x in self.big_table_diffs.descriptions],
-                'small_table': [x for x in self.small_table_diffs.descriptions],
-                'textual': [x for x in self.text_diffs.descriptions],
+                'big_math': [x for x in self.big_math_diffs.descriptions.keys()],
+                'small_math': [x for x in self.small_math_diffs.descriptions.keys()],
+                'big_table': [x for x in self.big_table_diffs.descriptions.keys()],
+                'small_table': [x for x in self.small_table_diffs.descriptions.keys()],
+                'textual': [x for x in self.text_diffs.descriptions.keys()],
             },
             'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
         }
-        output_string = json.dumps(output_data, indent=2)
-        with open(json_file_path, 'w') as json_file:
-            json_file.write(output_string)
+        if json_file_path:
+            output_string = json.dumps(output_data, indent=2)
+            with open(json_file_path, 'w') as json_file:
+                json_file.write(output_string)
+        else:
+            return output_data

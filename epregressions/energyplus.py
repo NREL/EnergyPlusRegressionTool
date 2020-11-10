@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-from __future__ import print_function
-
 import glob
 import os
 import shutil
 import subprocess
-from multiprocessing import current_process
 
 from epregressions.structures import ForceRunType
 
@@ -13,33 +10,45 @@ path = os.path.dirname(__file__)
 script_dir = os.path.abspath(path)
 
 
-def execute_energyplus(build_tree, entry_name, test_run_directory,
-                       run_type, min_reporting_freq, this_parametric_file, weather_file_name):
+class ExecutionArguments:
+    def __init__(self, build_tree, entry_name, test_run_directory,
+                 run_type, min_reporting_freq, this_parametric_file, weather_file_name):
+        self.build_tree = build_tree
+        self.entry_name = entry_name
+        self.test_run_directory = test_run_directory
+        self.run_type = run_type
+        self.min_reporting_freq = min_reporting_freq
+        self.this_parametric_file = this_parametric_file
+        self.weather_file_name = weather_file_name
 
+
+# noinspection PyBroadException
+def execute_energyplus(e_args: ExecutionArguments):
     # setup a few paths
-    energyplus = build_tree['energyplus']
-    basement = build_tree['basement']
-    idd_path = build_tree['idd_path']
-    slab = build_tree['slab']
-    basementidd = build_tree['basementidd']
-    slabidd = build_tree['slabidd']
-    expandobjects = build_tree['expandobjects']
-    epmacro = build_tree['epmacro']
-    readvars = build_tree['readvars']
-    parametric = build_tree['parametric']
+    energyplus = e_args.build_tree['energyplus']
+    basement = e_args.build_tree['basement']
+    idd_path = e_args.build_tree['idd_path']
+    slab = e_args.build_tree['slab']
+    basementidd = e_args.build_tree['basementidd']
+    slabidd = e_args.build_tree['slabidd']
+    expandobjects = e_args.build_tree['expandobjects']
+    epmacro = e_args.build_tree['epmacro']
+    readvars = e_args.build_tree['readvars']
+    parametric = e_args.build_tree['parametric']
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
-
     try:
-        shutil.copy(idd_path, os.path.join(test_run_directory, 'Energy+.idd'))
+
+        new_idd_path = os.path.join(e_args.test_run_directory, 'Energy+.idd')
+        shutil.copy(idd_path, new_idd_path)
 
         # Copy the weather file into the simulation directory
-        if run_type != ForceRunType.DD:
-            shutil.copy(weather_file_name, os.path.join(test_run_directory, 'in.epw'))
+        if e_args.run_type != ForceRunType.DD:
+            shutil.copy(e_args.weather_file_name, os.path.join(e_args.test_run_directory, 'in.epw'))
 
         # Switch to the simulation directory
-        os.chdir(test_run_directory)
+        os.chdir(e_args.test_run_directory)
 
         # Run EPMacro as necessary
         if os.path.exists('in.imf'):
@@ -55,14 +64,18 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
             with open('in.imf', 'w') as f:
                 for line in newlines:
                     f.write(line)
-            macro_run = subprocess.Popen(epmacro, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            macro_run = subprocess.Popen(
+                epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             macro_run.communicate()
             os.rename('out.idf', 'in.idf')
 
         # Run Preprocessor -- after EPMacro?
-        if this_parametric_file:
-            parametric_run = subprocess.Popen(parametric + ' in.idf', shell=True, stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE)
+        if e_args.this_parametric_file:
+            parametric_run = subprocess.Popen(
+                parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             parametric_run.communicate()
             candidate_files = glob.glob('in-*.idf')
             if len(candidate_files) > 0:
@@ -71,10 +84,12 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                return [build_tree['build_dir'], entry_name, False, False, current_process().name]
+                return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Run ExpandObjects and process as necessary
-        expand_objects_run = subprocess.Popen(expandobjects, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        expand_objects_run = subprocess.Popen(
+            expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         expand_objects_run.communicate()
         if os.path.exists('expanded.idf'):
             if os.path.exists('in.idf'):
@@ -82,11 +97,12 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
             os.rename('expanded.idf', 'in.idf')
 
             if os.path.exists('BasementGHTIn.idf'):
-                shutil.copy(basementidd, test_run_directory)
+                shutil.copy(basementidd, e_args.test_run_directory)
                 basement_environment = os.environ.copy()
                 basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
                 basement_run = subprocess.Popen(
-                    basement, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=basement_environment
+                    basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, env=basement_environment
                 )
                 basement_run.communicate()
                 with open('EPObjects.TXT') as f:
@@ -101,8 +117,10 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
                 os.remove('BasementGHT.idd')
 
             if os.path.exists('GHTIn.idf'):
-                shutil.copy(slabidd, test_run_directory)
-                slab_run = subprocess.Popen(slab, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                shutil.copy(slabidd, e_args.test_run_directory)
+                slab_run = subprocess.Popen(
+                    slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
                 slab_run.communicate()
                 with open('SLABSurfaceTemps.TXT') as f:
                     append_text = f.read()
@@ -117,15 +135,15 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
         # Set up environment
         os.environ["DISPLAYADVANCEDREPORTVARIABLES"] = "YES"
         os.environ["DISPLAYALLWARNINGS"] = "YES"
-        if run_type == ForceRunType.DD:
+        if e_args.run_type == ForceRunType.DD:
             os.environ["DDONLY"] = "Y"
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = ""
-        elif run_type == ForceRunType.ANNUAL:
+        elif e_args.run_type == ForceRunType.ANNUAL:
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = "Y"
-        elif run_type == ForceRunType.NONE:
+        elif e_args.run_type == ForceRunType.NONE:
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = ""
@@ -135,34 +153,49 @@ def execute_energyplus(build_tree, entry_name, test_run_directory,
 
         # use the user-entered minimum reporting frequency
         #  (useful for limiting to daily outputs for annual simulation, etc.)
-        os.environ["MINREPORTFREQUENCY"] = min_reporting_freq.upper()
+        os.environ["MINREPORTFREQUENCY"] = e_args.min_reporting_freq.upper()
 
         # Execute EnergyPlus
-        eplus_run = subprocess.Popen(energyplus, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        eplus_run.communicate()
+        try:
+            subprocess.check_call(
+                energyplus, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+        except Exception:  # pragma: no cover
+            ...
+            # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
+            #  here alone, it shows as missing on the coverage...wonky
+            return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Execute readvars
         if os.path.exists('in.rvi'):
-            csv_run = subprocess.Popen(readvars + ' in.rvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            csv_run = subprocess.Popen(
+                readvars + ' in.rvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         else:
-            csv_run = subprocess.Popen(readvars, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            csv_run = subprocess.Popen(
+                readvars, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         csv_run.communicate()
         if os.path.exists('in.mvi'):
-            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            mtr_run = subprocess.Popen(
+                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         else:
             with open('in.mvi', 'w') as f:
                 f.write("eplusout.mtr\n")
                 f.write("eplusmtr.csv\n")
-            mtr_run = subprocess.Popen(readvars + ' in.mvi', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            mtr_run = subprocess.Popen(
+                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
         mtr_run.communicate()
 
-        os.remove('Energy+.idd')
-        return [build_tree['build_dir'], entry_name, True, False, current_process().name]
+        os.remove(new_idd_path)
+        return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
 
-    except Exception as e:
-        with open("aa_testSuite_error.txt", 'w') as f:
-            print(e, file=f)
-        return [build_tree['build_dir'], entry_name, False, False, current_process().name]
+    except Exception:
+        return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
     finally:
         os.chdir(start_path)

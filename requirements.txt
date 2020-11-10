@@ -1,25 +1,18 @@
-# Core pip-install-able dependencies here
+# the core dependencies actually needed
+pypubsub==4.0.3
+beautifulsoup4==4.9.3
+
+# if running with CI, this is needed for talking to s3
 boto==2.49.0
-coveralls==1.5.1
-beautifulsoup4==4.6.3
-flake8==3.6.0
+
+# for running tests
+coveralls==2.1.2
+flake8==3.8.4
 nose==1.3.7
-Sphinx==1.8.1
 
-# this GUI uses PyGtk, relying on GTK3+
-# For Ubuntu, install GTK using the instructions here:
-#   https://pygobject.readthedocs.io/en/latest/getting_started.html
-#  then set up a development environment from these instructions:
-#   https://pygobject.readthedocs.io/en/latest/devguide/dev_environ.html#devenv
-# For Windows, download and install a **valid** Python version from Python.org:
-#  **Valid Versions**: Up to 3.4, not newer, 32-or-64-bit)
-#   https://www.python.org/downloads/windows/
-#  Then grab the PyGI installer from here:
-#   https://sourceforge.net/projects/pygobjectwin32/
-#  During that install:
-#   select your Python 3.4 installation folder
-#   select the GTK+ entry in the first list
-# For Mac, not sure yet
+# to generate documentation
+Sphinx==3.2.1
 
-# Once PyGObject is available, install the rest of the dependencies here:
-#  pip install -r requirements.txt
+# for packaging
+pyinstaller
+wheel

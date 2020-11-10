@@ -49,22 +49,21 @@ A completed build, with ``BUILD_FORTRAN`` on, is needed for each of
 the baseline and proposed versions.  Each build folder should have a
 Products subdirectory with the binaries and all other needed material.
 
-Select IDFs
-~~~~~~~~~~~
-
-Once the builds are completed, launch the test suite tool.
-Configure which idfs are supposed to be run using the selection
-and deselection buttons and options.
-
 Test Suite Options
 ~~~~~~~~~~~~~~~~~~
 
-Next configure the test suite options to point to the appropriate build
+With the tool open, configure the test suite options to point to the appropriate build
 directories. Then configure which test suite run
 configuration should be run. For a first pass, I would recommend doing
 design-days only so that time won’t be wasted should an obvious problem
 arise. Next verify the file structure. At this point, it would probably
 be a good idea to *save the settings, using File->Save*.
+
+Select IDFs
+~~~~~~~~~~~
+
+Configure which idfs are supposed to be run using the selection
+and deselection buttons and options.
 
 Running Suites
 ~~~~~~~~~~~~~~

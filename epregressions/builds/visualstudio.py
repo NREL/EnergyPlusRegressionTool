@@ -38,41 +38,6 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
                     break
             else:
                 raise Exception('Could not find source directory spec in the CMakeCache file')
-
-    def verify(self):
-        results = []
-        if not self.build_directory:
-            raise Exception('Build directory has not been set with set_build_directory()')
-        build_dir = self.build_directory
-        exists = os.path.exists(build_dir)
-        results.append(
-            ["Case %s Build Directory Exists? ", build_dir, exists]
-        )
-        cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
-        exists = os.path.exists(cmake_cache_file)
-        results.append(
-            ["Case %s Build CMake Cache? ", cmake_cache_file, exists]
-        )
-        source_dir = self.source_directory
-        exists = os.path.exists(source_dir)
-        results.append(
-            ["Case %s Source Directory Exists? ", source_dir, exists]
-        )
-        test_files_dir = os.path.join(self.source_directory, 'testfiles')
-        exists = os.path.exists(test_files_dir)
-        results.append(
-            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
-        )
-        data_sets_dir = os.path.join(self.source_directory, 'datasets')
-        exists = os.path.exists(data_sets_dir)
-        results.append(
-            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
-        )
-        products_dir = os.path.join(self.build_directory, 'Products')
-        exists = os.path.exists(products_dir)
-        results.append(
-            ["Case %s Products Directory Exists? ", products_dir, exists]
-        )
         build_mode_folder = 'Release'
         release_folder = os.path.join(self.build_directory, 'Products', build_mode_folder)
         release_folder_exists = os.path.exists(release_folder)
@@ -80,17 +45,11 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
             self.set_build_mode(debug=False)
         else:
             self.set_build_mode(debug=True)
-        energy_plus_exe = os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe')
-        exists = os.path.exists(energy_plus_exe)
-        results.append(
-            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
-        )
-        basement_exe = os.path.join(self.build_directory, 'Products', 'Basement.exe')
-        exists = os.path.exists(basement_exe)
-        results.append(
-            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
-        )
-        return results
+
+    def get_idf_directory(self):
+        if not self.build_directory:
+            raise Exception('Build directory has not been set with set_build_directory()')
+        return os.path.join(self.source_directory, 'testfiles')
 
     def get_build_tree(self):
         if not self.build_directory:

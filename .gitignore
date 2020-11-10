@@ -16,3 +16,16 @@ epregressions/tests/diffs/results.json
 .DS_Store
 results.json
 .eggs
+build
+dist
+/epregressions/tests/resources/epmacro.spec
+/epregressions/tests/resources/expandobjects.spec
+/epregressions/tests/resources/parametric.spec
+/epregressions/tests/resources/readvars.spec
+/epregressions/tests/resources/slab.spec
+/epregressions/tests/resources/energyplus.spec
+/epregressions/tests/resources/basement.spec
+deploy
+eplus_regression_runner.spec
+cover/
+runner.spec

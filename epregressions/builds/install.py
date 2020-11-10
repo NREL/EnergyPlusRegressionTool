@@ -1,7 +1,7 @@
 import os
 
 from epregressions.builds.base import BaseBuildDirectoryStructure
-from epregressions.platform import exe_extension
+from epregressions.ep_platform import exe_extension
 
 
 class EPlusInstallDirectory(BaseBuildDirectoryStructure):
@@ -25,42 +25,10 @@ class EPlusInstallDirectory(BaseBuildDirectoryStructure):
         # For an E+ install, the source directory is kinda just the root repo
         self.source_directory = build_directory
 
-    def verify(self):
-        results = []
+    def get_idf_directory(self):
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
-        build_dir = self.build_directory
-        exists = os.path.exists(build_dir)
-        results.append(
-            ["Case %s Build Directory Exists? ", build_dir, exists]
-        )
-        exists = os.path.exists(self.source_directory)
-        results.append(
-            ["Case %s Source Directory Exists? ", self.source_directory, exists]
-        )
-        test_files_dir = os.path.join(self.source_directory, 'ExampleFiles')
-        exists = os.path.exists(test_files_dir)
-        results.append(
-            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
-        )
-        data_sets_dir = os.path.join(self.source_directory, 'DataSets')
-        exists = os.path.exists(data_sets_dir)
-        results.append(
-            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
-        )
-        energy_plus_exe = os.path.join(
-            self.build_directory, 'energyplus' + exe_extension()
-        )
-        exists = os.path.exists(energy_plus_exe)
-        results.append(
-            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
-        )
-        basement_exe = os.path.join(self.build_directory, 'PreProcess', 'GrndTempCalc', 'Basement' + exe_extension())
-        exists = os.path.exists(basement_exe)
-        results.append(
-            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
-        )
-        return results
+        return os.path.join(self.source_directory, 'ExampleFiles')
 
     def get_build_tree(self):
         if not self.build_directory:

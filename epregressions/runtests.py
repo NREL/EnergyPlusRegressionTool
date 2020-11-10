@@ -8,14 +8,19 @@ from datetime import datetime
 import io
 import json
 import os
+from platform import system
 import shutil
 import sys
 
+if getattr(sys, 'frozen', False):  # pragma: no cover -- not covering frozen apps in unit tests
+    frozen = True
+else:
+    frozen = False
+
 from difflib import unified_diff  # python's own diff library
-from multiprocessing import Process, Queue, freeze_support  # add stuff to either make series calls, or multi-threading
 
 from epregressions.diffs import math_diff, table_diff, thresh_dict as td
-from epregressions import energyplus
+from epregressions.energyplus import ExecutionArguments, execute_energyplus
 from epregressions.structures import (
     ForceRunType,
     TextDifferences,
@@ -26,7 +31,7 @@ from epregressions.structures import (
     ReportingFreq,
     TestEntry
 )
-
+from multiprocessing import Pool
 
 # get the current file path for convenience
 path = os.path.dirname(__file__)
@@ -44,18 +49,20 @@ class TestRunConfiguration:
 
 
 class TestCaseCompleted:
-    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, name_of_thread):
+    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already):
         self.run_directory = run_directory
         self.case_name = case_name
         self.run_success = run_status
-        self.name_of_thread = name_of_thread
         self.muffle_err_msg = error_msg_reported_already
 
 
 # the actual main test suite run class
 class SuiteRunner:
 
-    def __init__(self, run_config, these_entries):
+    def __init__(self, run_config, these_entries, mute=False):
+
+        # initialize the master mute button -- this is overridden by registering callbacks
+        self.mute = mute
 
         # initialize callbacks
         self.print_callback = None
@@ -78,9 +85,7 @@ class SuiteRunner:
 
         # Main test configuration here
         self.build_tree_a = run_config.buildA.get_build_tree()
-        self.run_case_a = run_config.buildA.run
         self.build_tree_b = run_config.buildB.get_build_tree()
-        self.run_case_b = run_config.buildB.run
 
         # Settings/paths defined relative to this script
         self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
@@ -99,15 +104,8 @@ class SuiteRunner:
         i = datetime.now()
         self.test_output_dir += i.strftime('_%Y%m%d_%H%M%S')
 
-        # Filename specification, not path specific
-        self.ep_in_filename = "in.idf"
-
         # For files that don't have a specified weather file, use Chicago
         self.default_weather_filename = "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
-
-        # Required to avoid stalls
-        if self.number_of_threads == 1:
-            freeze_support()
 
     def run_test_suite(self):
 
@@ -121,20 +119,17 @@ class SuiteRunner:
             self.my_cancelled()
             return
 
-        num_builds = 2
-        self.my_starting(num_builds, len(self.entries))
+        self.my_starting(len(self.entries))
 
         # run the energyplus script
-        if self.run_case_a:
-            self.run_build(self.build_tree_a)
-            if self.id_like_to_stop_now:  # pragma: no cover
-                self.my_cancelled()
-                return
-        if self.run_case_b:
-            self.run_build(self.build_tree_b)
-            if self.id_like_to_stop_now:  # pragma: no cover
-                self.my_cancelled()
-                return
+        self.run_build(self.build_tree_a)
+        if self.id_like_to_stop_now:  # pragma: no cover
+            self.my_cancelled()
+            return
+        self.run_build(self.build_tree_b)
+        if self.id_like_to_stop_now:  # pragma: no cover
+            self.my_cancelled()
+            return
         self.my_simulationscomplete()
 
         response = self.diff_logs_for_build()
@@ -156,8 +151,8 @@ class SuiteRunner:
             self.my_print('Could not write results summary file: ' + str(this_exception))
 
         self.my_print("Test suite complete for directories:")
-        self.my_print("\t%s" % self.build_tree_a['build_dir'])
-        self.my_print("\t%s" % self.build_tree_b['build_dir'])
+        self.my_print(" --build-1--> %s" % self.build_tree_a['build_dir'])
+        self.my_print(" --build-2--> %s" % self.build_tree_b['build_dir'])
         self.my_print("Test suite complete")
 
         self.my_alldone(response)
@@ -185,10 +180,6 @@ class SuiteRunner:
         this_test_dir = self.test_output_dir
         local_run_type = self.force_run_type
 
-        # Create queues for threaded operation
-        task_queue = Queue()
-        done_queue = Queue()
-
         # Create a job list
         energy_plus_runs = []
 
@@ -202,101 +193,19 @@ class SuiteRunner:
             os.mkdir(test_run_directory)
 
             # establish the absolute path to the idf or imf, and append .idf or .imf as necessary
-            idf_base = os.path.join(build_tree['test_files_dir'], this_entry.basename)
-            idf_base = idf_base.strip()
-            idf_path = idf_base + ".idf"
-            imf_path = idf_base + ".imf"
+            full_input_file_path = os.path.join(build_tree['test_files_dir'], this_entry.name_relative_to_testfiles_dir)
 
             parametric_file = False
-            if os.path.exists(idf_path):
+            if not os.path.exists(full_input_file_path):
+                self.my_print(f"Input file does not exist: {full_input_file_path}")
+                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
+                continue
 
-                # copy the idf into the test directory, renaming to in.idf
-                shutil.copy(idf_path, os.path.join(test_run_directory, self.ep_in_filename))
-
-                # read in the entire text of the idf to do some special operations;
-                # could put in one line, but the with block ensures the file handle is closed
-                idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, self.ep_in_filename))
-
-                # if the file requires the window 5 data set file, bring it into the test run directory
-                if 'Window5DataFile.dat' in idf_text:
-                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    shutil.copy(os.path.join(build_tree['data_sets_dir'], 'Window5DataFile.dat'),
-                                os.path.join(test_run_directory, 'datasets'))
-                    idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
-
-                # if the file requires the TDV data set file, bring it
-                #  into the test run directory, right now I think it's broken
-                if 'DataSets\\TDV' in idf_text or 'DataSets\\\\TDV' in idf_text:
-                    os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
-                    tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
-                    src_files = os.listdir(tdv_dir)
-                    for file_name in src_files:
-                        full_file_name = os.path.join(tdv_dir, file_name)
-                        if os.path.isfile(full_file_name):
-                            shutil.copy(
-                                full_file_name,
-                                os.path.join(test_run_directory, 'datasets', 'TDV')
-                            )
-                    idf_text = idf_text.replace(
-                        '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
-                        os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
-                    )
-
-                if 'HybridZoneModel_TemperatureData.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
-                        os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
-                    )
-
-                if 'SolarShadingTest_Shading_Data.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
-                        os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
-                    )
-
-                if 'LocalEnvData.csv' in idf_text:
-                    shutil.copy(
-                        os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
-                        os.path.join(test_run_directory, 'LocalEnvData.csv')
-                    )
-
-                if 'report variable dictionary' in idf_text:
-                    idf_text = idf_text.replace('report variable dictionary', '')
-
-                if 'Parametric:' in idf_text:
-                    parametric_file = True
-
-                # if the file requires the FMUs data set file, bring it
-                #  into the test run directory, right now I think it's broken
-                if 'ExternalInterface:' in idf_text:
-                    self.my_print('Skipping an FMU based file as this is not set up to run yet')
-                    continue
-                    # os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                    # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
-                    # source_dir = os.path.join('datasets', 'FMUs')
-                    # src_files = os.listdir(source_dir)
-                    # for file_name in src_files:
-                    #     full_file_name = os.path.join(source_dir, file_name)
-                    #     if os.path.isfile(full_file_name):
-                    #         shutil.copy(
-                    #             full_file_name,
-                    #             os.path.join(test_run_directory, 'datasets', 'FMUs')
-                    #         )
-
-                # rewrite the idf with the (potentially) modified idf text
-                with io.open(
-                    os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, self.ep_in_filename),
-                    'w',
-                    encoding='utf-8'
-                ) as f_i:
-                    f_i.write("%s\n" % idf_text)
-
-            elif os.path.exists(imf_path):
-
-                shutil.copy(
-                    imf_path, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, 'in.imf')
-                )
+            # copy macro files if it is an imf
+            if full_input_file_path.endswith('.idf'):
+                ep_in_filename = "in.idf"
+            elif full_input_file_path.endswith('.imf'):
+                ep_in_filename = "in.imf"
                 # find the rest of the imf files and copy them into the test directory
                 source_files = os.listdir(build_tree['test_files_dir'])
                 for file_name in source_files:
@@ -305,15 +214,92 @@ class SuiteRunner:
                         shutil.copy(
                             full_file_name, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename)
                         )
-
             else:
-
-                # if the file doesn't exist, just move along
-                self.my_print("Input file doesn't exist in either idf or imf form:")
-                self.my_print("   IDF: %s" % idf_path)
-                self.my_print("   IMF: %s" % imf_path)
-                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False, ""))
+                self.my_print(f"Could not determine file extension, must be idf or imf: {full_input_file_path}")
+                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
+
+            # copy the input file into the test directory, renaming to in.idf or in.imf
+            shutil.copy(full_input_file_path, os.path.join(test_run_directory, ep_in_filename))
+
+            # read in the entire text of the idf to do some special operations;
+            # could put in one line, but the with block ensures the file handle is closed
+            idf_text = SuiteRunner.read_file_content(os.path.join(test_run_directory, ep_in_filename))
+
+            # if the file requires the window 5 data set file, bring it into the test run directory
+            if 'Window5DataFile.dat' in idf_text:
+                os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                shutil.copy(os.path.join(build_tree['data_sets_dir'], 'Window5DataFile.dat'),
+                            os.path.join(test_run_directory, 'datasets'))
+                idf_text = idf_text.replace('..\\datasets\\Window5DataFile.dat', 'datasets/Window5DataFile.dat')
+
+            # if the file requires the TDV data set file, bring it
+            #  into the test run directory, right now I think it's broken
+            if 'DataSets\\TDV' in idf_text or 'DataSets\\\\TDV' in idf_text:
+                os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                os.mkdir(os.path.join(test_run_directory, 'datasets', 'TDV'))
+                tdv_dir = os.path.join(build_tree['data_sets_dir'], 'TDV')
+                src_files = os.listdir(tdv_dir)
+                for file_name in src_files:
+                    full_file_name = os.path.join(tdv_dir, file_name)
+                    if os.path.isfile(full_file_name):
+                        shutil.copy(
+                            full_file_name,
+                            os.path.join(test_run_directory, 'datasets', 'TDV')
+                        )
+                idf_text = idf_text.replace(
+                    '..\\datasets\\TDV\\TDV_2008_kBtu_CTZ06.csv',
+                    os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
+                )
+
+            if 'HybridZoneModel_TemperatureData.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
+                    os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
+                )
+
+            if 'SolarShadingTest_Shading_Data.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
+                    os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
+                )
+
+            if 'LocalEnvData.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
+                    os.path.join(test_run_directory, 'LocalEnvData.csv')
+                )
+
+            if 'report variable dictionary' in idf_text:
+                idf_text = idf_text.replace('report variable dictionary', '')
+
+            if 'Parametric:' in idf_text:
+                parametric_file = True
+
+            # if the file requires the FMUs data set file, bring it
+            #  into the test run directory, right now I think it's broken
+            if 'ExternalInterface:' in idf_text:
+                self.my_print('Skipping an FMU based file as this is not set up to run yet')
+                continue
+                # os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
+                # source_dir = os.path.join('datasets', 'FMUs')
+                # src_files = os.listdir(source_dir)
+                # for file_name in src_files:
+                #     full_file_name = os.path.join(source_dir, file_name)
+                #     if os.path.isfile(full_file_name):
+                #         shutil.copy(
+                #             full_file_name,
+                #             os.path.join(test_run_directory, 'datasets', 'FMUs')
+                #         )
+
+            # rewrite the idf with the (potentially) modified idf text
+            with io.open(
+                    os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename, ep_in_filename),
+                    'w',
+                    encoding='utf-8'
+            ) as f_i:
+                f_i.write("%s\n" % idf_text)
 
             rvi = os.path.join(build_tree['test_files_dir'], this_entry.basename) + '.rvi'
             if os.path.exists(rvi):
@@ -349,57 +335,43 @@ class SuiteRunner:
                     epw_path = os.path.join(build_tree['weather_dir'], self.default_weather_filename)
 
             energy_plus_runs.append(
-                (
-                    energyplus.execute_energyplus,
-                    (
-                        build_tree,
-                        this_entry.basename,
-                        test_run_directory,
-                        local_run_type,
-                        self.min_reporting_freq,
-                        parametric_file,
-                        epw_path
-                    )
+                ExecutionArguments(
+                    build_tree,
+                    this_entry.basename,
+                    test_run_directory,
+                    local_run_type,
+                    self.min_reporting_freq,
+                    parametric_file,
+                    epw_path
                 )
             )
 
-        if self.number_of_threads == 1:
-            for task in energy_plus_runs:
-                # Sometime I'll look at how to squash the args down, for now just fill a temp array as needed
-                tmp_array = []
-                for val in task[1]:
-                    tmp_array.append(val)
-                if self.id_like_to_stop_now:  # pragma: no cover
-                    return  # self.my_cancelled() is called in parent function
-                ret = energyplus.execute_energyplus(*tmp_array)
-                self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
-        else:
-            # Submit tasks
-            for task in energy_plus_runs:
-                task_queue.put(task)
+        # So...on Windows, pyinstaller freezes the application, and then multiprocessing vomits on this.
+        # If you are running this from code, say from a Pip install, it works fine.  It's merely the combination of
+        # freezing _plus_ multiprocessing.  Apparently the tool needs to run multiprocessing.freeze_support(), which I
+        # tried, but that wasn't sufficient.  There is also a hack you can do to override the multiprocessing.Process
+        # class and add some extra stuff in there, but I could not figure out how to integrate that along with the
+        # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
+        # multithreaded.
+        if frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover -- not covering frozen apps in unit tests
+            self.my_print("Ignoring num_threads on frozen Windows/Mac instance, just running with one thread.")
+            for run in energy_plus_runs:
+                ep_return = self.ep_wrapper(run)
+                self.ep_done(ep_return)
+        else:  # for all other applications, run them in a multiprocessing pool
+            p = Pool(self.number_of_threads)
+            for run in energy_plus_runs:
+                p.apply_async(self.ep_wrapper, (run,), callback=self.ep_done, error_callback=self.ep_done)
+            p.close()
+            p.join()
 
-            # Start worker processes
-            for i in range(self.number_of_threads):
-                p = Process(target=self.threaded_worker, args=(task_queue, done_queue))
-                p.daemon = True  # this *is* "necessary" to allow cancelling the suite
-                p.start()
+    def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
+        if self.id_like_to_stop_now:
+            return
+        return execute_energyplus(run_args)
 
-            # Get and print results
-            for i in range(len(energy_plus_runs)):
-                ret = done_queue.get()
-                self.my_casecompleted(TestCaseCompleted(ret[0], ret[1], ret[2], ret[3], ret[4]))
-
-            # Tell child processes to stop
-            for i in range(self.number_of_threads):
-                task_queue.put('STOP')
-
-    def threaded_worker(self, input_data, output):  # pragma: no cover - even with multiprocess, coverage misses this
-        for func, these_args in iter(input_data.get, 'STOP'):
-            if self.id_like_to_stop_now:
-                print("I'd like to stop now.")
-                return
-            return_val = func(*these_args)
-            output.put(return_val)  # something needs to be put into the output queue for everything to work
+    def ep_done(self, results):
+        self.my_casecompleted(TestCaseCompleted(*results))
 
     @staticmethod
     def both_files_exist(base_path_a, base_path_b, common_relative_path):
@@ -592,25 +564,25 @@ class SuiteRunner:
             time_stamps_2 = [list(row.keys())[0] for row in rows_2]
             ok_to_continue = True
             if not columns_1 == columns_2:
-                diffs.append("Column mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Column mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not report_freq_1 == report_freq_2:
-                diffs.append("Report frequency mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Report frequency mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not len(rows_1) == len(rows_2):
-                diffs.append("Row count mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Row count mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
                 ok_to_continue = False
             elif not time_stamps_1 == time_stamps_2:
-                diffs.append("Timestamp mismatch in JSON time-series output, numerics not checked")
+                diffs.append("Timestamp mismatch in JSON time-series output, numeric data not checked")
                 resulting_diff_type = "Big Diffs"
                 num_values_checked = 1
                 num_big_diffs = 1
@@ -639,12 +611,15 @@ class SuiteRunner:
                                     resulting_diff_type = 'Small Diffs'
                                 num_small_diffs += 1
         except KeyError:
-            diffs.append("JSON key problem in JSON time-series output, numerics not checked")
+            diffs.append("JSON key problem in JSON time-series output, numeric data not checked")
             resulting_diff_type = "Big Diffs"
             num_values_checked = 1
             num_big_diffs = 1
         with io.open(diff_file, 'w', encoding='utf-8') as out_file:
-            my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
+            my_json_str = json.dumps(
+                {'diffs': diffs, 'num_big_diffs': num_big_diffs, 'num_small_diffs': num_small_diffs},
+                ensure_ascii=False
+            )
             if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
                 my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)
@@ -802,6 +777,11 @@ class SuiteRunner:
                 path_to_table_diff_log)))
 
         # Do Textual Diffs
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'in.idf'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'in.idf'),
+                join(case_result_dir_2, 'in.idf'),
+                join(out_dir, 'in.idf.diff'))), TextDifferences.IDF)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),
@@ -951,7 +931,8 @@ class SuiteRunner:
         completed_structure = CompletedStructure(
             self.build_tree_a['source_dir'], self.build_tree_a['build_dir'],
             self.build_tree_b['source_dir'], self.build_tree_b['build_dir'],
-            os.path.join(self.build_tree_a['build_dir'], self.test_output_dir)
+            os.path.join(self.build_tree_a['build_dir'], self.test_output_dir),
+            os.path.join(self.build_tree_b['build_dir'], self.test_output_dir)
         )
         for this_entry in self.entries:
             try:
@@ -970,6 +951,7 @@ class SuiteRunner:
 
     def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
                       diffcompleted_callback, alldone_callback, cancel_callback):
+        self.mute = False
         self.print_callback = print_callback
         self.starting_callback = simstarting_callback
         self.case_completed_callback = casecompleted_callback
@@ -979,24 +961,29 @@ class SuiteRunner:
         self.cancel_callback = cancel_callback
 
     def my_print(self, msg):
+        if self.mute:
+            return
         if self.print_callback:
             self.print_callback(msg)
             # print(msg) #can uncomment to debug
         else:  # pragma: no cover
             print(msg)
 
-    def my_starting(self, number_of_builds, number_of_cases_per_build):
+    def my_starting(self, number_of_cases_per_build):
+        if self.mute:
+            return
         if self.starting_callback:
-            self.starting_callback(number_of_builds, number_of_cases_per_build)
+            self.starting_callback(number_of_cases_per_build)
         else:  # pragma: no cover
             self.my_print(
-                "Starting runtests, # builds = %i, # cases per build = %i" % (
-                    number_of_builds,
+                "Starting runtests, # cases per build = %i" % (
                     number_of_cases_per_build
                 )
             )
 
     def my_casecompleted(self, test_case_completed_instance):
+        if self.mute:
+            return
         if self.case_completed_callback:
             self.case_completed_callback(test_case_completed_instance)
         else:  # pragma: no cover
@@ -1008,24 +995,32 @@ class SuiteRunner:
             )
 
     def my_simulationscomplete(self):
+        if self.mute:
+            return
         if self.simulations_complete_callback:
             self.simulations_complete_callback()
         else:  # pragma: no cover
             self.my_print("Completed all simulations")
 
     def my_diffcompleted(self, case_name):
+        if self.mute:
+            return
         if self.diff_completed_callback:
-            self.diff_completed_callback(case_name)
+            self.diff_completed_callback()
         else:  # pragma: no cover
             self.my_print("Completed diffing case: %s" % case_name)
 
     def my_alldone(self, results):
+        if self.mute:
+            return
         if self.all_done_callback:
             self.all_done_callback(results)
         else:  # pragma: no cover
             self.my_print("Completed runtests")
 
     def my_cancelled(self):  # pragma: no cover
+        if self.mute:
+            return
         if self.cancel_callback:
             self.cancel_callback()
         else:

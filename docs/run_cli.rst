@@ -14,8 +14,7 @@ Running build\_files\_to\_run.py
 In order to run a test suite, the main suite engine must know what files
 are to be run. The build\_files\_to\_run script generates a file to be
 used later by the test suite engine, that contains a properly formatted
-listing of files to be run. The basic operation is shown in Figure
-[fig:cmdprocess].
+listing of files to be run. The basic operation is shown in the following figure:
 
 .. figure:: Images/RunFromCommandLineProcess.jpg
    :alt: Utilizing the build\_files\_to\_run script to generate file list
@@ -23,7 +22,7 @@ listing of files to be run. The basic operation is shown in Figure
    High level overview of utilizing the build\_files\_to\_run script to
    generate a list of files for a test suite
 
-Figure [fig:cmdprocess] shows how the process begins by combining the
+This figure shows how the process begins by combining the
 master csv file which lists all the details about the idf set with a set
 of user options such as "Don’t run files with external interface dependence,
 and select a random set of 7". The script process these two inputs, and
