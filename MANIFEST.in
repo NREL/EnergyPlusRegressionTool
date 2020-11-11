@@ -1,1 +1,2 @@
 recursive-include epregressions *.config
+recursive-include epregressions *.png

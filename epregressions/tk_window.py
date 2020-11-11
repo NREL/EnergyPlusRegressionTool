@@ -10,6 +10,7 @@ from threading import Thread
 from time import sleep
 from tkinter import (
     Tk, ttk,  # Core pieces
+    PhotoImage,  # for taskbar icon
     Button, Frame, Label, LabelFrame, Listbox, Menu, OptionMenu, Scrollbar, Spinbox,  # Widgets
     StringVar,  # Special Types
     messagebox,  # Dialog boxes
@@ -81,8 +82,12 @@ class PubSubMessageTypes:
 class MyApp(Frame):
 
     def __init__(self):
-        self.root = Tk()
+        self.root = Tk(className='eplus_regression_runner')
         Frame.__init__(self, self.root)
+
+        # add the taskbar icon
+        img = PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png'))
+        self.root.iconphoto(False, img)
 
         # high level GUI configuration
         self.root.geometry('1000x600')
