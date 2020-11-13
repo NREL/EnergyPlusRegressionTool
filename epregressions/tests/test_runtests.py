@@ -1970,10 +1970,16 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
 
     def test_err_diff_equal_with_ignored_differences(self):
-        base_eio = os.path.join(self.resources, 'eplusout_base.err')
-        mod_eio = os.path.join(self.resources, 'eplusout_mod.err')
+        base_err = os.path.join(self.resources, 'eplusout_base.err')
+        mod_err = os.path.join(self.resources, 'eplusout_mod.err')
         diff_file = os.path.join(self.temp_base_build_dir, 'err.diff')
-        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_err, mod_err, diff_file))
+
+    def test_audit_diff_equal_with_ignored_differences(self):
+        base_audit = os.path.join(self.resources, 'eplusout_base.audit')
+        mod_audit = os.path.join(self.resources, 'eplusout_mod.audit')
+        diff_file = os.path.join(self.temp_base_build_dir, 'err.audit')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_audit, mod_audit, diff_file))
 
     def test_glhe_diff(self):
         base_glhe = os.path.join(self.resources, 'eplusout_base.glhe')
