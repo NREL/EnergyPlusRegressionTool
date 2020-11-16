@@ -397,6 +397,8 @@ class SuiteRunner:
             "(idf)=",
             "(user input)=",
             "(input file)=",
+            "(IDF Directory)=",
+            "(Current Working Directory)\"=",
             "ReadVars Run Time",
             "EnergyPlus Program Version",
             "PythonPlugin: Class"
