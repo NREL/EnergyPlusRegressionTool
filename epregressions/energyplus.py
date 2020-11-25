@@ -22,6 +22,10 @@ class ExecutionArguments:
         self.weather_file_name = weather_file_name
 
 
+def test_dir_path(test_path, rel_path):
+    return os.path.join(test_path, rel_path)
+
+
 # noinspection PyBroadException
 def execute_energyplus(e_args: ExecutionArguments):
     # setup a few paths
@@ -36,23 +40,23 @@ def execute_energyplus(e_args: ExecutionArguments):
     readvars = e_args.build_tree['readvars']
     parametric = e_args.build_tree['parametric']
 
-    # Save the current path so we can go back here
-    start_path = os.getcwd()
+    d = e_args.test_run_directory
+
+    std_out = b""
+
     try:
 
-        new_idd_path = os.path.join(e_args.test_run_directory, 'Energy+.idd')
+        new_idd_path = test_dir_path(d, 'Energy+.idd')
         shutil.copy(idd_path, new_idd_path)
 
         # Copy the weather file into the simulation directory
         if e_args.run_type != ForceRunType.DD:
-            shutil.copy(e_args.weather_file_name, os.path.join(e_args.test_run_directory, 'in.epw'))
-
-        # Switch to the simulation directory
-        os.chdir(e_args.test_run_directory)
+            shutil.copy(e_args.weather_file_name, test_dir_path(d, 'in.epw'))
 
         # Run EPMacro as necessary
-        if os.path.exists('in.imf'):
-            with open('in.imf', 'rb') as f:
+        imf_path = test_dir_path(d, 'in.imf')
+        if os.path.exists(imf_path):
+            with open(imf_path, 'rb') as f:
                 lines = f.readlines()
             newlines = []
             for line in lines:
@@ -61,76 +65,79 @@ def execute_energyplus(e_args: ExecutionArguments):
                     newlines.append('')
                 else:
                     newlines.append(encoded_line)
-            with open('in.imf', 'w') as f:
+            with open(imf_path, 'w') as f:
                 for line in newlines:
                     f.write(line)
-            macro_run = subprocess.Popen(
-                epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            macro_run.communicate()
-            os.rename('out.idf', 'in.idf')
+            try:
+                std_out += subprocess.check_output([epmacro], cwd=d)
+            except subprocess.CalledProcessError:
+                ...  # it wasn't doing anything before, so not catching anything here for now
+            os.rename(test_dir_path(d, 'out.idf'), test_dir_path(d, 'in.idf'))
 
         # Run Preprocessor -- after EPMacro?
         if e_args.this_parametric_file:
-            parametric_run = subprocess.Popen(
-                parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            parametric_run.communicate()
-            candidate_files = glob.glob('in-*.idf')
+            try:
+                std_out += subprocess.check_output([parametric, 'in.idf'], cwd=e_args.test_run_directory)
+            except subprocess.CalledProcessError:
+                ...  # it wasn't doing anything before, so not catching anything here for now
+            candidate_files = glob.glob(test_dir_path(d, 'in-*.idf'))
             if len(candidate_files) > 0:
                 file_to_run_here = sorted(candidate_files)[0]
-                if os.path.exists('in.idf'):
-                    os.remove('in.idf')
-                os.rename(file_to_run_here, 'in.idf')
+                idf_path = test_dir_path(d, 'in.idf')
+                if os.path.exists(idf_path):
+                    os.remove(idf_path)
+                os.rename(file_to_run_here, idf_path)
             else:
                 return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Run ExpandObjects and process as necessary
-        expand_objects_run = subprocess.Popen(
-            expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        expand_objects_run.communicate()
-        if os.path.exists('expanded.idf'):
-            if os.path.exists('in.idf'):
-                os.remove('in.idf')
-            os.rename('expanded.idf', 'in.idf')
+        try:
+            std_out += subprocess.check_output([expandobjects], cwd=e_args.test_run_directory)
+        except subprocess.CalledProcessError:
+            ...  # it wasn't doing anything before, so not catching anything for now
+        expanded_idf_path = test_dir_path(d, 'expanded.idf')
+        idf_path = test_dir_path(d, 'in.idf')
+        if os.path.exists(expanded_idf_path):
+            if os.path.exists(idf_path):
+                os.remove(idf_path)
+            os.rename(expanded_idf_path, idf_path)
 
-            if os.path.exists('BasementGHTIn.idf'):
+            if os.path.exists(test_dir_path(d, 'BasementGHTIn.idf')):
                 shutil.copy(basementidd, e_args.test_run_directory)
                 basement_environment = os.environ.copy()
                 basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
-                basement_run = subprocess.Popen(
-                    basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, env=basement_environment
-                )
-                basement_run.communicate()
-                with open('EPObjects.TXT') as f:
+                try:
+                    std_out += subprocess.check_output(
+                        [basement], env=basement_environment, cwd=e_args.test_run_directory
+                    )
+                except subprocess.CalledProcessError:
+                    ...  # it wasn't catching anything before, so not catching anything for now
+                with open(test_dir_path(d, 'EPObjects.TXT')) as f:
                     append_text = f.read()
-                with open('in.idf', 'a') as f:
+                with open(idf_path, 'a') as f:
                     f.write("\n%s\n" % append_text)
-                os.remove('RunINPUT.TXT')
-                os.remove('RunDEBUGOUT.TXT')
-                os.remove('EPObjects.TXT')
-                os.remove('BasementGHTIn.idf')
-                os.remove('MonthlyResults.csv')
-                os.remove('BasementGHT.idd')
+                files_to_remove = [
+                    'RunINPUT.TXT', 'RunDEBUGOUT.TXT', 'EPObjects.TXT',
+                    'BasementGHTIn.idf', 'MonthlyResults.csv', 'BasementGHT.idd'
+                ]
+                for file_to_remove in files_to_remove:
+                    os.remove(test_dir_path(d, file_to_remove))
 
-            if os.path.exists('GHTIn.idf'):
+            if os.path.exists(test_dir_path(d, 'GHTIn.idf')):
                 shutil.copy(slabidd, e_args.test_run_directory)
-                slab_run = subprocess.Popen(
-                    slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                slab_run.communicate()
-                with open('SLABSurfaceTemps.TXT') as f:
+                try:
+                    std_out += subprocess.check_output([slab], cwd=e_args.test_run_directory)
+                except subprocess.CalledProcessError:
+                    ...  # it wasn't doing anything before, so not catching anything for now
+                with open(test_dir_path(d, 'SLABSurfaceTemps.TXT')) as f:
                     append_text = f.read()
-                with open('in.idf', 'a') as f:
+                with open(test_dir_path(d, 'in.idf'), 'a') as f:
                     f.write("\n%s\n" % append_text)
-                os.remove('SLABINP.TXT')
-                os.remove('GHTIn.idf')
-                os.remove('SLABSurfaceTemps.TXT')
-                os.remove('SLABSplit Surface Temps.TXT')
-                os.remove('SlabGHT.idd')
+                files_to_remove = [
+                    'SLABINP.TXT', 'GHTIn.idf', 'SLABSurfaceTemps.TXT', 'SLABSplit Surface Temps.TXT', 'SlabGHT.idd'
+                ]
+                for file_to_remove in files_to_remove:
+                    os.remove(test_dir_path(d, file_to_remove))
 
         # Set up environment
         os.environ["DISPLAYADVANCEDREPORTVARIABLES"] = "YES"
@@ -157,45 +164,42 @@ def execute_energyplus(e_args: ExecutionArguments):
 
         # Execute EnergyPlus
         try:
-            subprocess.check_call(
-                energyplus, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-        except Exception:  # pragma: no cover
+            std_out += subprocess.check_output([energyplus], cwd=e_args.test_run_directory)
+        except subprocess.CalledProcessError:  # pragma: no cover
             ...
             # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
             #  here alone, it shows as missing on the coverage...wonky
             return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
 
         # Execute readvars
-        if os.path.exists('in.rvi'):
-            csv_run = subprocess.Popen(
-                readvars + ' in.rvi', shell=True, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+        if os.path.exists(test_dir_path(d, 'in.rvi')):
+            try:
+                std_out += subprocess.check_output([readvars, 'in.rvi'], cwd=e_args.test_run_directory)
+            except subprocess.CalledProcessError:
+                ...  # it wasn't catching anything before, so not catching anything for now
         else:
-            csv_run = subprocess.Popen(
-                readvars, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        csv_run.communicate()
-        if os.path.exists('in.mvi'):
-            mtr_run = subprocess.Popen(
-                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+            try:
+                std_out += subprocess.check_output([readvars], cwd=e_args.test_run_directory)
+            except subprocess.CalledProcessError:
+                ...  # it wasn't doing anything before, so not catching anything for now
+        if os.path.exists(test_dir_path(d, 'in.mvi')):
+            try:
+                std_out += subprocess.check_output([readvars, 'in.mvi'], cwd=e_args.test_run_directory)
+            except subprocess.CalledProcessError:
+                ...  # it wasn't doing anything before, so not catching anything for now
         else:
-            with open('in.mvi', 'w') as f:
+            with open(test_dir_path(d, 'in.mvi'), 'w') as f:
                 f.write("eplusout.mtr\n")
                 f.write("eplusmtr.csv\n")
-            mtr_run = subprocess.Popen(
-                readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-        mtr_run.communicate()
-
+            try:
+                std_out += subprocess.check_output([readvars, 'in.mvi'])
+            except subprocess.CalledProcessError:
+                ...  # it wasn't doing anything before, so not catching anything for now
+        with open(test_dir_path(d, 'eplusout.stdout'), 'w') as f:
+            f.write(std_out.decode(encoding='utf-8', errors='ignore'))
         os.remove(new_idd_path)
+
         return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
 
     except Exception:
         return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
-
-    finally:
-        os.chdir(start_path)

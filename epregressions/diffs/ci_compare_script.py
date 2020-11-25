@@ -191,6 +191,14 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
             has_small_diffs = True
             print_message("Table small diffs.")
 
+    if entry.idf_diffs and (entry.idf_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("IDF diffs.")
+
+    if entry.stdout_diffs and (entry.stdout_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("StdOut diffs.")
+
     if has_small_diffs:
         print("[decent_ci:test_result:warn]")
 

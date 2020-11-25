@@ -401,7 +401,10 @@ class SuiteRunner:
             "(Current Working Directory)\"=",
             "ReadVars Run Time",
             "EnergyPlus Program Version",
-            "PythonPlugin: Class"
+            "PythonPlugin: Class",
+            "ExpandObjects Finished. Time:",
+            "EnergyPlus, Version",
+            "EnergyPlus Run Time=",
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
@@ -784,6 +787,11 @@ class SuiteRunner:
                 join(case_result_dir_1, 'in.idf'),
                 join(case_result_dir_2, 'in.idf'),
                 join(out_dir, 'in.idf.diff'))), TextDifferences.IDF)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stdout'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.stdout'),
+                join(case_result_dir_2, 'eplusout.stdout'),
+                join(out_dir, 'eplusout.stdout.diff'))), TextDifferences.STDOUT)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),

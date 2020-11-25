@@ -85,9 +85,10 @@ class MyApp(Frame):
         self.root = Tk(className='eplus_regression_runner')
         Frame.__init__(self, self.root)
 
-        # add the taskbar icon
-        img = PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png'))
-        self.root.iconphoto(False, img)
+        # add the taskbar icon, but its having issues reading the png on Mac, not sure.
+        if system() != 'Darwin':
+            img = PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png'))
+            self.root.iconphoto(False, img)
 
         # high level GUI configuration
         self.root.geometry('1000x600')
