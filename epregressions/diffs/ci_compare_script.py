@@ -199,6 +199,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("StdOut diffs.")
 
+    if entry.stderr_diffs and (entry.stderr_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("StdErr diffs.")
+
     if has_small_diffs:
         print("[decent_ci:test_result:warn]")
 

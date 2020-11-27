@@ -69,6 +69,7 @@ class TextDifferences:
     GLHE = 20
     IDF = 21
     STDOUT = 22
+    STDERR = 23
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -213,6 +214,7 @@ class TestEntry:
         self.json_diffs = None
         self.idf_diffs = None
         self.stdout_diffs = None
+        self.stderr_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -274,6 +276,8 @@ class TestEntry:
             self.idf_diffs = diffs
         elif diff_type == TextDifferences.STDOUT:
             self.stdout_diffs = diffs
+        elif diff_type == TextDifferences.STDERR:
+            self.stderr_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -342,6 +346,8 @@ class TestEntry:
                 response['idf_diffs'] = self.idf_diffs.to_dict()
             if self.stdout_diffs:
                 response['stdout_diffs'] = self.stdout_diffs.to_dict()
+            if self.stderr_diffs:
+                response['stderr_diffs'] = self.stderr_diffs.to_dict()
         return response
 
 
@@ -432,6 +438,7 @@ class CompletedStructure:
             this_entry.screen_diffs: "screen",
             this_entry.glhe_diffs: "glhe",
             this_entry.stdout_diffs: "stdout",
+            this_entry.stderr_diffs: "stderr",
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

@@ -245,7 +245,7 @@ class MyApp(Frame):
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
-        group_full_idf_list.pack(fill=X, padx=5)
+        group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_full_idf_list)
         self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set)
         self.full_idf_listbox.bind('<Double-1>', self.idf_move_to_active)
@@ -253,18 +253,20 @@ class MyApp(Frame):
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.full_idf_listbox.yview)
 
+        down_arrows = "  ↓  " * 4
         self.move_idf_to_active_button = Button(
-            pane_idfs, text="↓ Add to Active List ↓", command=self.idf_move_to_active
+            pane_idfs, text=down_arrows + "Add to Active List" + down_arrows, command=self.idf_move_to_active
         )
-        self.move_idf_to_active_button.pack(side=TOP, fill=X, expand=True)
+        self.move_idf_to_active_button.pack(side=TOP, fill=X, expand=False)
 
+        up_arrows = "  ↑  " * 4
         self.remove_idf_from_active_button = Button(
-            pane_idfs, text="↑ Remove from Active List ↑", command=self.idf_remove_from_active
+            pane_idfs, text=up_arrows + "Remove from Active List" + up_arrows, command=self.idf_remove_from_active
         )
-        self.remove_idf_from_active_button.pack(side=TOP, fill=X, expand=True)
+        self.remove_idf_from_active_button.pack(side=TOP, fill=X, expand=False)
 
         group_active_idf_list = LabelFrame(pane_idfs, text="Active IDF List")
-        group_active_idf_list.pack(fill=X, padx=5)
+        group_active_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_active_idf_list)
         self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set)
         self.active_idf_listbox.bind('<Double-1>', self.idf_remove_from_active)
@@ -316,7 +318,7 @@ class MyApp(Frame):
         self.run_button.pack(side=LEFT, expand=0)
         self.stop_button = Button(frame_status, text="Stop", command=self.client_stop, state='disabled')
         self.stop_button.pack(side=LEFT, expand=0)
-        self.progress = ttk.Progressbar(frame_status)
+        self.progress = ttk.Progressbar(frame_status, length=250)
         self.progress.pack(side=LEFT, expand=0)
         label = Label(frame_status, textvariable=self.label_string)
         self.label_string.set("Initialized")
