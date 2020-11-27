@@ -135,6 +135,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         os.makedirs(tdv_dir)
         with open(os.path.join(tdv_dir, 'dummy.txt'), 'w') as f_tdv:
             f_tdv.write('HEY')
+        if 'extra_data' in idf_config['config'] and 'ExternalInterface' in idf_config['config']['extra_data']:
+            fmu_dir = os.path.join(datasets_dir, 'FMUs')
+            os.makedirs(fmu_dir)
+            with open(os.path.join(fmu_dir, 'My.fmu'), 'w') as f_fmu:
+                f_fmu.write('AlgebraicVariables')
         # os.path.join(self.resource_dir, 'dummy.epmacro.py'): os.path.join(products_dir, 'Energy+.idd'),
 
     @staticmethod
@@ -1699,7 +1704,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in.idf')))
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'in-02.idf')))
 
-    def test_external_interface_is_skipped(self):
+    def test_external_interface_is_executed(self):
         base = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
             self.temp_base_build_dir,
@@ -1762,8 +1767,8 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should be named according to what we listed above
         self.assertEqual('my_file', results_for_file.basename)
         # it should have been skipped in both cases, so missing
-        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case1)
-        self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case2)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
 
     def test_both_success_no_diffs_dd_only(self):
         base = CMakeCacheMakeFileBuildDirectory()

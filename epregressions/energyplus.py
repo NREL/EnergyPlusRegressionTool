@@ -48,7 +48,8 @@ def execute_energyplus(e_args: ExecutionArguments):
         shutil.copy(idd_path, new_idd_path)
 
         # Copy the weather file into the simulation directory
-        shutil.copy(e_args.weather_file_name, os.path.join(e_args.test_run_directory, 'in.epw'))
+        if e_args.weather_file_name:
+            shutil.copy(e_args.weather_file_name, os.path.join(e_args.test_run_directory, 'in.epw'))
 
         # Switch to the simulation directory
         os.chdir(e_args.test_run_directory)
