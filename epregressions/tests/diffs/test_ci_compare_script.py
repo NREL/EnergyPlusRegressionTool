@@ -214,14 +214,17 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('eplusscreen.csv', 'base screen output', 'mod screen output')
         self._write_files_to_both_folders('eplusout.glhe', '{"glhe_1":{}}', '{"glhe 2":{}}')
         self._write_files_to_both_folders('eplusout_hourly.json', '{"hi":{}}', '{"bye":{}}')
+        self._write_files_to_both_folders('in.idf', 'base idf content', 'mod idf content')
+        self._write_files_to_both_folders('eplusout.stdout', 'base standard output', 'mod standard output')
+        self._write_files_to_both_folders('eplusout.stderr', 'base standard error', 'mod standard error')
         with captured_output() as (out, err):
             # should fail if we don't have any .end files
             main_function(
                 file_name='HVACTemplate-5ZoneFanCoil',
                 base_dir=self.temp_base_dir,
                 mod_dir=self.temp_mod_dir,
-                base_sha='base123',
-                mod_sha='mod456',
+                base_sha='base124',
+                mod_sha='mod457',
                 make_public=True,
                 device_id='some_device_id',
                 test_mode=True
@@ -253,7 +256,10 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 'SCREEN diffs',
                 'GLHE diffs',
                 'JSON big diffs',
-                '[decent_ci:test_result:warn]'
+                '[decent_ci:test_result:warn]',
+                'IDF diffs',
+                'StdOut diffs',
+                'StdErr diffs'
             ]
             output = out.getvalue().strip()
             for token in expected_tokens:

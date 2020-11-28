@@ -38,13 +38,17 @@ def execute_energyplus(e_args: ExecutionArguments):
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
+
+    std_out = b""
+    std_err = b""
+
     try:
 
         new_idd_path = os.path.join(e_args.test_run_directory, 'Energy+.idd')
         shutil.copy(idd_path, new_idd_path)
 
         # Copy the weather file into the simulation directory
-        if e_args.run_type != ForceRunType.DD:
+        if e_args.weather_file_name:
             shutil.copy(e_args.weather_file_name, os.path.join(e_args.test_run_directory, 'in.epw'))
 
         # Switch to the simulation directory
@@ -67,7 +71,9 @@ def execute_energyplus(e_args: ExecutionArguments):
             macro_run = subprocess.Popen(
                 epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-            macro_run.communicate()
+            o, e = macro_run.communicate()
+            std_out += o
+            std_err += e
             os.rename('out.idf', 'in.idf')
 
         # Run Preprocessor -- after EPMacro?
@@ -76,7 +82,9 @@ def execute_energyplus(e_args: ExecutionArguments):
                 parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-            parametric_run.communicate()
+            o, e = parametric_run.communicate()
+            std_out += o
+            std_err += e
             candidate_files = glob.glob('in-*.idf')
             if len(candidate_files) > 0:
                 file_to_run_here = sorted(candidate_files)[0]
@@ -84,13 +92,15 @@ def execute_energyplus(e_args: ExecutionArguments):
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
+                return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, "Issue with Parametrics"]
 
         # Run ExpandObjects and process as necessary
         expand_objects_run = subprocess.Popen(
             expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        expand_objects_run.communicate()
+        o, e = expand_objects_run.communicate()
+        std_out += o
+        std_err += e
         if os.path.exists('expanded.idf'):
             if os.path.exists('in.idf'):
                 os.remove('in.idf')
@@ -104,7 +114,9 @@ def execute_energyplus(e_args: ExecutionArguments):
                     basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE, env=basement_environment
                 )
-                basement_run.communicate()
+                o, e = basement_run.communicate()
+                std_out += o
+                std_err += e
                 with open('EPObjects.TXT') as f:
                     append_text = f.read()
                 with open('in.idf', 'a') as f:
@@ -121,7 +133,9 @@ def execute_energyplus(e_args: ExecutionArguments):
                 slab_run = subprocess.Popen(
                     slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
-                slab_run.communicate()
+                o, e = slab_run.communicate()
+                std_out += o
+                std_err += e
                 with open('SLABSurfaceTemps.TXT') as f:
                     append_text = f.read()
                 with open('in.idf', 'a') as f:
@@ -157,14 +171,14 @@ def execute_energyplus(e_args: ExecutionArguments):
 
         # Execute EnergyPlus
         try:
-            subprocess.check_call(
-                energyplus, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            std_out += subprocess.check_output(
+                energyplus, shell=True, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE
             )
-        except Exception:  # pragma: no cover
+        except subprocess.CalledProcessError as e:  # pragma: no cover
             ...
             # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
             #  here alone, it shows as missing on the coverage...wonky
-            return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
+            return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
         # Execute readvars
         if os.path.exists('in.rvi'):
@@ -175,7 +189,9 @@ def execute_energyplus(e_args: ExecutionArguments):
         else:
             csv_run = subprocess.Popen(
                 readvars, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        csv_run.communicate()
+        o, e = csv_run.communicate()
+        std_out += o
+        std_err += e
         if os.path.exists('in.mvi'):
             mtr_run = subprocess.Popen(
                 readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
@@ -189,13 +205,22 @@ def execute_energyplus(e_args: ExecutionArguments):
                 readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-        mtr_run.communicate()
+        o, e = mtr_run.communicate()
+        std_out += o
+        std_err += e
+
+        if len(std_out) > 0:
+            with open('eplusout.stdout', 'w') as f:
+                f.write(std_out.decode('utf-8'))
+        if len(std_err) > 0:
+            with open('eplusout.stderr', 'w') as f:
+                f.write(std_err.decode('utf-8'))
 
         os.remove(new_idd_path)
         return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
 
-    except Exception:
-        return [e_args.build_tree['build_dir'], e_args.entry_name, False, False]
+    except Exception as e:
+        return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
     finally:
         os.chdir(start_path)

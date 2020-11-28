@@ -49,11 +49,12 @@ class TestRunConfiguration:
 
 
 class TestCaseCompleted:
-    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already):
+    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, extra_message=""):
         self.run_directory = run_directory
         self.case_name = case_name
         self.run_success = run_status
         self.muffle_err_msg = error_msg_reported_already
+        self.extra_message = extra_message
 
 
 # the actual main test suite run class
@@ -258,6 +259,22 @@ class SuiteRunner:
                     os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
                 )
 
+            if 'LookupTable.csv' in idf_text:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'LookupTable.csv'),
+                    os.path.join(test_run_directory, 'LookupTable.csv')
+                )
+
+            if 'HybridModel' in this_entry.basename:
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'HybridModel_Measurements_with_HVAC.csv'),
+                    os.path.join(test_run_directory, 'HybridModel_Measurements_with_HVAC.csv')
+                )
+                shutil.copy(
+                    os.path.join(build_tree['test_files_dir'], 'HybridModel_Measurements_no_HVAC.csv'),
+                    os.path.join(test_run_directory, 'HybridModel_Measurements_no_HVAC.csv')
+                )
+
             if 'SolarShadingTest_Shading_Data.csv' in idf_text:
                 shutil.copy(
                     os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
@@ -279,19 +296,20 @@ class SuiteRunner:
             # if the file requires the FMUs data set file, bring it
             #  into the test run directory, right now I think it's broken
             if 'ExternalInterface:' in idf_text:
-                self.my_print('Skipping an FMU based file as this is not set up to run yet')
-                continue
-                # os.mkdir(os.path.join(test_run_directory, 'datasets'))
-                # os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
-                # source_dir = os.path.join('datasets', 'FMUs')
-                # src_files = os.listdir(source_dir)
-                # for file_name in src_files:
-                #     full_file_name = os.path.join(source_dir, file_name)
-                #     if os.path.isfile(full_file_name):
-                #         shutil.copy(
-                #             full_file_name,
-                #             os.path.join(test_run_directory, 'datasets', 'FMUs')
-                #         )
+                # self.my_print('Skipping an FMU based file as this is not set up to run yet')
+                # continue
+                os.mkdir(os.path.join(test_run_directory, 'datasets'))
+                os.mkdir(os.path.join(test_run_directory, 'datasets', 'FMUs'))
+                fmu_dir = os.path.join(build_tree['data_sets_dir'], 'FMUs')
+                src_files = os.listdir(fmu_dir)
+                for file_name in src_files:
+                    full_file_name = os.path.join(fmu_dir, file_name)
+                    if os.path.isfile(full_file_name):
+                        shutil.copy(
+                            full_file_name,
+                            os.path.join(test_run_directory, 'datasets', 'FMUs')
+                        )
+                idf_text = idf_text.replace('..\\datasets', 'datasets')
 
             # rewrite the idf with the (potentially) modified idf text
             with io.open(
@@ -353,7 +371,7 @@ class SuiteRunner:
         # class and add some extra stuff in there, but I could not figure out how to integrate that along with the
         # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
         # multithreaded.
-        if frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover -- not covering frozen apps in unit tests
+        if self.number_of_threads == 1 or frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover
             self.my_print("Ignoring num_threads on frozen Windows/Mac instance, just running with one thread.")
             for run in energy_plus_runs:
                 ep_return = self.ep_wrapper(run)
@@ -367,7 +385,7 @@ class SuiteRunner:
 
     def ep_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
-            return
+            return ["", "Cancelled", False, False]
         return execute_energyplus(run_args)
 
     def ep_done(self, results):
@@ -398,10 +416,17 @@ class SuiteRunner:
             "(user input)=",
             "(input file)=",
             "(IDF Directory)=",
+            "(Current Working Directory)=",
             "(Current Working Directory)\"=",
             "ReadVars Run Time",
             "EnergyPlus Program Version",
-            "PythonPlugin: Class"
+            "PythonPlugin: Class",
+            "ExpandObjects Finished. Time:",
+            "EnergyPlus, Version",
+            "EnergyPlus Run Time=",
+            "ParametricPreprocessor Finished. Time:",
+            "ExpandObjects Finished with Error(s). Time:",
+            "Elapsed time: ",
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
@@ -784,6 +809,16 @@ class SuiteRunner:
                 join(case_result_dir_1, 'in.idf'),
                 join(case_result_dir_2, 'in.idf'),
                 join(out_dir, 'in.idf.diff'))), TextDifferences.IDF)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stdout'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.stdout'),
+                join(case_result_dir_2, 'eplusout.stdout'),
+                join(out_dir, 'eplusout.stdout.diff'))), TextDifferences.STDOUT)
+        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stderr'):
+            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+                join(case_result_dir_1, 'eplusout.stderr'),
+                join(case_result_dir_2, 'eplusout.stderr'),
+                join(out_dir, 'eplusout.stderr.diff'))), TextDifferences.STDERR)
         if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
             this_entry.add_text_differences(TextDifferences(self.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),

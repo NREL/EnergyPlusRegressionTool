@@ -40,8 +40,30 @@ class BaseBuildDirectoryStructure(object):
     def get_idfs_in_dir(idf_dir: Path) -> Set[Path]:
         idf_path = Path(idf_dir)
         all_idfs_absolute_path = list(idf_path.rglob('*.idf'))
+        all_idfs_absolute_path.extend(list(idf_path.rglob('*.imf')))
         all_idfs_relative_path = set([idf.relative_to(idf_path) for idf in all_idfs_absolute_path])
-        return all_idfs_relative_path
+        known_ignore_list = [
+            # these files are for running EnergyPlus _as an FMU_ and we aren't doing that
+            '_ExternalInterface-actuator.idf',
+            '_ExternalInterface-schedule.idf',
+            '_ExternalInterface-variable.idf',
+            # these files are macro resource files, imported by AbsorptionChiller_Macro.imf
+            'HVAC3ZoneGeometry.imf',
+            'HVAC3ZoneMat-Const.imf',
+            'HVAC3ZoneChillerSpec.imf',
+            'HVAC3Zone-IntGains-Def.imf',
+        ]
+
+        def should_keep(file_path):
+            should_ignore = False
+            for i in known_ignore_list:
+                if i in str(file_path):
+                    should_ignore = True
+                    break
+            return not should_ignore
+
+        filtered_list = filter(should_keep, all_idfs_relative_path)
+        return set(filtered_list)
 
     def set_build_directory(self, build_directory):
         raise NotImplementedError('Must implement set_build_directory(str) in derived classes')
