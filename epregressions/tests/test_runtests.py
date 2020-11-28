@@ -111,6 +111,12 @@ class TestTestSuiteRunner(unittest.TestCase):
             f_hybrid.write('OK2')
         with open(os.path.join(testfiles_dir, 'LocalEnvData.csv'), 'w') as f_hybrid:
             f_hybrid.write('OK3')
+        with open(os.path.join(testfiles_dir, 'LookupTable.csv'), 'w') as f_lookup:
+            f_lookup.write('OK4')
+        with open(os.path.join(testfiles_dir, 'HybridModel_Measurements_with_HVAC.csv'), 'w') as f_hybrid:
+            f_hybrid.write('OK5')
+        with open(os.path.join(testfiles_dir, 'HybridModel_Measurements_no_HVAC.csv'), 'w') as f_hybrid:
+            f_hybrid.write('OK6')
         with open(os.path.join(testfiles_dir, 'my_macro_file.imf'), 'w') as f_macro:
             f_macro.write(json_text)
         with open(os.path.join(testfiles_dir, 'extra.imf'), 'w') as f_macro_extra:
@@ -1480,6 +1486,155 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should have put Macro files in the run directory
         file_results_dir = os.path.join(results_dir, 'my_macro_file')
         self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'extra.imf')))
+
+    def test_lookup_table_file_gets_dependencies(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": "LookupTable.csv"
+                }
+            }
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": "LookupTable.csv"
+                }
+            }
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry('my_file.idf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries)
+        r.add_callbacks(
+            print_callback=TestTestSuiteRunner.dummy_callback,
+            simstarting_callback=TestTestSuiteRunner.dummy_callback,
+            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
+            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
+            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
+            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            cancel_callback=TestTestSuiteRunner.dummy_callback
+        )
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        # it should have created a test directory and dropped the summaries there
+        results_dir = diff_results.results_dir_a
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
+        # it should have put the CSV LookupTable files in the run directory
+        file_results_dir = os.path.join(results_dir, 'my_file')
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'LookupTable.csv')))
+
+    def test_hybrid_model_file_gets_dependencies(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": ""
+                }
+            },
+            alt_filename='HybridModelBlah.idf'
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+        base.run = True
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": ""
+                }
+            },
+            alt_filename='HybridModelBlah.idf'
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+        mod.run = True
+
+        entries = [TestEntry('HybridModelBlah.idf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries)
+        r.add_callbacks(
+            print_callback=TestTestSuiteRunner.dummy_callback,
+            simstarting_callback=TestTestSuiteRunner.dummy_callback,
+            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
+            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
+            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
+            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            cancel_callback=TestTestSuiteRunner.dummy_callback
+        )
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('HybridModelBlah', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        # it should have created a test directory and dropped the summaries there
+        results_dir = diff_results.results_dir_a
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'test_results.json')))
+        self.assertTrue(os.path.exists(os.path.join(results_dir, 'run_times.csv')))
+        # it should have put the CSV LookupTable files in the run directory
+        file_results_dir = os.path.join(results_dir, 'HybridModelBlah')
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'HybridModel_Measurements_with_HVAC.csv')))
+        self.assertTrue(os.path.exists(os.path.join(file_results_dir, 'HybridModel_Measurements_no_HVAC.csv')))
 
     def test_missing_weather_still_gets_epw(self):
         base = CMakeCacheMakeFileBuildDirectory()
