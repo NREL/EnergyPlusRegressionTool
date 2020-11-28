@@ -170,7 +170,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             py_file=True
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -188,7 +187,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -271,7 +269,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             True
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -290,7 +287,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             True
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry(os.path.join('subdir', 'my_file.idf'), 'my_weather')]
         config = TestRunConfiguration(
@@ -358,7 +354,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -376,7 +371,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -416,7 +410,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             alt_filename='my_file.iQf'
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -435,7 +428,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             alt_filename='my_file.iQf'
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.iQf', 'my_weather')]
         config = TestRunConfiguration(
@@ -474,7 +466,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -492,7 +483,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('EMSTestMathAndKill.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -531,7 +521,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -549,7 +538,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -588,7 +576,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -606,7 +593,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -645,7 +631,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -663,7 +648,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -702,7 +686,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -720,7 +703,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -759,7 +741,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -777,7 +758,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -842,7 +822,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -860,7 +839,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -925,7 +903,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -943,7 +920,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -989,7 +965,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1006,7 +981,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather'), TestEntry('my_macro_file.imf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1066,7 +1040,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1084,7 +1057,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1139,7 +1111,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(  # noqa: W605
@@ -1157,7 +1128,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1212,7 +1182,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1230,7 +1199,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1285,7 +1253,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1303,7 +1270,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1358,7 +1324,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1376,7 +1341,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1431,7 +1395,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1449,7 +1412,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_macro_file.imf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1504,7 +1466,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1522,7 +1483,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1578,7 +1538,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             alt_filename='HybridModelBlah.idf'
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1597,7 +1556,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             alt_filename='HybridModelBlah.idf'
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('HybridModelBlah.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1653,7 +1611,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1671,7 +1628,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather_DOES_NOT_EXIST')]
         config = TestRunConfiguration(
@@ -1726,7 +1682,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1744,7 +1699,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1802,7 +1756,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1820,7 +1773,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1876,7 +1828,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1894,7 +1845,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -1941,7 +1891,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -1958,7 +1907,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -2008,7 +1956,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -2025,7 +1972,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file.idf', 'my_weather')]
         config = TestRunConfiguration(
@@ -2075,7 +2021,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         base.set_build_directory(self.temp_base_build_dir)
-        base.run = True
 
         mod = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(
@@ -2092,7 +2037,6 @@ class TestTestSuiteRunner(unittest.TestCase):
             }
         )
         mod.set_build_directory(self.temp_mod_build_dir)
-        mod.run = True
 
         entries = [TestEntry('my_file_DOES_NOT_EXIST.idf', 'my_weather')]
         config = TestRunConfiguration(
