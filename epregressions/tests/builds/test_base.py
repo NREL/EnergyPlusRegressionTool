@@ -61,5 +61,8 @@ class TestBaseBuildMethods(unittest.TestCase):
         open(os.path.join(temp_idf_dir, 'file1.idf'), 'w').write('hi')
         open(os.path.join(temp_idf_dir, 'file2.iQQ'), 'w').write('he')
         open(os.path.join(temp_idf_dir, 'file3.idf'), 'w').write('ha')
+        open(os.path.join(temp_idf_dir, 'file4.imf'), 'w').write('ha')  # macro
+        open(os.path.join(temp_idf_dir, '_ExternalInterface-actuator.idf'), 'w').write('ha')  # ext interface as FMU
+        open(os.path.join(temp_idf_dir, 'HVAC3ZoneGeometry.imf'), 'w').write('ha')  # macro resource file
         # TODO: Modify the test to expect relevant IMF files as well and fix the function
-        self.assertEqual(2, len(self.base_build.get_idfs_in_dir(temp_idf_dir)))
+        self.assertEqual(3, len(self.base_build.get_idfs_in_dir(temp_idf_dir)))

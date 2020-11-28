@@ -194,6 +194,9 @@ object_to_write = {
 with open('eplusout_hourly.json', 'w') as f_json:
     f_json.write(json.dumps(object_to_write))
 
+print("Foo", file=sys.stdout)
+print("Bar", file=sys.stderr)
+
 # DO THIS LAST - it has sys.exit() calls - eplusout.end
 num_warnings = config['num_warnings'] if 'num_warnings' in config else 0
 num_severe = config['num_severe'] if 'num_severe' in config else 0
