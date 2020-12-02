@@ -62,11 +62,17 @@ class TestBaseBuildMethods(unittest.TestCase):
     def test_get_idfs(self):
         temp_idf_dir = tempfile.mkdtemp()
         self.assertSetEqual(set(), self.base_build.get_idfs_in_dir(temp_idf_dir))
-        open(os.path.join(temp_idf_dir, 'file1.idf'), 'w').write('hi')
-        open(os.path.join(temp_idf_dir, 'file2.iQQ'), 'w').write('he')
-        open(os.path.join(temp_idf_dir, 'file3.idf'), 'w').write('ha')
-        open(os.path.join(temp_idf_dir, 'file4.imf'), 'w').write('ha')  # macro
-        open(os.path.join(temp_idf_dir, '_ExternalInterface-actuator.idf'), 'w').write('ha')  # ext interface as FMU
-        open(os.path.join(temp_idf_dir, 'HVAC3ZoneGeometry.imf'), 'w').write('ha')  # macro resource file
+        with open(os.path.join(temp_idf_dir, 'file1.idf'), 'w') as f:
+            f.write('hi')
+        with open(os.path.join(temp_idf_dir, 'file2.iQQ'), 'w') as f:
+            f.write('he')
+        with open(os.path.join(temp_idf_dir, 'file3.idf'), 'w') as f:
+            f.write('ha')
+        with open(os.path.join(temp_idf_dir, 'file4.imf'), 'w') as f:
+            f.write('ha')  # macro
+        with open(os.path.join(temp_idf_dir, '_ExternalInterface-actuator.idf'), 'w') as f:
+            f.write('ha')  # ext interface as FMU
+        with open(os.path.join(temp_idf_dir, 'HVAC3ZoneGeometry.imf'), 'w') as f:
+            f.write('ha')  # macro resource file
         # TODO: Modify the test to expect relevant IMF files as well and fix the function
         self.assertEqual(3, len(self.base_build.get_idfs_in_dir(temp_idf_dir)))
