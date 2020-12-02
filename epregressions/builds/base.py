@@ -28,6 +28,8 @@ def autodetect_build_dir_type(build_dir: str) -> str:
                         return KnownBuildTypes.VisualStudio
                     elif 'Makefile' in generator_name:
                         return KnownBuildTypes.Makefile
+                    elif 'Ninja' in generator_name:
+                        return KnownBuildTypes.Makefile
     return KnownBuildTypes.Unknown
 
 
