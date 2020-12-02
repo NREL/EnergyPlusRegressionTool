@@ -33,6 +33,10 @@ class TestAutoDetectBuildType(unittest.TestCase):
         self.add_cache_file('CMAKE_GENERATOR:INTERNAL=Visual Studio 2019')
         self.assertEqual(KnownBuildTypes.VisualStudio, autodetect_build_dir_type(self.build_dir))
 
+    def test_detect_ninja(self):
+        self.add_cache_file('CMAKE_GENERATOR:INTERNAL=Ninja')
+        self.assertEqual(KnownBuildTypes.Makefile, autodetect_build_dir_type(self.build_dir))
+
 
 class TestBaseBuildMethods(unittest.TestCase):
 
