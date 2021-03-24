@@ -141,6 +141,7 @@ class MyApp(Frame):
         self.active_idf_listbox = None
         self.remove_idf_from_active_button = None
         self.idf_select_all_button = None
+        self.idf_select_almost_all_button = None
         self.idf_deselect_all_button = None
         self.idf_select_n_random_button = None
         self.run_period_option_menu = None
@@ -235,6 +236,10 @@ class MyApp(Frame):
             group_idf_tools, text="Select All", command=self.idf_select_all
         )
         self.idf_select_all_button.pack(side=LEFT, expand=1)
+        self.idf_select_almost_all_button = Button(
+            group_idf_tools, text="Select All Except Long Runs", command=self.idf_select_all_except_long_runs
+        )
+        self.idf_select_almost_all_button.pack(side=LEFT, expand=1)
         self.idf_deselect_all_button = Button(
             group_idf_tools, text="Deselect All", command=self.idf_deselect_all
         )
@@ -307,7 +312,7 @@ class MyApp(Frame):
         self.results_tree.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.results_tree.yview)
-        main_notebook.add(frame_results, text="Run Control and Results")
+        main_notebook.add(frame_results, text="Results")
 
         # pack the main notebook on the window
         main_notebook.pack(fill=BOTH, expand=1)
@@ -635,6 +640,24 @@ class MyApp(Frame):
             return
         all_idfs = self.full_idf_listbox.get(0, END)
         for idf in all_idfs:
+            self.active_idf_listbox.insert(END, idf)
+        self.idf_refresh_count_status()
+
+    def idf_select_all_except_long_runs(self):
+        self.idf_deselect_all()
+        if not self.valid_idfs_in_listing:
+            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            return
+        all_idfs = self.full_idf_listbox.get(0, END)
+        for idf in all_idfs:
+            skip_list = [
+                'LgOffVAVusingBasement.idf',
+                'HospitalLowEnergy.idf',
+                'SingleFamilyHouse_HP_Slab_Dehumidification.idf',
+                'SingleFamilyHouse_HP_Slab.idf'
+            ]
+            if idf in skip_list:
+                continue
             self.active_idf_listbox.insert(END, idf)
         self.idf_refresh_count_status()
 
