@@ -1004,7 +1004,10 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(2, len(diff_results.entries_by_file))
-        results_for_file = diff_results.entries_by_file[0]
+        if diff_results.entries_by_file[0].basename == 'my_file':
+            results_for_file = diff_results.entries_by_file[0]
+        elif diff_results.entries_by_file[1].basename == 'my_file':
+            results_for_file = diff_results.entries_by_file[1]
         # it should be named according to what we listed above
         self.assertEqual('my_file', results_for_file.basename)
         # it should have succeeded in both base and mod cases

@@ -71,7 +71,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     runner = SuiteRunner(run_config, [])
 
     cleanup(mod_dir)
-    entry = runner.process_diffs_for_one_case(
+    entry, message = runner.process_diffs_for_one_case(
         initial_entry,
         runner.build_tree_a,
         runner.build_tree_b,
