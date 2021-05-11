@@ -998,8 +998,15 @@ class SuiteRunner:
 
     def diff_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
-            return None, "Stopped by request"
-        return SuiteRunner.process_diffs_for_one_case(*run_args)
+            return run_args[0], "Stopped by request"
+        try:
+            return_val = SuiteRunner.process_diffs_for_one_case(*run_args)
+            return return_val
+        except Exception as e:  # pragma: no cover -- I'm not trying to catch every possible case here
+            msg = f"Unexpected error processing diffs for {run_args[0].basename},"
+            msg += "could indicate an E+ crash caused corrupted files, "
+            msg += f"Message: {e}"
+            return run_args[0], msg
 
     def diff_done(self, results):
         this_entry, message = results
