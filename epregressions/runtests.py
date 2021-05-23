@@ -73,7 +73,10 @@ class SuiteRunner:
         self.diff_completed_callback = None
         self.all_done_callback = None
         self.cancel_callback = None
+
+        # set a few things
         self.id_like_to_stop_now = False
+        self.completed_structure = None
 
         # User configuration; read from the run_configuration
         self.force_run_type = run_config.force_run_type
@@ -133,12 +136,12 @@ class SuiteRunner:
             return
         self.my_simulationscomplete()
 
-        response = self.diff_logs_for_build()
+        self.diff_logs_for_build()
 
         try:
             self.my_print('Writing runtime summary file')
             csv_file_path = os.path.join(self.build_tree_a['build_dir'], self.test_output_dir, 'run_times.csv')
-            response.to_runtime_summary(csv_file_path)
+            self.completed_structure.to_runtime_summary(csv_file_path)
             self.my_print('Runtime summary written successfully')
         except Exception as this_exception:  # pragma: no cover
             self.my_print('Could not write runtime summary file: ' + str(this_exception))
@@ -146,7 +149,7 @@ class SuiteRunner:
         try:
             self.my_print('Writing simulation results summary file')
             json_file_path = os.path.join(self.build_tree_a['build_dir'], self.test_output_dir, 'test_results.json')
-            response.to_json_summary(json_file_path)
+            self.completed_structure.to_json_summary(json_file_path)
             self.my_print('Results summary written successfully')
         except Exception as this_exception:  # pragma: no cover
             self.my_print('Could not write results summary file: ' + str(this_exception))
@@ -156,8 +159,8 @@ class SuiteRunner:
         self.my_print(" --build-2--> %s" % self.build_tree_b['build_dir'])
         self.my_print("Test suite complete")
 
-        self.my_alldone(response)
-        return response
+        self.my_alldone(self.completed_structure)
+        return self.completed_structure
 
     def prepare_dir_structure(self, b_a, b_b, d_test):
 
@@ -372,7 +375,8 @@ class SuiteRunner:
         # `apply_async` approach I am using.  Blech.  Once again, on Windows, this means it will partially not be
         # multithreaded.
         if self.number_of_threads == 1 or frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover
-            self.my_print("Ignoring num_threads on frozen Windows/Mac instance, just running with one thread.")
+            if self.number_of_threads > 1:
+                self.my_print("Ignoring num_threads on frozen Windows/Mac instance, just running with one thread.")
             for run in energy_plus_runs:
                 ep_return = self.ep_wrapper(run)
                 self.ep_done(ep_return)
@@ -652,17 +656,20 @@ class SuiteRunner:
             out_file.write(my_json_str)
         return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
 
-    def process_diffs_for_one_case(self, this_entry, ci_mode=False):
+    @staticmethod
+    def process_diffs_for_one_case(
+            this_entry, build_tree_a, build_tree_b, test_output_dir, thresh_dict_file, ci_mode=False
+    ):
 
         if ci_mode:  # in "ci_mode" the build directory is actually the output directory of each file
-            case_result_dir_1 = self.build_tree_a['build_dir']
-            case_result_dir_2 = self.build_tree_b['build_dir']
+            case_result_dir_1 = build_tree_a['build_dir']
+            case_result_dir_2 = build_tree_b['build_dir']
         else:
             case_result_dir_1 = os.path.join(
-                self.build_tree_a['build_dir'], self.test_output_dir, this_entry.basename
+                build_tree_a['build_dir'], test_output_dir, this_entry.basename
             )
             case_result_dir_2 = os.path.join(
-                self.build_tree_b['build_dir'], self.test_output_dir, this_entry.basename
+                build_tree_b['build_dir'], test_output_dir, this_entry.basename
             )
 
         out_dir = case_result_dir_1
@@ -681,10 +688,10 @@ class SuiteRunner:
         runtime_case2 = 0
         end_path = join(case_result_dir_1, 'eplusout.end')
         if os.path.exists(end_path):
-            [status_case1, runtime_case1] = self.process_end_file(end_path)
+            [status_case1, runtime_case1] = SuiteRunner.process_end_file(end_path)
         end_path = join(case_result_dir_2, 'eplusout.end')
         if os.path.exists(end_path):
-            [status_case2, runtime_case2] = self.process_end_file(end_path)
+            [status_case2, runtime_case2] = SuiteRunner.process_end_file(end_path)
 
         # one quick check here for expect-fatal tests
         if this_entry.basename == 'EMSTestMathAndKill' or this_entry.basename == 'PythonPluginTestMathAndKill':
@@ -697,8 +704,7 @@ class SuiteRunner:
                         EndErrSummary.STATUS_SUCCESS,
                         runtime_case2
                     ))
-                self.my_print("TestMathAndKill Fatal-ed as expected, continuing with no diff checking on it")
-                return this_entry
+                return this_entry, "TestMathAndKill Fatal-ed as expected, continuing with no diff checking on it"
 
         # add the initial end/err summary to the entry
         this_entry.add_summary_result(EndErrSummary(status_case1, runtime_case1, status_case2, runtime_case2))
@@ -708,46 +714,40 @@ class SuiteRunner:
         if not any(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]):
             # Case 1a: Both files are successful
             if sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 2:
-                # Just continue to process diffs
-                self.my_print(
-                    "Processing (Diffs) : %s" % this_entry.basename
-                )
+                ...  # Just continue to process diffs
             # Case 1b: Both completed, but both failed: report that it failed in both cases and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 0:
-                self.my_print(
+                return (
+                    this_entry,
                     "Skipping entry because it has a fatal error in both base and mod cases: %s" % this_entry.basename
                 )
-                return this_entry
             # Case 1c: Both completed, but one failed: report that it failed in one case and return early
             elif sum(x == EndErrSummary.STATUS_SUCCESS for x in [status_case1, status_case2]) == 1:
-                self.my_print(
+                return (
+                    this_entry,
                     "Skipping an entry because it appears to have a fatal error in one case: %s" % this_entry.basename
                 )
-                return this_entry
         # Case 2: Both end files DID NOT exist
         elif all(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]):
-            self.my_print(
+            return (
+                this_entry,
                 "Skipping entry because it failed (crashed) in both base and mod cases: %s" % this_entry.basename
             )
-            return this_entry
         # Case 3: Both end files DID NOT exist
         elif sum(x == EndErrSummary.STATUS_MISSING for x in [status_case1, status_case2]) == 1:
-            self.my_print(
+            return (
+                this_entry,
                 "Skipping an entry because it appears to have failed (crashed) in one case: %s" % this_entry.basename
             )
-            return this_entry
         # Case 4: Unhandled combination
         else:  # pragma: no cover -- I don't think we can get here
-            self.my_print(
-                "Skipping an entry because it has an unknown end status: %s" % this_entry.basename
-            )
-            return this_entry
+            return this_entry, "Skipping an entry because it has an unknown end status: %s" % this_entry.basename
 
         # Load diffing threshold dictionary
-        thresh_dict = td.ThreshDict(self.thresh_dict_file)
+        thresh_dict = td.ThreshDict(thresh_dict_file)
 
         # Do Math (CSV) Diffs
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.csv'):
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusout.csv'),
@@ -756,7 +756,7 @@ class SuiteRunner:
                 join(out_dir, 'eplusout.csv.percdiff.csv'),
                 join(out_dir, 'eplusout.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ESO)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmtr.csv'):
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmtr.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusmtr.csv'),
@@ -766,7 +766,7 @@ class SuiteRunner:
                 join(out_dir, 'eplusmtr.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.MTR)
 
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'epluszsz.csv'):
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'epluszsz.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'epluszsz.csv'),
@@ -775,7 +775,7 @@ class SuiteRunner:
                 join(out_dir, 'epluszsz.csv.percdiff.csv'),
                 join(out_dir, 'epluszsz.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ZSZ)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusssz.csv'):
             this_entry.add_math_differences(MathDifferences(math_diff.math_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplusssz.csv'),
@@ -786,14 +786,14 @@ class SuiteRunner:
                 path_to_math_diff_log)), MathDifferences.SSZ)
 
         # Do sorta-math-diff JSON diff
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_hourly.json'):
-            this_entry.add_math_differences(MathDifferences(self.diff_json_time_series(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_hourly.json'):
+            this_entry.add_math_differences(MathDifferences(SuiteRunner.diff_json_time_series(
                 join(case_result_dir_1, 'eplusout_hourly.json'),
                 join(case_result_dir_2, 'eplusout_hourly.json'),
                 join(out_dir, 'eplusout_hourly.diffs.json'))), MathDifferences.JSON)
 
         # Do Tabular (HTML) Diffs
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplustbl.htm'):
             this_entry.add_table_differences(TableDifferences(table_diff.table_diff(
                 thresh_dict,
                 join(case_result_dir_1, 'eplustbl.htm'),
@@ -804,126 +804,126 @@ class SuiteRunner:
                 path_to_table_diff_log)))
 
         # Do Textual Diffs
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'in.idf'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'in.idf'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'in.idf'),
                 join(case_result_dir_2, 'in.idf'),
                 join(out_dir, 'in.idf.diff'))), TextDifferences.IDF)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stdout'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stdout'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.stdout'),
                 join(case_result_dir_2, 'eplusout.stdout'),
                 join(out_dir, 'eplusout.stdout.diff'))), TextDifferences.STDOUT)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stderr'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.stderr'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.stderr'),
                 join(case_result_dir_2, 'eplusout.stderr'),
                 join(out_dir, 'eplusout.stderr.diff'))), TextDifferences.STDERR)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.audit'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.audit'),
                 join(case_result_dir_2, 'eplusout.audit'),
                 join(out_dir, 'eplusout.audit.diff'))), TextDifferences.AUD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.bnd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.bnd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.bnd'),
                 join(case_result_dir_2, 'eplusout.bnd'),
                 join(out_dir, 'eplusout.bnd.diff'))), TextDifferences.BND)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dxf'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dxf'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.dxf'),
                 join(case_result_dir_2, 'eplusout.dxf'),
                 join(out_dir, 'eplusout.dxf.diff'))), TextDifferences.DXF)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.eio'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.eio'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.eio'),
                 join(case_result_dir_2, 'eplusout.eio'),
                 join(out_dir, 'eplusout.eio.diff'))), TextDifferences.EIO)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mdd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mdd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.mdd'),
                 join(case_result_dir_2, 'eplusout.mdd'),
                 join(out_dir, 'eplusout.mdd.diff'))), TextDifferences.MDD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mtd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mtd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.mtd'),
                 join(case_result_dir_2, 'eplusout.mtd'),
                 join(out_dir, 'eplusout.mtd.diff'))), TextDifferences.MTD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.rdd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.rdd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.rdd'),
                 join(case_result_dir_2, 'eplusout.rdd'),
                 join(out_dir, 'eplusout.rdd.diff'))), TextDifferences.RDD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.shd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.shd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.shd'),
                 join(case_result_dir_2, 'eplusout.shd'),
                 join(out_dir, 'eplusout.shd.diff'))), TextDifferences.SHD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.err'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.err'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.err'),
                 join(case_result_dir_2, 'eplusout.err'),
                 join(out_dir, 'eplusout.err.diff'))), TextDifferences.ERR)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightin'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightin'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.delightin'),
                 join(case_result_dir_2, 'eplusout.delightin'),
                 join(out_dir, 'eplusout.delightin.diff'))), TextDifferences.DL_IN)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightout'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.delightout'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.delightout'),
                 join(case_result_dir_2, 'eplusout.delightout'),
                 join(out_dir, 'eplusout.delightout.diff'))), TextDifferences.DL_OUT)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'readvars.audit'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'readvars.audit'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'readvars.audit'),
                 join(case_result_dir_2, 'readvars.audit'),
                 join(out_dir, 'readvars.audit.diff'))), TextDifferences.READ_VARS_AUDIT)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.edd'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.edd'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.edd'),
                 join(case_result_dir_2, 'eplusout.edd'),
                 join(out_dir, 'eplusout.edd.diff'))), TextDifferences.EDD)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.wrl'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.wrl'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.wrl'),
                 join(case_result_dir_2, 'eplusout.wrl'),
                 join(out_dir, 'eplusout.wrl.diff'))), TextDifferences.WRL)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sln'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sln'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.sln'),
                 join(case_result_dir_2, 'eplusout.sln'),
                 join(out_dir, 'eplusout.sln.diff'))), TextDifferences.SLN)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sci'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.sci'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.sci'),
                 join(case_result_dir_2, 'eplusout.sci'),
                 join(out_dir, 'eplusout.sci.diff'))), TextDifferences.SCI)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmap.csv'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusmap.csv'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusmap.csv'),
                 join(case_result_dir_2, 'eplusmap.csv'),
                 join(out_dir, 'eplusmap.csv.diff'))), TextDifferences.MAP)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dfs'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.dfs'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.dfs'),
                 join(case_result_dir_2, 'eplusout.dfs'),
                 join(out_dir, 'eplusout.dfs.diff'))), TextDifferences.DFS)
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusscreen.csv'):
-            this_entry.add_text_differences(TextDifferences(self.diff_text_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusscreen.csv'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusscreen.csv'),
                 join(case_result_dir_2, 'eplusscreen.csv'),
                 join(out_dir, 'eplusscreen.csv.diff'))), TextDifferences.SCREEN)
 
         # sorta textual diff, the GLHE json file
-        if self.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.glhe'):
-            this_entry.add_text_differences(TextDifferences(self.diff_glhe_files(
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.glhe'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_glhe_files(
                 join(case_result_dir_1, 'eplusout.glhe'),
                 join(case_result_dir_2, 'eplusout.glhe'),
                 join(out_dir, 'eplusout.glhe.diff'))), TextDifferences.GLHE)
 
         # return the updated entry
-        return this_entry
+        return this_entry, "Processed (Diffs) : %s" % this_entry.basename
 
     @staticmethod
     def process_end_file(end_path):
@@ -965,26 +965,54 @@ class SuiteRunner:
     # diff_logs_for_build creates diff logs between simulations in two build directories
     def diff_logs_for_build(self):
 
-        completed_structure = CompletedStructure(
+        self.completed_structure = CompletedStructure(
             self.build_tree_a['source_dir'], self.build_tree_a['build_dir'],
             self.build_tree_b['source_dir'], self.build_tree_b['build_dir'],
             os.path.join(self.build_tree_a['build_dir'], self.test_output_dir),
             os.path.join(self.build_tree_b['build_dir'], self.test_output_dir)
         )
+        diff_runs = []
         for this_entry in self.entries:
-            try:
-                this_entry = self.process_diffs_for_one_case(this_entry)
-                completed_structure.add_test_entry(this_entry)
-            except Exception as e:  # pragma: no cover -- I'm not trying to catch every possible case here
-                self.my_print(
-                    (
-                        "Unexpected error processing diffs for %s, could indicate an E+ crash caused corrupted files"
-                    ) % this_entry.basename
-                )
-                self.my_print("Message: %s" % e)
-            finally:
-                self.my_diffcompleted(this_entry.basename)
-        return completed_structure
+            diff_runs.append(
+                [
+                    this_entry,
+                    self.build_tree_a,
+                    self.build_tree_b,
+                    self.test_output_dir,
+                    self.thresh_dict_file
+                ]
+            )
+
+        if self.number_of_threads == 1 or frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover
+            if self.number_of_threads > 1:
+                self.my_print("Ignoring num_threads on frozen Windows/Mac instance, just running with one thread.")
+            for run in diff_runs:
+                diff_return = self.diff_wrapper(run)
+                self.diff_done(diff_return)
+        else:  # for all other applications, run them in a multiprocessing pool
+            p = Pool(self.number_of_threads)
+            for run in diff_runs:
+                p.apply_async(self.diff_wrapper, (run, ), callback=self.diff_done, error_callback=self.diff_done)
+            p.close()
+            p.join()
+
+    def diff_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
+        if self.id_like_to_stop_now:
+            return run_args[0], "Stopped by request"
+        try:
+            return_val = SuiteRunner.process_diffs_for_one_case(*run_args)
+            return return_val
+        except Exception as e:  # pragma: no cover -- I'm not trying to catch every possible case here
+            msg = f"Unexpected error processing diffs for {run_args[0].basename},"
+            msg += "could indicate an E+ crash caused corrupted files, "
+            msg += f"Message: {e}"
+            return run_args[0], msg
+
+    def diff_done(self, results):
+        this_entry, message = results
+        self.my_print(message)
+        self.my_diffcompleted(this_entry.basename)
+        self.completed_structure.add_test_entry(this_entry)
 
     def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
                       diffcompleted_callback, alldone_callback, cancel_callback):

@@ -71,7 +71,14 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     runner = SuiteRunner(run_config, [])
 
     cleanup(mod_dir)
-    entry = runner.process_diffs_for_one_case(initial_entry, ci_mode=True)  # returns an updated entry
+    entry, message = runner.process_diffs_for_one_case(
+        initial_entry,
+        runner.build_tree_a,
+        runner.build_tree_b,
+        runner.test_output_dir,
+        runner.thresh_dict_file,
+        ci_mode=True
+    )  # returns an updated entry
 
     with open('results.json', 'w') as f:
         f.write(json.dumps(entry.to_dict(), indent=4))
