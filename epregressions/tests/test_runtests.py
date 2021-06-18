@@ -1004,7 +1004,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(2, len(diff_results.entries_by_file))
-        results_for_file = diff_results.entries_by_file[0]
+        # these next blocks are pragma'd from coverage because we dont know which one will get hit
+        if diff_results.entries_by_file[0].basename == 'my_file':  # pragma: no cover
+            results_for_file = diff_results.entries_by_file[0]
+        else:  # if diff_results.entries_by_file[1].basename == 'my_file':  # pragma: no cover
+            results_for_file = diff_results.entries_by_file[1]
         # it should be named according to what we listed above
         self.assertEqual('my_file', results_for_file.basename)
         # it should have succeeded in both base and mod cases
