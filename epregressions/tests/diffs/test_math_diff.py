@@ -45,6 +45,19 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(2, response[3])  # small diffs
 
+    def test_bad_numeric_raises_exception(self):
+        """This tests the ability to handle bad numerics which cause weird errors in MathDiff"""
+        with self.assertRaises(KeyError):
+            math_diff(
+                self.thresh_dict,
+                os.path.join(self.diff_files_dir, 'eplusout.csv'),
+                os.path.join(self.diff_files_dir, 'eplusout_bad_numeric.csv'),
+                os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+                os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+                os.path.join(self.temp_output_dir, 'math_diff.log'),
+                os.path.join(self.temp_output_dir, 'summary.csv'),
+            )
+
     def test_big_diff_in_watts_files(self):
         """This tests the ability to capture diffs in a regular (not-temperature) variable"""
         response = math_diff(
