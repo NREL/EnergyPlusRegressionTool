@@ -901,6 +901,14 @@ class MyApp(Frame):
     def done_handler(self, results: CompletedStructure):
         self.add_to_log("All done, finished")
         self.label_string.set("Hey, all done!")
+        if system() == 'Linux':
+            subprocess.call(['notify-send', 'EnergyPlus Regression Tool', 'Regressions Finished'])
+        elif system() == 'Darwin':
+            subprocess.call([
+                'osascript',
+                '-e',
+                'display notification "Regressions Finished" with title "EnergyPlus Regression Tool"'
+            ])
         self.build_results_tree(results)
         self.client_done()
 
