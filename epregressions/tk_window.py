@@ -252,7 +252,7 @@ class MyApp(Frame):
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_full_idf_list)
-        self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set)
+        self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set, selectmode="multiple")
         self.full_idf_listbox.bind('<Double-1>', self.idf_move_to_active)
         self.full_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
@@ -273,7 +273,7 @@ class MyApp(Frame):
         group_active_idf_list = LabelFrame(pane_idfs, text="Active IDF List")
         group_active_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_active_idf_list)
-        self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set)
+        self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set, selectmode="multiple")
         self.active_idf_listbox.bind('<Double-1>', self.idf_remove_from_active)
         self.active_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
@@ -605,15 +605,19 @@ class MyApp(Frame):
         if not current_selection:
             simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
-        currently_selected_idf = self.full_idf_listbox.get(current_selection)
-        try:
-            self.active_idf_listbox.get(0, END).index(currently_selected_idf)
-            simpledialog.messagebox.showwarning("IDF Selection Warning", "IDF already exists in active list")
-            return
-        except ValueError:
-            pass  # the value error indicates it was _not_ found, so this is success
-        self.active_idf_listbox.insert(END, currently_selected_idf)
-        self.idf_refresh_count_status(currently_selected_idf, True)
+        already_exist_count = 0
+        for selection in current_selection:
+            currently_selected_idf = self.full_idf_listbox.get(selection)
+            try:
+                self.active_idf_listbox.get(0, END).index(currently_selected_idf)
+                already_exist_count += 1
+                continue
+            except ValueError:
+                pass  # the value error indicates it was _not_ found, so this is success
+            self.active_idf_listbox.insert(END, currently_selected_idf)
+            self.idf_refresh_count_status(currently_selected_idf, True)
+        if already_exist_count > 0:
+            simpledialog.messagebox.showwarning("IDF Selection Warning", "At least one IDF was already in active list")
 
     def idf_remove_from_active(self, event=None):
         if self.long_thread:
@@ -627,8 +631,11 @@ class MyApp(Frame):
                 return
             simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
-        self.active_idf_listbox.delete(current_selection)
-        self.idf_refresh_count_status(current_selection, False)
+        for selection in reversed(current_selection):
+            currently_selected_idf = self.active_idf_listbox.get(selection)
+            item_index = self.active_idf_listbox.get(0, END).index(currently_selected_idf)
+            self.active_idf_listbox.delete(item_index)
+            self.idf_refresh_count_status(currently_selected_idf, False)
 
     def idf_select_all(self):
         self.idf_deselect_all()
