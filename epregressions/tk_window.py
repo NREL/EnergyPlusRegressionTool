@@ -229,7 +229,7 @@ class MyApp(Frame):
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
         group_idf_tools.pack(fill=X, padx=5)
         self.idf_select_all_button = Button(
-            group_idf_tools, text="Refresh", command=self.client_idf_refresh
+            group_idf_tools, text="Refresh", command=self.build_idf_listing
         )
         self.idf_select_all_button.pack(side=LEFT, expand=1)
         self.idf_select_all_button = Button(
@@ -594,9 +594,6 @@ class MyApp(Frame):
         message_string = '\n'.join(messages)
         self.root.clipboard_clear()
         self.root.clipboard_append(message_string)
-
-    def client_idf_refresh(self):
-        self.build_idf_listing()
 
     def idf_move_to_active(self, _=None):
         if self.long_thread:
