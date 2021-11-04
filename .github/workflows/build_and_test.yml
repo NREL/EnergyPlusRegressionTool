@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Build Package and Run Tests
 
 on: [push]
 
@@ -49,7 +49,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: EnergyPlusRegressionTool-${{ matrix.os }}
-        path: deploy/EnergyPlusRegressionTool
+        path: deploy/EnergyPlusRegressionTool-*
     - name: Build Wheel
       run: python3 setup.py bdist_wheel sdist
     - name: Publish package to PyPi (tags only)
