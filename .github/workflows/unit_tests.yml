@@ -2,6 +2,10 @@ name: Unit Tests
 
 on: [push]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   unit_tests:
     strategy:
@@ -32,25 +36,21 @@ jobs:
       with:
         python-version: 3.7
     - name: Install Pip Dependencies
-      shell: bash
       run: pip install ${{ matrix.pip_arg }} -r requirements.txt
     - name: Run Tests
-      shell: bash
       run: nosetests
     - name: Upload Coverage Results
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: coveralls --service=github
     - name: Build Package
-      shell: bash
       run: ./scripts/build.sh ${{ matrix.build_arg }}
     - name: Upload Package
       uses: actions/upload-artifact@v2
       with:
         name: EnergyPlusRegressionTool-${{ matrix.os }}
-        path: deploy/EPLaunch
+        path: deploy/EnergyPlusRegressionTool
     - name: Build Wheel
-      shell: bash
       run: python3 setup.py bdist_wheel sdist
     - name: Publish package to PyPi (tags only)
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.os == 'ubuntu-20.04'
@@ -58,3 +58,5 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
