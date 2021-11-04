@@ -11,14 +11,17 @@ jobs:
             python: xvfb-run python3
             pip_arg: ""
             nosetests_args: --with-coverage --cover-package epregressions  # --cover-html for local html results
+            build_arg: Ubuntu20
           - os: macos-10.15
             python: python3
             pip_arg: ""
             nosetests_args: ""
-          #- os: windows-2019
-          #  python: python
-          #  pip_arg: --user
-          #  nosetests_args: ""
+            build_arg: Mac
+          - os: windows-2019
+            python: python
+            pip_arg: --user
+            nosetests_args: ""
+            build_arg: Windows
 
     runs-on: ${{ matrix.os }}
 
@@ -38,3 +41,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: coveralls --service=github
+    - name: Build Package
+      shell: bash
+      run: ./scripts/build.sh ${{ matrix.build_arg }}
