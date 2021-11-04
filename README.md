@@ -1,7 +1,7 @@
 # EnergyPlus Regressions
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/NREL/EnergyPlusRegressionTool.svg?branch=master)](https://travis-ci.org/NREL/EnergyPlusRegressionTool)
+[![Build Package and Run Tests](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/NREL/EnergyPlusRegressionTool/badge.svg?branch=master)](https://coveralls.io/github/NREL/EnergyPlusRegressionTool?branch=master)
 
 ## Overview

@@ -38,7 +38,7 @@ jobs:
     - name: Install Pip Dependencies
       run: pip install ${{ matrix.pip_arg }} -r requirements.txt
     - name: Run Tests
-      run: nosetests
+      run: nosetests ${{ matrix.nosetests_args }}
     - name: Upload Coverage Results
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
