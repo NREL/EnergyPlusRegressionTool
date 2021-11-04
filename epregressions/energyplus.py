@@ -55,7 +55,9 @@ def execute_energyplus(e_args: ExecutionArguments):
         os.chdir(e_args.test_run_directory)
 
         # Run EPMacro as necessary
+        print("**Checking for IMF file")
         if os.path.exists('in.imf'):
+            print("**Found IMF file")
             with open('in.imf', 'rb') as f:
                 lines = f.readlines()
             newlines = []
@@ -68,12 +70,14 @@ def execute_energyplus(e_args: ExecutionArguments):
             with open('in.imf', 'w') as f:
                 for line in newlines:
                     f.write(line)
+            print(f"About to run epmacro: {epmacro}")
             macro_run = subprocess.Popen(
                 epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             o, e = macro_run.communicate()
             std_out += o
             std_err += e
+            print("Renamed out.idf to in.idf")
             os.rename('out.idf', 'in.idf')
 
         # Run Preprocessor -- after EPMacro?
