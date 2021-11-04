@@ -55,9 +55,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         os.chdir(e_args.test_run_directory)
 
         # Run EPMacro as necessary
-        print("**Checking for IMF file")
         if os.path.exists('in.imf'):
-            print("**Found IMF file")
             with open('in.imf', 'rb') as f:
                 lines = f.readlines()
             newlines = []
@@ -70,20 +68,15 @@ def execute_energyplus(e_args: ExecutionArguments):
             with open('in.imf', 'w') as f:
                 for line in newlines:
                     f.write(line)
-            print(f"About to run epmacro: {epmacro}")
             macro_run = subprocess.Popen(
                 epmacro, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             o, e = macro_run.communicate()
             std_out += o
             std_err += e
-            print(f"**Out.idf exists: {os.path.exists('out.idf')}")
-            print("**Renaming out.idf to in.idf")
             os.rename('out.idf', 'in.idf')
-            print("**Renamed out.idf to in.idf")
 
         # Run Preprocessor -- after EPMacro?
-        print("**Checking for parametric file")
         if e_args.this_parametric_file:
             parametric_run = subprocess.Popen(
                 parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
@@ -176,7 +169,6 @@ def execute_energyplus(e_args: ExecutionArguments):
         #  (useful for limiting to daily outputs for annual simulation, etc.)
         os.environ["MINREPORTFREQUENCY"] = e_args.min_reporting_freq.upper()
 
-        print("**About to execute EnergyPlus")
         # Execute EnergyPlus
         try:
             std_out += subprocess.check_output(
@@ -188,7 +180,6 @@ def execute_energyplus(e_args: ExecutionArguments):
             #  here alone, it shows as missing on the coverage...wonky
             return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
-        print("**About to execute readvars")
         # Execute readvars
         if os.path.exists('in.rvi'):
             csv_run = subprocess.Popen(
@@ -201,7 +192,6 @@ def execute_energyplus(e_args: ExecutionArguments):
         o, e = csv_run.communicate()
         std_out += o
         std_err += e
-        print("**Handling rvi/mvi stuff")
         if os.path.exists('in.mvi'):
             mtr_run = subprocess.Popen(
                 readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,

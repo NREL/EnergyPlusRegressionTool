@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 import unittest
 
@@ -117,8 +118,8 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
+    @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.epmacro")
     def test_eplus_passed_macro(self):
-        print("**Inside test_eplus_passed_macro")
         with open(os.path.join(self.run_dir, 'in.imf'), 'w') as f:
             f.write('##fileprefix line\n')
             f.write('line2\n')
@@ -137,8 +138,8 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
+    @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.parametric")
     def test_eplus_passed_parametric(self):
-        print("**Inside test_eplus_passed_parametric")
         with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
             f.write('PARAMETRIC:')
         return_val = execute_energyplus(ExecutionArguments(
