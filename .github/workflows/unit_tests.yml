@@ -1,0 +1,40 @@
+name: Unit Tests
+
+on: [push]
+
+jobs:
+  unit_tests:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            python: xvfb-run python3
+            pip_arg: ""
+            nosetests_args: --with-coverage --cover-package epregressions  # --cover-html for local html results
+          - os: macos-10.15
+            python: python3
+            pip_arg: ""
+            nosetests_args: ""
+          #- os: windows-2019
+          #  python: python
+          #  pip_arg: --user
+          #  nosetests_args: ""
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install Pip Dependencies
+      shell: bash
+      run: pip install ${{ matrix.pip_arg }} -r requirements.txt
+    - name: Run Tests
+      shell: bash
+      run: nosetests
+    - name: Upload Coverage Results
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: coveralls --service=github
