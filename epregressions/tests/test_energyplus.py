@@ -118,6 +118,7 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_macro(self):
+        print("**Inside test_eplus_passed_macro")
         with open(os.path.join(self.run_dir, 'in.imf'), 'w') as f:
             f.write('##fileprefix line\n')
             f.write('line2\n')

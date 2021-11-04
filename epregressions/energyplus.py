@@ -173,6 +173,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         #  (useful for limiting to daily outputs for annual simulation, etc.)
         os.environ["MINREPORTFREQUENCY"] = e_args.min_reporting_freq.upper()
 
+        print("**About to execute EnergyPlus")
         # Execute EnergyPlus
         try:
             std_out += subprocess.check_output(
@@ -184,6 +185,7 @@ def execute_energyplus(e_args: ExecutionArguments):
             #  here alone, it shows as missing on the coverage...wonky
             return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
+        print("**About to execute readvars")
         # Execute readvars
         if os.path.exists('in.rvi'):
             csv_run = subprocess.Popen(
@@ -196,6 +198,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         o, e = csv_run.communicate()
         std_out += o
         std_err += e
+        print("**Handling rvi/mvi stuff")
         if os.path.exists('in.mvi'):
             mtr_run = subprocess.Popen(
                 readvars + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
@@ -224,6 +227,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
 
     except Exception as e:
+        print("**" + str(e))
         return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
     finally:
