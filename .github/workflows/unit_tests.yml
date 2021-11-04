@@ -44,3 +44,17 @@ jobs:
     - name: Build Package
       shell: bash
       run: ./scripts/build.sh ${{ matrix.build_arg }}
+    - name: Upload Package
+      uses: actions/upload-artifact@v2
+      with:
+        name: EnergyPlusRegressionTool-${{ matrix.os }}
+        path: deploy/EPLaunch
+    - name: Build Wheel
+      shell: bash
+      run: python3 setup.py bdist_wheel sdist
+    - name: Publish package to PyPi (tags only)
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.os == 'ubuntu-20.04'
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
