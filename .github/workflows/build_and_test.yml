@@ -58,5 +58,5 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
+    #- name: Setup upterm session
+    #  uses: lhotari/action-upterm@v1
