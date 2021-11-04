@@ -805,12 +805,14 @@ class MyApp(Frame):
         if not self.build_1:
             messagebox.showerror("Build folder 1 problem", "Select a valid build folder 1 prior to running")
             return
+        ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
         build_1_problem_files = [b[1] for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
-            messagebox.showerror("Build folder 1 problem", f"Missing files:\n{missing_files}")
-            return
+            r = messagebox.askokcancel("Build folder 1 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
+            if not r:
+                return
         if not self.build_2:
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
@@ -818,8 +820,9 @@ class MyApp(Frame):
         build_2_problem_files = [b[1] for b in build_2_valid if not b[2]]
         if len(build_2_problem_files):
             missing_files = '\n'.join(build_2_problem_files)
-            messagebox.showerror("Build folder 2 problem", f"Missing files:\n{missing_files}")
-            return
+            r = messagebox.askokcancel("Build folder 2 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
+            if not r:
+                return
         run_configuration = TestRunConfiguration(
             force_run_type=self.run_period_option.get(),
             num_threads=num_threads,
