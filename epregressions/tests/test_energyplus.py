@@ -138,6 +138,7 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_parametric(self):
+        print("**Inside test_eplus_passed_parametric")
         with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
             f.write('PARAMETRIC:')
         return_val = execute_energyplus(ExecutionArguments(

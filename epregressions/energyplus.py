@@ -77,10 +77,13 @@ def execute_energyplus(e_args: ExecutionArguments):
             o, e = macro_run.communicate()
             std_out += o
             std_err += e
-            print("Renamed out.idf to in.idf")
+            print(f"**Out.idf exists: {os.path.exists('out.idf')}")
+            print("**Renaming out.idf to in.idf")
             os.rename('out.idf', 'in.idf')
+            print("**Renamed out.idf to in.idf")
 
         # Run Preprocessor -- after EPMacro?
+        print("**Checking for parametric file")
         if e_args.this_parametric_file:
             parametric_run = subprocess.Popen(
                 parametric + ' in.idf', shell=True, stdin=subprocess.DEVNULL,
