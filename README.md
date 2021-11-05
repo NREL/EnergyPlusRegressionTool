@@ -1,7 +1,8 @@
 # EnergyPlus Regressions
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
-[![Build Package and Run Tests](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml)
+[![Test/Package Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Flake8/master?label=flake8)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/flake8.yml)
+[![Flake8 Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Build%20Package%20and%20Run%20Tests/master?label=build%2Fpackage)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/NREL/EnergyPlusRegressionTool/badge.svg?branch=master)](https://coveralls.io/github/NREL/EnergyPlusRegressionTool?branch=master)
 
 ## Overview
