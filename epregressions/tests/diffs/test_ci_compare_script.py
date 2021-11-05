@@ -217,7 +217,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('in.idf', 'base idf content', 'mod idf content')
         self._write_files_to_both_folders('eplusout.stdout', 'base standard output', 'mod standard output')
         self._write_files_to_both_folders('eplusout.stderr', 'base standard error', 'mod standard error')
-        self._write_files_to_both_folders('eplusout_perflog.csv', 'a,b,c\nd,e,f', 'a,b,c\nd,e,g')
+        self._write_files_to_both_folders('eplusout_perflog.csv', 'a,b,c,4\nd,e,f,4', 'a,b,c,4\nq,e,g,3')
         with captured_output() as (out, err):
             # should fail if we don't have any .end files
             main_function(
