@@ -220,6 +220,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
 
     except Exception as e:
+        print("**" + str(e))
         return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
 
     finally:

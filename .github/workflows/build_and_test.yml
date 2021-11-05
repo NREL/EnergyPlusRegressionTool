@@ -1,0 +1,63 @@
+name: Build Package and Run Tests
+
+on: [push]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit_tests:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            python: xvfb-run python3
+            pip_arg: ""
+            nosetests_args: --with-coverage --cover-package epregressions  # --cover-html for local html results
+            build_arg: Ubuntu20
+          - os: macos-10.15
+            python: python3
+            pip_arg: ""
+            nosetests_args: ""
+            build_arg: Mac
+          - os: windows-2019
+            python: python
+            pip_arg: --user
+            nosetests_args: ""
+            build_arg: Windows
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install Pip Dependencies
+      run: pip install ${{ matrix.pip_arg }} -r requirements.txt
+    - name: Run Tests
+      run: nosetests ${{ matrix.nosetests_args }}
+    - name: Upload Coverage Results
+      if: matrix.os == 'ubuntu-20.04'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: coveralls --service=github
+    - name: Build Package
+      run: ./scripts/build.sh ${{ matrix.build_arg }}
+    - name: Upload Package
+      uses: actions/upload-artifact@v2
+      with:
+        name: EnergyPlusRegressionTool-${{ matrix.os }}
+        path: deploy/EnergyPlusRegressionTool-*
+    - name: Build Wheel
+      run: python3 setup.py bdist_wheel sdist
+    - name: Publish package to PyPi (tags only)
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && matrix.os == 'ubuntu-20.04'
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+    #- name: Setup upterm session
+    #  uses: lhotari/action-upterm@v1

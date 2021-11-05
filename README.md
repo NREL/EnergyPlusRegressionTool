@@ -1,7 +1,8 @@
 # EnergyPlus Regressions
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/NREL/EnergyPlusRegressionTool.svg?branch=master)](https://travis-ci.org/NREL/EnergyPlusRegressionTool)
+[![Test/Package Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Flake8/master?label=flake8)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/flake8.yml)
+[![Flake8 Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Build%20Package%20and%20Run%20Tests/master?label=build%2Fpackage)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/NREL/EnergyPlusRegressionTool/badge.svg?branch=master)](https://coveralls.io/github/NREL/EnergyPlusRegressionTool?branch=master)
 
 ## Overview
@@ -61,5 +62,5 @@ This documentation is written using RST with Sphinx, and published on [ReadTheDo
 ## Testing
 
 Exhaustive unit tests have been added to the "underneath the hood" code, like the functions that calculate diffs and run builds.
-The unit tests are run by [Travis](https://travis-ci.org/NREL/EnergyPlusRegressionTool).
+The unit tests are run on [Github Actions](https://github.com/NREL/EnergyPlusRegressionTool/actions).
 The GUI code is not unit tested, but tested routinely on all platforms.
