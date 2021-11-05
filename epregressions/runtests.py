@@ -414,13 +414,15 @@ class SuiteRunner:
         for line in txt1:
             tokens = line.split(',')
             for i in tokens_to_skip:
-                tokens[i] = '***'
+                if i < len(tokens):
+                    tokens[i] = '***'
             txt1_cleaned.append(','.join(tokens))
         txt2_cleaned = []
         for line in txt2:
             tokens = line.split(',')
             for i in tokens_to_skip:
-                tokens[i] = '***'
+                if i < len(tokens):
+                    tokens[i] = '***'
             txt2_cleaned.append(','.join(tokens))
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
