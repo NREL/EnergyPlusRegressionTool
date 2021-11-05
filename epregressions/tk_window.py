@@ -229,7 +229,7 @@ class MyApp(Frame):
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
         group_idf_tools.pack(fill=X, padx=5)
         self.idf_select_all_button = Button(
-            group_idf_tools, text="Refresh", command=self.client_idf_refresh
+            group_idf_tools, text="Refresh", command=self.build_idf_listing
         )
         self.idf_select_all_button.pack(side=LEFT, expand=1)
         self.idf_select_all_button = Button(
@@ -252,7 +252,7 @@ class MyApp(Frame):
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_full_idf_list)
-        self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set)
+        self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set, selectmode="extended")
         self.full_idf_listbox.bind('<Double-1>', self.idf_move_to_active)
         self.full_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
@@ -273,7 +273,7 @@ class MyApp(Frame):
         group_active_idf_list = LabelFrame(pane_idfs, text="Active IDF List")
         group_active_idf_list.pack(fill=BOTH, expand=True, padx=5)
         scrollbar = Scrollbar(group_active_idf_list)
-        self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set)
+        self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set, selectmode="extended")
         self.active_idf_listbox.bind('<Double-1>', self.idf_remove_from_active)
         self.active_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
@@ -595,9 +595,6 @@ class MyApp(Frame):
         self.root.clipboard_clear()
         self.root.clipboard_append(message_string)
 
-    def client_idf_refresh(self):
-        self.build_idf_listing()
-
     def idf_move_to_active(self, _=None):
         if self.long_thread:
             return
@@ -608,15 +605,19 @@ class MyApp(Frame):
         if not current_selection:
             simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
-        currently_selected_idf = self.full_idf_listbox.get(current_selection)
-        try:
-            self.active_idf_listbox.get(0, END).index(currently_selected_idf)
-            simpledialog.messagebox.showwarning("IDF Selection Warning", "IDF already exists in active list")
-            return
-        except ValueError:
-            pass  # the value error indicates it was _not_ found, so this is success
-        self.active_idf_listbox.insert(END, currently_selected_idf)
-        self.idf_refresh_count_status(currently_selected_idf, True)
+        already_exist_count = 0
+        for selection in current_selection:
+            currently_selected_idf = self.full_idf_listbox.get(selection)
+            try:
+                self.active_idf_listbox.get(0, END).index(currently_selected_idf)
+                already_exist_count += 1
+                continue
+            except ValueError:
+                pass  # the value error indicates it was _not_ found, so this is success
+            self.active_idf_listbox.insert(END, currently_selected_idf)
+            self.idf_refresh_count_status(currently_selected_idf, True)
+        if already_exist_count > 0:
+            simpledialog.messagebox.showwarning("IDF Selection Warning", "At least one IDF was already in active list")
 
     def idf_remove_from_active(self, event=None):
         if self.long_thread:
@@ -630,8 +631,11 @@ class MyApp(Frame):
                 return
             simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
-        self.active_idf_listbox.delete(current_selection)
-        self.idf_refresh_count_status(current_selection, False)
+        for selection in reversed(current_selection):
+            currently_selected_idf = self.active_idf_listbox.get(selection)
+            item_index = self.active_idf_listbox.get(0, END).index(currently_selected_idf)
+            self.active_idf_listbox.delete(item_index)
+            self.idf_refresh_count_status(currently_selected_idf, False)
 
     def idf_select_all(self):
         self.idf_deselect_all()
@@ -801,12 +805,14 @@ class MyApp(Frame):
         if not self.build_1:
             messagebox.showerror("Build folder 1 problem", "Select a valid build folder 1 prior to running")
             return
+        ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
         build_1_problem_files = [b[1] for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
-            messagebox.showerror("Build folder 1 problem", f"Missing files:\n{missing_files}")
-            return
+            r = messagebox.askokcancel("Build folder 1 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
+            if not r:
+                return
         if not self.build_2:
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
@@ -814,8 +820,9 @@ class MyApp(Frame):
         build_2_problem_files = [b[1] for b in build_2_valid if not b[2]]
         if len(build_2_problem_files):
             missing_files = '\n'.join(build_2_problem_files)
-            messagebox.showerror("Build folder 2 problem", f"Missing files:\n{missing_files}")
-            return
+            r = messagebox.askokcancel("Build folder 2 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
+            if not r:
+                return
         run_configuration = TestRunConfiguration(
             force_run_type=self.run_period_option.get(),
             num_threads=num_threads,

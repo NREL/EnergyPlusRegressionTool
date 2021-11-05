@@ -130,7 +130,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         # now write out a bunch of diff files and make sure the output is good to go
         end_string = 'EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  3.06sec'
         self._write_files_to_both_folders('eplusout.end', end_string, end_string)
-        # test one set of results there there is just table small diffs
+        # test one set of results where there is just table small diffs
         shutil.copy(
             os.path.join(self.tbl_resource_dir, 'eplustbl.htm'),
             os.path.join(self.temp_base_dir, 'eplustbl.htm')
@@ -217,6 +217,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         self._write_files_to_both_folders('in.idf', 'base idf content', 'mod idf content')
         self._write_files_to_both_folders('eplusout.stdout', 'base standard output', 'mod standard output')
         self._write_files_to_both_folders('eplusout.stderr', 'base standard error', 'mod standard error')
+        self._write_files_to_both_folders('eplusout_perflog.csv', 'a,b,c\nd,e,f', 'a,b,c\nd,e,g')
         with captured_output() as (out, err):
             # should fail if we don't have any .end files
             main_function(
@@ -259,7 +260,8 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 '[decent_ci:test_result:warn]',
                 'IDF diffs',
                 'StdOut diffs',
-                'StdErr diffs'
+                'StdErr diffs',
+                'PERF_LOG diffs'
             ]
             output = out.getvalue().strip()
             for token in expected_tokens:

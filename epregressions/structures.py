@@ -70,6 +70,7 @@ class TextDifferences:
     IDF = 21
     STDOUT = 22
     STDERR = 23
+    PERF_LOG = 24
     # diff types
     EQUAL = 1
     DIFFS = 2
@@ -215,6 +216,7 @@ class TestEntry:
         self.idf_diffs = None
         self.stdout_diffs = None
         self.stderr_diffs = None
+        self.perf_log_diffs = None
 
     def add_summary_result(self, end_err_summary):
         self.summary_result = end_err_summary
@@ -278,6 +280,8 @@ class TestEntry:
             self.stdout_diffs = diffs
         elif diff_type == TextDifferences.STDERR:
             self.stderr_diffs = diffs
+        elif diff_type == TextDifferences.PERF_LOG:
+            self.perf_log_diffs = diffs
 
     def add_table_differences(self, diffs):
         self.table_diffs = diffs
@@ -348,6 +352,8 @@ class TestEntry:
                 response['stdout_diffs'] = self.stdout_diffs.to_dict()
             if self.stderr_diffs:
                 response['stderr_diffs'] = self.stderr_diffs.to_dict()
+            if self.perf_log_diffs:
+                response['perf_log_diffs'] = self.perf_log_diffs.to_dict()
         return response
 
 
@@ -439,6 +445,7 @@ class CompletedStructure:
             this_entry.glhe_diffs: "glhe",
             this_entry.stdout_diffs: "stdout",
             this_entry.stderr_diffs: "stderr",
+            this_entry.perf_log_diffs: "perf_log"
         }
         for diff in text_diff_hash:
             file_type = text_diff_hash[diff]

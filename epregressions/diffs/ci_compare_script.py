@@ -178,6 +178,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         has_small_diffs = True
         print_message("SHD diffs.")
 
+    if entry.perf_log_diffs and (entry.perf_log_diffs.diff_type != TextDifferences.EQUAL):
+        has_small_diffs = True
+        print_message("PERF_LOG diffs.")
+
     # numeric diff
     if entry.ssz_diffs:
         has_diffs, has_small_diffs = process_diffs("SSZ", entry.ssz_diffs, has_diffs, has_small_diffs)

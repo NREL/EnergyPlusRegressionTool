@@ -403,6 +403,43 @@ class SuiteRunner:
         return False
 
     @staticmethod
+    def diff_perf_log(file_a, file_b, diff_file):
+        # will do a pretty simple CSV text token comparison, no numeric comparison, and omit some certain patterns
+        filters = [' Version ', 'YMD=', 'hr ']
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.readlines()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.readlines()
+        txt1_cleaned = []
+        for line in txt1:
+            tokens = []
+            for token in line.split(','):
+                if any([x in token for x in filters]):
+                    tokens.append("***")
+                else:
+                    tokens.append(token)
+            txt1_cleaned.append(','.join(tokens))
+        txt2_cleaned = []
+        for line in txt2:
+            tokens = []
+            for token in line.split(','):
+                if any([x in token for x in filters]):
+                    tokens.append("***")
+                else:
+                    tokens.append(token)
+            txt2_cleaned.append(','.join(tokens))
+        if txt1_cleaned == txt2_cleaned:
+            return TextDifferences.EQUAL
+        # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
+        comparison = unified_diff(txt1_cleaned, txt2_cleaned)
+        out_file = io.open(diff_file, 'w', encoding='utf-8')
+        out_lines = list(comparison)
+        for out_line in out_lines:
+            out_file.write(out_line)
+        out_file.close()
+        return TextDifferences.DIFFS
+
+    @staticmethod
     def diff_text_files(file_a, file_b, diff_file):
         # read the contents of the two files into a list, could read it into text first
         with io.open(file_a, encoding='utf-8') as f_txt_1:
@@ -451,8 +488,6 @@ class SuiteRunner:
         out_file = io.open(diff_file, 'w', encoding='utf-8')
         out_lines = list(comparison)
         for out_line in out_lines:
-            if sys.version_info[0] == 2:
-                out_line = out_line.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS
@@ -555,8 +590,6 @@ class SuiteRunner:
                     diffs.append("Key error in GLHE object named \"%s\"; something doesn't match" % glhe_name)
         with io.open(diff_file, 'w', encoding='utf-8') as out_file:
             my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
-            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
-                my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)
         return TextDifferences.DIFFS
 
@@ -651,8 +684,6 @@ class SuiteRunner:
                 {'diffs': diffs, 'num_big_diffs': num_big_diffs, 'num_small_diffs': num_small_diffs},
                 ensure_ascii=False
             )
-            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
-                my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)
         return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
 
@@ -839,6 +870,11 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.eio'),
                 join(case_result_dir_2, 'eplusout.eio'),
                 join(out_dir, 'eplusout.eio.diff'))), TextDifferences.EIO)
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_perflog.csv'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_perf_log(
+                join(case_result_dir_1, 'eplusout_perflog.csv'),
+                join(case_result_dir_2, 'eplusout_perflog.csv'),
+                join(out_dir, 'eplusout_perflog.csv.diff'))), TextDifferences.PERF_LOG)
         if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mdd'):
             this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.mdd'),
