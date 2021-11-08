@@ -405,28 +405,24 @@ class SuiteRunner:
     @staticmethod
     def diff_perf_log(file_a, file_b, diff_file):
         # will do a pretty simple CSV text token comparison, no numeric comparison, and omit some certain patterns
-        filters = [' Version ', 'YMD=', 'hr ']
+        tokens_to_skip = [1, 2, 29, 30]
         with io.open(file_a, encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.readlines()
         with io.open(file_b, encoding='utf-8') as f_txt_2:
             txt2 = f_txt_2.readlines()
         txt1_cleaned = []
         for line in txt1:
-            tokens = []
-            for token in line.split(','):
-                if any([x in token for x in filters]):
-                    tokens.append("***")
-                else:
-                    tokens.append(token)
+            tokens = line.split(',')
+            for i in tokens_to_skip:
+                if i < len(tokens):
+                    tokens[i] = '***'
             txt1_cleaned.append(','.join(tokens))
         txt2_cleaned = []
         for line in txt2:
-            tokens = []
-            for token in line.split(','):
-                if any([x in token for x in filters]):
-                    tokens.append("***")
-                else:
-                    tokens.append(token)
+            tokens = line.split(',')
+            for i in tokens_to_skip:
+                if i < len(tokens):
+                    tokens[i] = '***'
             txt2_cleaned.append(','.join(tokens))
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
