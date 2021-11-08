@@ -2083,6 +2083,18 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = os.path.join(self.temp_base_build_dir, 'err.diff')
         self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_err, mod_err, diff_file))
 
+    def test_perf_log_equal_with_ignored_differences(self):
+        base_perf_log = os.path.join(self.resources, 'eplusout_perflog_base.csv')
+        mod_perf_log = os.path.join(self.resources, 'eplusout_perflog_same_except_times.csv')
+        diff_file = os.path.join(self.temp_base_build_dir, 'perf_log.diff')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_perf_log(base_perf_log, mod_perf_log, diff_file))
+
+    def test_perf_log_diffs(self):
+        base_perf_log = os.path.join(self.resources, 'eplusout_perflog_base.csv')
+        mod_perf_log = os.path.join(self.resources, 'eplusout_perflog_mod.csv')
+        diff_file = os.path.join(self.temp_base_build_dir, 'perf_log.diff')
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_perf_log(base_perf_log, mod_perf_log, diff_file))
+
     def test_audit_diff_equal_with_ignored_differences(self):
         base_audit = os.path.join(self.resources, 'eplusout_base.audit')
         mod_audit = os.path.join(self.resources, 'eplusout_mod.audit')

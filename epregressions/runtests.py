@@ -403,6 +403,39 @@ class SuiteRunner:
         return False
 
     @staticmethod
+    def diff_perf_log(file_a, file_b, diff_file):
+        # will do a pretty simple CSV text token comparison, no numeric comparison, and omit some certain patterns
+        tokens_to_skip = [1, 2, 29, 30]
+        with io.open(file_a, encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.readlines()
+        with io.open(file_b, encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.readlines()
+        txt1_cleaned = []
+        for line in txt1:
+            tokens = line.split(',')
+            for i in tokens_to_skip:
+                if i < len(tokens):
+                    tokens[i] = '***'
+            txt1_cleaned.append(','.join(tokens))
+        txt2_cleaned = []
+        for line in txt2:
+            tokens = line.split(',')
+            for i in tokens_to_skip:
+                if i < len(tokens):
+                    tokens[i] = '***'
+            txt2_cleaned.append(','.join(tokens))
+        if txt1_cleaned == txt2_cleaned:
+            return TextDifferences.EQUAL
+        # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
+        comparison = unified_diff(txt1_cleaned, txt2_cleaned)
+        out_file = io.open(diff_file, 'w', encoding='utf-8')
+        out_lines = list(comparison)
+        for out_line in out_lines:
+            out_file.write(out_line)
+        out_file.close()
+        return TextDifferences.DIFFS
+
+    @staticmethod
     def diff_text_files(file_a, file_b, diff_file):
         # read the contents of the two files into a list, could read it into text first
         with io.open(file_a, encoding='utf-8') as f_txt_1:
@@ -451,8 +484,6 @@ class SuiteRunner:
         out_file = io.open(diff_file, 'w', encoding='utf-8')
         out_lines = list(comparison)
         for out_line in out_lines:
-            if sys.version_info[0] == 2:
-                out_line = out_line.encode('ascii', 'ignore').decode('ascii')  # pragma: no cover
             out_file.write(out_line)
         out_file.close()
         return TextDifferences.DIFFS
@@ -555,8 +586,6 @@ class SuiteRunner:
                     diffs.append("Key error in GLHE object named \"%s\"; something doesn't match" % glhe_name)
         with io.open(diff_file, 'w', encoding='utf-8') as out_file:
             my_json_str = json.dumps({"diffs": diffs}, ensure_ascii=False)
-            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
-                my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)
         return TextDifferences.DIFFS
 
@@ -651,8 +680,6 @@ class SuiteRunner:
                 {'diffs': diffs, 'num_big_diffs': num_big_diffs, 'num_small_diffs': num_small_diffs},
                 ensure_ascii=False
             )
-            if sys.version_info[0] == 2:  # python 2 unicode crap  # pragma: no cover
-                my_json_str = my_json_str.decode("utf-8")
             out_file.write(my_json_str)
         return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
 
@@ -839,6 +866,11 @@ class SuiteRunner:
                 join(case_result_dir_1, 'eplusout.eio'),
                 join(case_result_dir_2, 'eplusout.eio'),
                 join(out_dir, 'eplusout.eio.diff'))), TextDifferences.EIO)
+        if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout_perflog.csv'):
+            this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_perf_log(
+                join(case_result_dir_1, 'eplusout_perflog.csv'),
+                join(case_result_dir_2, 'eplusout_perflog.csv'),
+                join(out_dir, 'eplusout_perflog.csv.diff'))), TextDifferences.PERF_LOG)
         if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.mdd'):
             this_entry.add_text_differences(TextDifferences(SuiteRunner.diff_text_files(
                 join(case_result_dir_1, 'eplusout.mdd'),
@@ -1105,13 +1137,10 @@ if __name__ == "__main__":  # pragma: no cover
       1: Arguments can be passed from the command line in the usage here, or
       2: An instance of the SuiteRunner class can be constructed, more useful for UIs or scripting"""
     )
-    parser.add_argument('a_src', action="store", help='Path to case a\'s source repository root')
     parser.add_argument('a_build', action="store", help='Path to case a\'s build directory')
-    parser.add_argument('b_src', action="store", help='Path to case b\'s source repository root')
     parser.add_argument('b_build', action="store", help='Path to case b\'s build directory')
     parser.add_argument('idf_list_file', action='store', help='Path to the file containing the list of IDFs to run')
-    parser.add_argument('-a', action="store_true", help='Use this flag to run case a files')
-    parser.add_argument('-b', action="store_true", help='Use this flag to run case b files')
+    parser.add_argument('output_file', action='store', help='Path to output regression summary json file')
     parser.add_argument('-f', choices=['DD', 'Annual'], help='Force a specific run type', default=None)
     parser.add_argument('-j', action="store", dest="j", type=int, default=1, help='Number of processors to use')
     parser.add_argument('-t', action='store_true', default=False, help='Use this flag to run in test mode')
@@ -1169,4 +1198,6 @@ if __name__ == "__main__":  # pragma: no cover
     Runner = SuiteRunner(RunConfig, entries)
 
     # Run it
-    Runner.run_test_suite()
+    response = Runner.run_test_suite()
+
+    print(response.to_json_summary(args.output_file))
