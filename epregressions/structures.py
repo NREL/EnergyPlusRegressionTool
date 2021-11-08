@@ -514,7 +514,10 @@ class CompletedStructure:
                 'textual': [x for x in self.text_diffs.descriptions.keys()],
             },
             'results_by_file': [entry.to_dict() for entry in self.entries_by_file],
-            'extra': {'start_time': self.extra.descriptions[0], 'end_time': self.extra.descriptions[1]}
+            'extra': {
+                'start_time': self.extra.descriptions['time_stamps'][0],
+                'end_time': self.extra.descriptions['time_stamps'][1]
+            }
         }
         if json_file_path:
             output_string = json.dumps(output_data, indent=2)
