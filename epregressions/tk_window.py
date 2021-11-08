@@ -51,6 +51,7 @@ class ResultsTreeRoots:
     BigTable = "Files with BIG tablediffs"
     SmallTable = "Files with small tablediffs"
     Textual = "Files with textual diffs"
+    Extra = "Extra Information"
 
     @staticmethod
     def get_all():
@@ -144,6 +145,7 @@ class MyApp(Frame):
         self.idf_select_almost_all_button = None
         self.idf_deselect_all_button = None
         self.idf_select_n_random_button = None
+        self.idf_select_from_list_button = None
         self.run_period_option_menu = None
         self.reporting_frequency_option_menu = None
 
@@ -193,10 +195,10 @@ class MyApp(Frame):
         menu.add_cascade(label="Help", menu=help_menu)
 
         # main notebook holding everything
-        main_notebook = ttk.Notebook(self.root)
+        self.main_notebook = ttk.Notebook(self.root)
 
         # run configuration
-        pane_run = Frame(main_notebook)
+        pane_run = Frame(self.main_notebook)
         group_build_dir_1 = LabelFrame(pane_run, text="Build Directory 1")
         group_build_dir_1.pack(fill=X, padx=5)
         self.build_dir_1_button = Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1)
@@ -222,10 +224,10 @@ class MyApp(Frame):
             group_run_options, self.reporting_frequency, *ReportingFreq.get_all()
         )
         self.reporting_frequency_option_menu.grid(row=3, column=2, sticky=W)
-        main_notebook.add(pane_run, text='Configuration')
+        self.main_notebook.add(pane_run, text='Configuration')
 
         # now let's set up a list of checkboxes for selecting IDFs to run
-        pane_idfs = Frame(main_notebook)
+        pane_idfs = Frame(self.main_notebook)
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
         group_idf_tools.pack(fill=X, padx=5)
         self.idf_select_all_button = Button(
@@ -248,6 +250,10 @@ class MyApp(Frame):
             group_idf_tools, text="Select N Random", command=self.idf_select_random
         )
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_list_button = Button(
+            group_idf_tools, text="Select From List", command=self.idf_select_list
+        )
+        self.idf_select_from_list_button.pack(side=LEFT, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
@@ -281,10 +287,10 @@ class MyApp(Frame):
 
         self.build_idf_listing(initialize=True)
 
-        main_notebook.add(pane_idfs, text="IDF Selection")
+        self.main_notebook.add(pane_idfs, text="IDF Selection")
 
         # set up a scrolled listbox for the log messages
-        frame_log_messages = Frame(main_notebook)
+        frame_log_messages = Frame(self.main_notebook)
         group_log_messages = LabelFrame(frame_log_messages, text="Log Message Tools")
         group_log_messages.pack(fill=X, padx=5)
         Button(group_log_messages, text="Clear Log Messages", command=self.clear_log).pack(side=LEFT, expand=1)
@@ -295,13 +301,14 @@ class MyApp(Frame):
         self.log_message_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.log_message_listbox.yview)
-        main_notebook.add(frame_log_messages, text="Log Messages")
+        self.main_notebook.add(frame_log_messages, text="Log Messages")
 
         # set up a tree-view for the results
-        frame_results = Frame(main_notebook)
+        frame_results = Frame(self.main_notebook)
         scrollbar = Scrollbar(frame_results)
         self.results_tree = ttk.Treeview(frame_results, columns=("Base File", "Mod File"))
         self.results_tree.bind('<Double-1>', self.results_double_click)
+        self.results_tree.bind("<Button-3>", self.results_popup)
         self.results_tree.heading("#0", text="Results")
         self.results_tree.column('#0', minwidth=200, width=200)
         self.results_tree.heading("Base File", text="Base File")
@@ -312,10 +319,10 @@ class MyApp(Frame):
         self.results_tree.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.results_tree.yview)
-        main_notebook.add(frame_results, text="Results")
+        self.main_notebook.add(frame_results, text="Results (initialized)")
 
         # pack the main notebook on the window
-        main_notebook.pack(fill=BOTH, expand=1)
+        self.main_notebook.pack(fill=BOTH, expand=1)
 
         # status bar at the bottom
         frame_status = Frame(self.root)
@@ -441,6 +448,37 @@ class MyApp(Frame):
             return
         self.open_file_browser_to_directory(cell_value)
 
+    def results_popup(self, event):
+        iid = self.results_tree.identify_row(event.y)
+        if iid:
+            self.results_tree.selection_set(iid)
+            cur_item = self.results_tree.item(self.results_tree.focus())
+            title = cur_item['text']
+            if title.startswith('Case '):
+                if title.endswith('(0)'):
+                    context_menu = Menu(self, tearoff=0)
+                    context_menu.add_command(label="Selected Node Has No Children", command=self.dummy)
+                    context_menu.post(event.x_root, event.y_root)
+                else:
+                    tags = self.results_tree.item(iid, "tags")
+
+                    def copy_lambda():
+                        self.copy_selected_node(tags)
+                    context_menu = Menu(self, tearoff=0)
+                    context_menu.add_command(label="Copy Selected Node Files", command=copy_lambda)
+                    context_menu.post(event.x_root, event.y_root)
+        else:
+            # ignoring anything but the tree root nodes
+            pass
+
+    def dummy(self):
+        pass
+
+    def copy_selected_node(self, tags):
+        string = ';'.join(tags)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(string)
+
     @staticmethod
     def open_file_browser_to_directory(dir_to_open):
         this_platform = system()
@@ -560,23 +598,39 @@ class MyApp(Frame):
             ResultsTreeRoots.SmallMath: results.small_math_diffs,
             ResultsTreeRoots.BigTable: results.big_table_diffs,
             ResultsTreeRoots.SmallTable: results.small_table_diffs,
-            ResultsTreeRoots.Textual: results.text_diffs
+            ResultsTreeRoots.Textual: results.text_diffs,
+            ResultsTreeRoots.Extra: results.extra
         }
+        case_roots = [
+            ResultsTreeRoots.NumRun, ResultsTreeRoots.Success1, ResultsTreeRoots.NotSuccess1,
+            ResultsTreeRoots.Success2, ResultsTreeRoots.NotSuccess2
+        ]
         for root, these_results in root_and_files.items():
             num_items = sum([len(y) for _, y in these_results.descriptions.items()])
             self.tree_folders[root] = self.results_tree.insert(
                 parent="", index=END, text=f"{root} ({num_items})", values=("", "")
             )
+            if root in case_roots:
+                cases = [k for k in these_results.descriptions.keys()]
+                self.results_tree.item(self.tree_folders[root], tags=cases)
             for base_name, result_list in these_results.descriptions.items():
-                dir_1 = os.path.join(results.results_dir_a, base_name)
-                dir_2 = os.path.join(results.results_dir_b, base_name)
-                for result in result_list:
-                    self.results_tree.insert(
-                        parent=self.tree_folders[root], index=END, text=result,
-                        values=(
-                            "Double click to see base run results", "Double click to see mod run results", dir_1, dir_2
+                if root != ResultsTreeRoots.Extra:
+                    dir_1 = os.path.join(results.results_dir_a, base_name)
+                    dir_2 = os.path.join(results.results_dir_b, base_name)
+                    for result in result_list:
+                        self.results_tree.insert(
+                            parent=self.tree_folders[root], index=END, text=result,
+                            values=(
+                                "Double click to see base run results",
+                                "Double click to see mod run results",
+                                dir_1, dir_2
+                            )
                         )
-                    )
+                else:  # extra data
+                    for result in result_list:
+                        self.results_tree.insert(
+                            parent=self.tree_folders[root], index=END, text=result
+                        )
         self.last_results = results
 
     def add_to_log(self, message):
@@ -694,6 +748,24 @@ class MyApp(Frame):
                 self.active_idf_listbox.insert(END, idf_to_get)
         self.idf_refresh_count_status()
 
+    def idf_select_list(self):
+        if not self.valid_idfs_in_listing:
+            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            return
+        idf_names_to_select = simpledialog.askstring("Input IDF Names", "List them semicolon delimited")
+        if not idf_names_to_select:
+            return
+        self.idf_deselect_all()
+        idf_names_to_select_sorted = sorted(idf_names_to_select.split(';'))
+        for idf_name_to_find in idf_names_to_select_sorted:
+            idf_name = idf_name_to_find + '.idf'
+            imf_name = idf_name_to_find + '.imf'
+            for i in range(self.full_idf_listbox.size()):
+                this_idf_possibility = self.full_idf_listbox.get(i)
+                if this_idf_possibility == idf_name or this_idf_possibility == imf_name:
+                    self.active_idf_listbox.insert(END, this_idf_possibility)
+        self.idf_refresh_count_status()
+
     def idf_refresh_count_status(self, test_case=None, checked=False):
         if not self.valid_idfs_in_listing:
             return
@@ -710,9 +782,11 @@ class MyApp(Frame):
         if is_running:
             run_button_state = 'disabled'
             stop_button_state = 'normal'
+            results_tab_title = 'Results (Waiting on current run)'
         else:
             run_button_state = 'normal'
             stop_button_state = 'disabled'
+            results_tab_title = 'Results (Up to date)'
         self.build_dir_1_button.configure(state=run_button_state)
         self.build_dir_2_button.configure(state=run_button_state)
         self.run_button.configure(state=run_button_state)
@@ -725,6 +799,7 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu.configure(state=run_button_state)
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
+        self.main_notebook.tab(3, text=results_tab_title)
 
     def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)

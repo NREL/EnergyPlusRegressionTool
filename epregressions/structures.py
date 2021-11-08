@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 import json
 import os
 
@@ -357,6 +358,18 @@ class TestEntry:
         return response
 
 
+class ExtraInfo:
+    def __init__(self):
+        self.descriptions = {
+            'time_stamps': [
+                f"Start time: {datetime.now()}", "End time initialized"
+            ]
+        }
+
+    def set_end_time(self):
+        self.descriptions['time_stamps'][1] = f"End time: {datetime.now()}"
+
+
 class CompletedStructure:
     def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir,
                  case_b_build_dir, results_dir_a, results_dir_b):
@@ -380,6 +393,8 @@ class CompletedStructure:
         self.big_table_diffs = Results()
         self.small_table_diffs = Results()
         self.text_diffs = Results()
+        # extra info
+        self.extra = ExtraInfo()
 
     def add_test_entry(self, this_entry):
         self.entries_by_file.append(this_entry)
@@ -498,7 +513,11 @@ class CompletedStructure:
                 'small_table': [x for x in self.small_table_diffs.descriptions.keys()],
                 'textual': [x for x in self.text_diffs.descriptions.keys()],
             },
-            'results_by_file': [entry.to_dict() for entry in self.entries_by_file]
+            'results_by_file': [entry.to_dict() for entry in self.entries_by_file],
+            'extra': {
+                'start_time': self.extra.descriptions['time_stamps'][0],
+                'end_time': self.extra.descriptions['time_stamps'][1]
+            }
         }
         if json_file_path:
             output_string = json.dumps(output_data, indent=2)
