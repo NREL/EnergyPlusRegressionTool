@@ -16,6 +16,7 @@ jobs:
             pip_arg: ""
             nosetests_args: --with-coverage --cover-package epregressions  # --cover-html for local html results
             pyinstall_args: ""
+            add_data: "epregressions/diffs/math_diff.config:epregressions/diffs"
             pack_tool: tar -zcvf
             extension: .tar.gz
             pack_suffix: -C dist runner
@@ -24,6 +25,7 @@ jobs:
             pip_arg: ""
             nosetests_args: ""
             pyinstall_args: --noconsole
+            add_data: "epregressions/diffs/math_diff.config:epregressions/diffs"
             pack_tool: tar -zcvf
             extension: .tar.gz
             pack_suffix: -C dist runner
@@ -32,6 +34,7 @@ jobs:
             pip_arg: --user
             nosetests_args: ""
             pyinstall_args: --noconsole
+            add_data: "epregressions/diffs/math_diff.config;epregressions/diffs"
             pack_tool: 7z.exe a
             extension: .zip
             pack_suffix: ./dist/*
@@ -56,7 +59,7 @@ jobs:
     - name: Make Deploy Directory
       run: mkdir deploy
     - name: Build Installer
-      run: pyinstaller --onefile ${{ matrix.pyinstall_args }} --add-data "epregressions/diffs/math_diff.config:epregressions/diffs" epregressions/runner.py
+      run: pyinstaller --onefile ${{ matrix.pyinstall_args }} --add-data ${{ matrix.add_data }} epregressions/runner.py
     - name: Fixup Installer
       run: |
         VERSION_STRING=$(grep VERSION epregressions/__init__.py | cut -d= -f2 | xargs)
