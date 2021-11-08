@@ -184,7 +184,7 @@ def dict_of_dicts2dict_of_lists(dict_of_dicts, key_order, list_labels):
         for ll in list_labels:
             try:
                 dict_of_lists[key].append(dict_of_dicts[key][ll])
-            except ValueError:
+            except (KeyError, ValueError):
                 print(f"Encountered a ValueError, trying to find key: {ll}, can be caused by malformed CSV numerics")
                 raise
     return dict_of_lists
