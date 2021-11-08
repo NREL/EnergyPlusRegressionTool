@@ -145,6 +145,7 @@ class MyApp(Frame):
         self.idf_select_almost_all_button = None
         self.idf_deselect_all_button = None
         self.idf_select_n_random_button = None
+        self.idf_select_from_list_button = None
         self.run_period_option_menu = None
         self.reporting_frequency_option_menu = None
 
@@ -249,6 +250,10 @@ class MyApp(Frame):
             group_idf_tools, text="Select N Random", command=self.idf_select_random
         )
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_list_button = Button(
+            group_idf_tools, text="Select From List", command=self.idf_select_list
+        )
+        self.idf_select_from_list_button.pack(side=LEFT, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
@@ -303,6 +308,7 @@ class MyApp(Frame):
         scrollbar = Scrollbar(frame_results)
         self.results_tree = ttk.Treeview(frame_results, columns=("Base File", "Mod File"))
         self.results_tree.bind('<Double-1>', self.results_double_click)
+        self.results_tree.bind("<Button-3>", self.results_popup)
         self.results_tree.heading("#0", text="Results")
         self.results_tree.column('#0', minwidth=200, width=200)
         self.results_tree.heading("Base File", text="Base File")
@@ -442,6 +448,37 @@ class MyApp(Frame):
             return
         self.open_file_browser_to_directory(cell_value)
 
+    def results_popup(self, event):
+        iid = self.results_tree.identify_row(event.y)
+        if iid:
+            self.results_tree.selection_set(iid)
+            cur_item = self.results_tree.item(self.results_tree.focus())
+            title = cur_item['text']
+            if title.startswith('Case '):
+                if title.endswith('(0)'):
+                    context_menu = Menu(self, tearoff=0)
+                    context_menu.add_command(label="Selected Node Has No Children", command=self.dummy)
+                    context_menu.post(event.x_root, event.y_root)
+                else:
+                    tags = self.results_tree.item(iid, "tags")
+
+                    def copy_lambda():
+                        self.copy_selected_node(tags)
+                    context_menu = Menu(self, tearoff=0)
+                    context_menu.add_command(label="Copy Selected Node Files", command=copy_lambda)
+                    context_menu.post(event.x_root, event.y_root)
+        else:
+            # ignoring anything but the tree root nodes
+            pass
+
+    def dummy(self):
+        pass
+
+    def copy_selected_node(self, tags):
+        string = ';'.join(tags)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(string)
+
     @staticmethod
     def open_file_browser_to_directory(dir_to_open):
         this_platform = system()
@@ -564,11 +601,18 @@ class MyApp(Frame):
             ResultsTreeRoots.Textual: results.text_diffs,
             ResultsTreeRoots.Extra: results.extra
         }
+        case_roots = [
+            ResultsTreeRoots.NumRun, ResultsTreeRoots.Success1, ResultsTreeRoots.NotSuccess1,
+            ResultsTreeRoots.Success2, ResultsTreeRoots.NotSuccess2
+        ]
         for root, these_results in root_and_files.items():
             num_items = sum([len(y) for _, y in these_results.descriptions.items()])
             self.tree_folders[root] = self.results_tree.insert(
                 parent="", index=END, text=f"{root} ({num_items})", values=("", "")
             )
+            if root in case_roots:
+                cases = [k for k in these_results.descriptions.keys()]
+                self.results_tree.item(self.tree_folders[root], tags=cases)
             for base_name, result_list in these_results.descriptions.items():
                 if root != ResultsTreeRoots.Extra:
                     dir_1 = os.path.join(results.results_dir_a, base_name)
@@ -702,6 +746,24 @@ class MyApp(Frame):
                 idfs_to_take.append(idf_to_get)
             for idf_to_get in sorted(idfs_to_take):
                 self.active_idf_listbox.insert(END, idf_to_get)
+        self.idf_refresh_count_status()
+
+    def idf_select_list(self):
+        if not self.valid_idfs_in_listing:
+            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            return
+        idf_names_to_select = simpledialog.askstring("Input IDF Names", "List them semicolon delimited")
+        if not idf_names_to_select:
+            return
+        self.idf_deselect_all()
+        idf_names_to_select_sorted = sorted(idf_names_to_select.split(';'))
+        for idf_name_to_find in idf_names_to_select_sorted:
+            idf_name = idf_name_to_find + '.idf'
+            imf_name = idf_name_to_find + '.imf'
+            for i in range(self.full_idf_listbox.size()):
+                this_idf_possibility = self.full_idf_listbox.get(i)
+                if this_idf_possibility == idf_name or this_idf_possibility == imf_name:
+                    self.active_idf_listbox.insert(END, this_idf_possibility)
         self.idf_refresh_count_status()
 
     def idf_refresh_count_status(self, test_case=None, checked=False):
