@@ -1107,9 +1107,10 @@ class SuiteRunner:
         else:  # pragma: no cover
             self.my_print("Completed diffing case: %s" % case_name)
 
-    def my_alldone(self, results):
+    def my_alldone(self, results: CompletedStructure):
         if self.mute:
             return
+        results.extra.set_end_time()
         if self.all_done_callback:
             self.all_done_callback(results)
         else:  # pragma: no cover

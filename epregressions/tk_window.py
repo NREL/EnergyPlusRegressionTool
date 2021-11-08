@@ -51,6 +51,7 @@ class ResultsTreeRoots:
     BigTable = "Files with BIG tablediffs"
     SmallTable = "Files with small tablediffs"
     Textual = "Files with textual diffs"
+    Extra = "Extra Information"
 
     @staticmethod
     def get_all():
@@ -560,7 +561,8 @@ class MyApp(Frame):
             ResultsTreeRoots.SmallMath: results.small_math_diffs,
             ResultsTreeRoots.BigTable: results.big_table_diffs,
             ResultsTreeRoots.SmallTable: results.small_table_diffs,
-            ResultsTreeRoots.Textual: results.text_diffs
+            ResultsTreeRoots.Textual: results.text_diffs,
+            ResultsTreeRoots.Extra: results.extra
         }
         for root, these_results in root_and_files.items():
             num_items = sum([len(y) for _, y in these_results.descriptions.items()])
@@ -568,15 +570,23 @@ class MyApp(Frame):
                 parent="", index=END, text=f"{root} ({num_items})", values=("", "")
             )
             for base_name, result_list in these_results.descriptions.items():
-                dir_1 = os.path.join(results.results_dir_a, base_name)
-                dir_2 = os.path.join(results.results_dir_b, base_name)
-                for result in result_list:
-                    self.results_tree.insert(
-                        parent=self.tree_folders[root], index=END, text=result,
-                        values=(
-                            "Double click to see base run results", "Double click to see mod run results", dir_1, dir_2
+                if root != ResultsTreeRoots.Extra:
+                    dir_1 = os.path.join(results.results_dir_a, base_name)
+                    dir_2 = os.path.join(results.results_dir_b, base_name)
+                    for result in result_list:
+                        self.results_tree.insert(
+                            parent=self.tree_folders[root], index=END, text=result,
+                            values=(
+                                "Double click to see base run results",
+                                "Double click to see mod run results",
+                                dir_1, dir_2
+                            )
                         )
-                    )
+                else:  # extra data
+                    for result in result_list:
+                        self.results_tree.insert(
+                            parent=self.tree_folders[root], index=END, text=result
+                        )
         self.last_results = results
 
     def add_to_log(self, message):
