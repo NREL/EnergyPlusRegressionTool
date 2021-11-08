@@ -54,7 +54,9 @@ Selecting Input Files
 The input files are selected on the second tab. The user can
 select files by double clicking them in the top list, and they can be removed
 by double clicking them in the bottom list.  There are also a few selection options
-for selecting a random set, or selecting/deselecting all.
+for selecting a random set, selecting/deselecting all, and selecting all but the
+known-slowest files.  A recent enhancement now allows the user to select multiple
+files before adding or removing them to the active run list.
 
 Running & Canceling Test Suite
 ------------------------------
@@ -93,8 +95,8 @@ the test suite is complete, messages are sent to this log as well as to
 the GUI itself, so that the GUI can prepare itself for the next run if
 needed.
 
-Last Run Summary & Re-do-ing
-----------------------------
+Last Run Summary
+----------------
 
 When a test suite is completed, the GUI processes the results into a
 useful high-level results structure. This is shown in the following figure:

@@ -29,9 +29,11 @@ mathematical comparisons remains.
 Build Structure
 ---------------
 
-This program operates on EnergyPlus build folders.  It relies on the
-build folders having been set up by CMake, as it parses the CMakeCache
-to get access to the base source directory.  With the build and source
+This program operates on EnergyPlus build folders and EnergyPlus install
+folders. It relies on the build folders having been set up by CMake,
+as it parses the CMakeCache to get access to the base source directory.
+For installations, it detects the appropriately installed tools relative
+to the install folder root.  With the build and source
 directories available, the program has everything it needs to run.
 
 Known issues

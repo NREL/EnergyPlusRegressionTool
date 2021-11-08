@@ -1,6 +1,8 @@
 Running from Command Line
 =========================
 
+(this page needs a review)
+
 The original design of these scripts was for them to be used from the
 command line. It was only later that the graphical interface was added
 as a front-end for the scripts. Because of this original design, the
