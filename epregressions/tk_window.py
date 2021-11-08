@@ -193,10 +193,10 @@ class MyApp(Frame):
         menu.add_cascade(label="Help", menu=help_menu)
 
         # main notebook holding everything
-        main_notebook = ttk.Notebook(self.root)
+        self.main_notebook = ttk.Notebook(self.root)
 
         # run configuration
-        pane_run = Frame(main_notebook)
+        pane_run = Frame(self.main_notebook)
         group_build_dir_1 = LabelFrame(pane_run, text="Build Directory 1")
         group_build_dir_1.pack(fill=X, padx=5)
         self.build_dir_1_button = Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1)
@@ -222,10 +222,10 @@ class MyApp(Frame):
             group_run_options, self.reporting_frequency, *ReportingFreq.get_all()
         )
         self.reporting_frequency_option_menu.grid(row=3, column=2, sticky=W)
-        main_notebook.add(pane_run, text='Configuration')
+        self.main_notebook.add(pane_run, text='Configuration')
 
         # now let's set up a list of checkboxes for selecting IDFs to run
-        pane_idfs = Frame(main_notebook)
+        pane_idfs = Frame(self.main_notebook)
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
         group_idf_tools.pack(fill=X, padx=5)
         self.idf_select_all_button = Button(
@@ -281,10 +281,10 @@ class MyApp(Frame):
 
         self.build_idf_listing(initialize=True)
 
-        main_notebook.add(pane_idfs, text="IDF Selection")
+        self.main_notebook.add(pane_idfs, text="IDF Selection")
 
         # set up a scrolled listbox for the log messages
-        frame_log_messages = Frame(main_notebook)
+        frame_log_messages = Frame(self.main_notebook)
         group_log_messages = LabelFrame(frame_log_messages, text="Log Message Tools")
         group_log_messages.pack(fill=X, padx=5)
         Button(group_log_messages, text="Clear Log Messages", command=self.clear_log).pack(side=LEFT, expand=1)
@@ -295,10 +295,10 @@ class MyApp(Frame):
         self.log_message_listbox.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.log_message_listbox.yview)
-        main_notebook.add(frame_log_messages, text="Log Messages")
+        self.main_notebook.add(frame_log_messages, text="Log Messages")
 
         # set up a tree-view for the results
-        frame_results = Frame(main_notebook)
+        frame_results = Frame(self.main_notebook)
         scrollbar = Scrollbar(frame_results)
         self.results_tree = ttk.Treeview(frame_results, columns=("Base File", "Mod File"))
         self.results_tree.bind('<Double-1>', self.results_double_click)
@@ -312,10 +312,10 @@ class MyApp(Frame):
         self.results_tree.pack(fill=BOTH, side=LEFT, expand=True)
         scrollbar.pack(fill=Y, side=LEFT)
         scrollbar.config(command=self.results_tree.yview)
-        main_notebook.add(frame_results, text="Results")
+        self.main_notebook.add(frame_results, text="Results (initialized)")
 
         # pack the main notebook on the window
-        main_notebook.pack(fill=BOTH, expand=1)
+        self.main_notebook.pack(fill=BOTH, expand=1)
 
         # status bar at the bottom
         frame_status = Frame(self.root)
@@ -710,9 +710,11 @@ class MyApp(Frame):
         if is_running:
             run_button_state = 'disabled'
             stop_button_state = 'normal'
+            results_tab_title = 'Results (Waiting on current run)'
         else:
             run_button_state = 'normal'
             stop_button_state = 'disabled'
+            results_tab_title = 'Results (Up to date)'
         self.build_dir_1_button.configure(state=run_button_state)
         self.build_dir_2_button.configure(state=run_button_state)
         self.run_button.configure(state=run_button_state)
@@ -725,6 +727,7 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu.configure(state=run_button_state)
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
+        self.main_notebook.tab(3, text=results_tab_title)
 
     def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
