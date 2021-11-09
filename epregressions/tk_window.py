@@ -1,17 +1,18 @@
-from datetime import datetime
-from json import dumps, load as load_json_from_file
 import os
-from pathlib import Path
-from platform import system
 import random
 import subprocess
 import sys
+import webbrowser
+from datetime import datetime
+from json import dumps, load as load_json_from_file
+from pathlib import Path
+from platform import system
 from threading import Thread
 from time import sleep
 from tkinter import (
     Tk, ttk,  # Core pieces
     PhotoImage,  # for taskbar icon
-    Button, Frame, Label, LabelFrame, Listbox, Menu, OptionMenu, Scrollbar, Spinbox,  # Widgets
+    Frame, Label, LabelFrame, Listbox, Menu, OptionMenu, Scrollbar, Spinbox,  # Widgets
     StringVar,  # Special Types
     messagebox,  # Dialog boxes
     E, W,  # Cardinal directions N, S,
@@ -20,11 +21,14 @@ from tkinter import (
     filedialog, simpledialog,  # system dialogs
 )
 from typing import List, Union
-import webbrowser
 
 from pubsub import pub
 
 from epregressions import VERSION
+from epregressions.builds.base import KnownBuildTypes, autodetect_build_dir_type, BaseBuildDirectoryStructure
+from epregressions.builds.install import EPlusInstallDirectory
+from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
+from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
 from epregressions.epw_map import get_epw_for_idf
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
@@ -33,10 +37,6 @@ from epregressions.structures import (
     ReportingFreq,
     TestEntry,
 )
-from epregressions.builds.base import KnownBuildTypes, autodetect_build_dir_type, BaseBuildDirectoryStructure
-from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
-from epregressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
-from epregressions.builds.install import EPlusInstallDirectory
 
 
 class ResultsTreeRoots:
@@ -152,7 +152,6 @@ class MyApp(Frame):
         # some data holders
         self.tree_folders = dict()
         self.valid_idfs_in_listing = False
-        self.run_button_color = '#008000'
         self.build_1 = None
         self.build_2 = None
         self.last_results = None
@@ -161,6 +160,7 @@ class MyApp(Frame):
         self.save_interval = 10000  # ms, so 1 minute
 
         # initialize the GUI
+        self.main_notebook = None
         self.init_window()
 
         # try to auto-load the last settings, and kick off the auto-save feature
@@ -197,17 +197,26 @@ class MyApp(Frame):
         # main notebook holding everything
         self.main_notebook = ttk.Notebook(self.root)
 
+        style = ttk.Style()
+        style.map("C.TButton",
+                  foreground=[('pressed', 'red'), ('active', 'blue')],
+                  background=[('pressed', '!disabled', 'black'),
+                              ('active', 'white')]
+                  )
+
         # run configuration
         pane_run = Frame(self.main_notebook)
         group_build_dir_1 = LabelFrame(pane_run, text="Build Directory 1")
         group_build_dir_1.pack(fill=X, padx=5)
-        self.build_dir_1_button = Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1)
+        self.build_dir_1_button = ttk.Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1,
+                                             style="C.TButton")
         self.build_dir_1_button.grid(row=1, column=1, sticky=W)
         self.build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
         self.build_dir_1_label.grid(row=1, column=2, sticky=E)
         group_build_dir_2 = LabelFrame(pane_run, text="Build Directory 2")
         group_build_dir_2.pack(fill=X, padx=5)
-        self.build_dir_2_button = Button(group_build_dir_2, text="Change...", command=self.client_build_dir_2)
+        self.build_dir_2_button = ttk.Button(group_build_dir_2, text="Change...", command=self.client_build_dir_2,
+                                             style="C.TButton")
         self.build_dir_2_button.grid(row=1, column=1, sticky=W)
         self.build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
         self.build_dir_2_label.grid(row=1, column=2, sticky=E)
@@ -230,28 +239,28 @@ class MyApp(Frame):
         pane_idfs = Frame(self.main_notebook)
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
         group_idf_tools.pack(fill=X, padx=5)
-        self.idf_select_all_button = Button(
-            group_idf_tools, text="Refresh", command=self.build_idf_listing
+        self.idf_select_all_button = ttk.Button(
+            group_idf_tools, text="Refresh", command=self.build_idf_listing, style="C.TButton"
         )
         self.idf_select_all_button.pack(side=LEFT, expand=1)
-        self.idf_select_all_button = Button(
-            group_idf_tools, text="Select All", command=self.idf_select_all
+        self.idf_select_all_button = ttk.Button(
+            group_idf_tools, text="Select All", command=self.idf_select_all, style="C.TButton"
         )
         self.idf_select_all_button.pack(side=LEFT, expand=1)
-        self.idf_select_almost_all_button = Button(
+        self.idf_select_almost_all_button = ttk.Button(
             group_idf_tools, text="Select All Except Long Runs", command=self.idf_select_all_except_long_runs
         )
         self.idf_select_almost_all_button.pack(side=LEFT, expand=1)
-        self.idf_deselect_all_button = Button(
-            group_idf_tools, text="Deselect All", command=self.idf_deselect_all
+        self.idf_deselect_all_button = ttk.Button(
+            group_idf_tools, text="Deselect All", command=self.idf_deselect_all, style="C.TButton"
         )
         self.idf_deselect_all_button.pack(side=LEFT, expand=1)
-        self.idf_select_n_random_button = Button(
-            group_idf_tools, text="Select N Random", command=self.idf_select_random
+        self.idf_select_n_random_button = ttk.Button(
+            group_idf_tools, text="Select N Random", command=self.idf_select_random, style="C.TButton"
         )
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
-        self.idf_select_from_list_button = Button(
-            group_idf_tools, text="Select From List", command=self.idf_select_list
+        self.idf_select_from_list_button = ttk.Button(
+            group_idf_tools, text="Select From List", command=self.idf_select_list, style="C.TButton"
         )
         self.idf_select_from_list_button.pack(side=LEFT, expand=1)
 
@@ -265,14 +274,16 @@ class MyApp(Frame):
         scrollbar.config(command=self.full_idf_listbox.yview)
 
         down_arrows = "  ↓  " * 4
-        self.move_idf_to_active_button = Button(
-            pane_idfs, text=down_arrows + "Add to Active List" + down_arrows, command=self.idf_move_to_active
+        self.move_idf_to_active_button = ttk.Button(
+            pane_idfs, text=down_arrows + "Add to Active List" + down_arrows, command=self.idf_move_to_active,
+            style="C.TButton"
         )
         self.move_idf_to_active_button.pack(side=TOP, fill=X, expand=False)
 
         up_arrows = "  ↑  " * 4
-        self.remove_idf_from_active_button = Button(
-            pane_idfs, text=up_arrows + "Remove from Active List" + up_arrows, command=self.idf_remove_from_active
+        self.remove_idf_from_active_button = ttk.Button(
+            pane_idfs, text=up_arrows + "Remove from Active List" + up_arrows, command=self.idf_remove_from_active,
+            style="C.TButton"
         )
         self.remove_idf_from_active_button.pack(side=TOP, fill=X, expand=False)
 
@@ -293,8 +304,10 @@ class MyApp(Frame):
         frame_log_messages = Frame(self.main_notebook)
         group_log_messages = LabelFrame(frame_log_messages, text="Log Message Tools")
         group_log_messages.pack(fill=X, padx=5)
-        Button(group_log_messages, text="Clear Log Messages", command=self.clear_log).pack(side=LEFT, expand=1)
-        Button(group_log_messages, text="Copy Log Messages", command=self.copy_log).pack(side=LEFT, expand=1)
+        ttk.Button(group_log_messages, text="Clear Log Messages", command=self.clear_log, style="C.TButton").pack(
+            side=LEFT, expand=1)
+        ttk.Button(group_log_messages, text="Copy Log Messages", command=self.copy_log, style="C.TButton").pack(
+            side=LEFT, expand=1)
         scrollbar = Scrollbar(frame_log_messages)
         self.log_message_listbox = Listbox(frame_log_messages, yscrollcommand=scrollbar.set)
         self.add_to_log("Program started!")
@@ -326,9 +339,10 @@ class MyApp(Frame):
 
         # status bar at the bottom
         frame_status = Frame(self.root)
-        self.run_button = Button(frame_status, text="Run", bg=self.run_button_color, command=self.client_run)
+        self.run_button = ttk.Button(frame_status, text="Run", command=self.client_run, style="C.TButton")
         self.run_button.pack(side=LEFT, expand=0)
-        self.stop_button = Button(frame_status, text="Stop", command=self.client_stop, state='disabled')
+        self.stop_button = ttk.Button(frame_status, text="Stop", command=self.client_stop, state='disabled',
+                                      style="C.TButton")
         self.stop_button.pack(side=LEFT, expand=0)
         self.progress = ttk.Progressbar(frame_status, length=250)
         self.progress.pack(side=LEFT, expand=0)
@@ -464,6 +478,7 @@ class MyApp(Frame):
 
                     def copy_lambda():
                         self.copy_selected_node(tags)
+
                     context_menu = Menu(self, tearoff=0)
                     context_menu.add_command(label="Copy Selected Node Files", command=copy_lambda)
                     context_menu.post(event.x_root, event.y_root)
