@@ -152,7 +152,6 @@ class MyApp(Frame):
         # some data holders
         self.tree_folders = dict()
         self.valid_idfs_in_listing = False
-        self.run_button_color = '#008000'
         self.build_1 = None
         self.build_2 = None
         self.last_results = None
