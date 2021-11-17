@@ -2071,6 +2071,17 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_MISSING, results_for_file.summary_result.simulation_status_case2)
 
+    def test_eio_with_version(self):
+        # tests that the Version, XX.N line is ignored in the EIO
+        base_eio = os.path.join(self.temp_mod_source_dir, 'base.eio')
+        mod_eio = os.path.join(self.temp_mod_source_dir, 'mod.eio')
+        with open(base_eio, 'w') as f:
+            f.write(' ! <Version>, Version ID\nVersion, 9.6\n')
+        with open(mod_eio, 'w') as f:
+            f.write(' ! <Version>, Version ID\nVersion, 22.1\n')
+        diff_file = os.path.join(self.temp_mod_source_dir, 'diff.eio')
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_eio, mod_eio, diff_file))
+
     def test_eio_diff_with_utf8(self):
         base_eio = os.path.join(self.resources, 'eplusout_with_utf8_base.eio')
         mod_eio = os.path.join(self.resources, 'eplusout_with_utf8_mod.eio')
