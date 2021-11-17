@@ -468,7 +468,10 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                 # Statistics local to this table
                 for diff_result in diff_dict[h]:
                     diff_type = diff_result[2]
-                    if diff_type == 'small':
+                    if h == 'Version ID':
+                        table_equal += 1
+                        count_of_equal += 1
+                    elif diff_type == 'small':
                         table_small_diff += 1
                         count_of_small_diff += 1
                     elif diff_type == 'big':

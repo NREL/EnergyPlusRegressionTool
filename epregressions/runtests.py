@@ -446,6 +446,7 @@ class SuiteRunner:
         txt1_cleaned = []
         skip_strings = [
             "Program Version,EnergyPlus",
+            "Version,",
             "EnergyPlus Completed",
             "EnergyPlus Terminated",
             "DElight input generated",

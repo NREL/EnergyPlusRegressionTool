@@ -409,3 +409,24 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_ignore_version_diff(self):
+        # This table has a version number difference
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_versiondiff_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_versiondiff_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(4, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs  # TODO This is zero
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(18, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
