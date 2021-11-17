@@ -76,6 +76,9 @@ class ThreshDict(object):
         if hstr == 'Date/Time' or hstr == 'Time':
             return 0.0, 0.0
 
+        if hstr == 'Version ID':  # allow version number changes to pass without throwing table diffs
+            return 100.0, 100.0
+
         # Parse hstr (column header) to extract Unit and Aggregation
 
         # noinspection PyBroadException
