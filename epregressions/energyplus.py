@@ -94,57 +94,58 @@ def execute_energyplus(e_args: ExecutionArguments):
             else:
                 return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, "Issue with Parametrics"]
 
-        # Run ExpandObjects and process as necessary
-        expand_objects_run = subprocess.Popen(
-            expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        o, e = expand_objects_run.communicate()
-        std_out += o
-        std_err += e
-        if os.path.exists('expanded.idf'):
-            if os.path.exists('in.idf'):
-                os.remove('in.idf')
-            os.rename('expanded.idf', 'in.idf')
+        # Run ExpandObjects and process as necessary, but not for epJSON files!
+        if os.path.exists('in.idf'):
+            expand_objects_run = subprocess.Popen(
+                expandobjects, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            o, e = expand_objects_run.communicate()
+            std_out += o
+            std_err += e
+            if os.path.exists('expanded.idf'):
+                if os.path.exists('in.idf'):
+                    os.remove('in.idf')
+                os.rename('expanded.idf', 'in.idf')
 
-            if os.path.exists('BasementGHTIn.idf'):
-                shutil.copy(basementidd, e_args.test_run_directory)
-                basement_environment = os.environ.copy()
-                basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
-                basement_run = subprocess.Popen(
-                    basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE, env=basement_environment
-                )
-                o, e = basement_run.communicate()
-                std_out += o
-                std_err += e
-                with open('EPObjects.TXT') as f:
-                    append_text = f.read()
-                with open('in.idf', 'a') as f:
-                    f.write("\n%s\n" % append_text)
-                os.remove('RunINPUT.TXT')
-                os.remove('RunDEBUGOUT.TXT')
-                os.remove('EPObjects.TXT')
-                os.remove('BasementGHTIn.idf')
-                os.remove('MonthlyResults.csv')
-                os.remove('BasementGHT.idd')
+                if os.path.exists('BasementGHTIn.idf'):
+                    shutil.copy(basementidd, e_args.test_run_directory)
+                    basement_environment = os.environ.copy()
+                    basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
+                    basement_run = subprocess.Popen(
+                        basement, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, env=basement_environment
+                    )
+                    o, e = basement_run.communicate()
+                    std_out += o
+                    std_err += e
+                    with open('EPObjects.TXT') as f:
+                        append_text = f.read()
+                    with open('in.idf', 'a') as f:
+                        f.write("\n%s\n" % append_text)
+                    os.remove('RunINPUT.TXT')
+                    os.remove('RunDEBUGOUT.TXT')
+                    os.remove('EPObjects.TXT')
+                    os.remove('BasementGHTIn.idf')
+                    os.remove('MonthlyResults.csv')
+                    os.remove('BasementGHT.idd')
 
-            if os.path.exists('GHTIn.idf'):
-                shutil.copy(slabidd, e_args.test_run_directory)
-                slab_run = subprocess.Popen(
-                    slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                o, e = slab_run.communicate()
-                std_out += o
-                std_err += e
-                with open('SLABSurfaceTemps.TXT') as f:
-                    append_text = f.read()
-                with open('in.idf', 'a') as f:
-                    f.write("\n%s\n" % append_text)
-                os.remove('SLABINP.TXT')
-                os.remove('GHTIn.idf')
-                os.remove('SLABSurfaceTemps.TXT')
-                os.remove('SLABSplit Surface Temps.TXT')
-                os.remove('SlabGHT.idd')
+                if os.path.exists('GHTIn.idf'):
+                    shutil.copy(slabidd, e_args.test_run_directory)
+                    slab_run = subprocess.Popen(
+                        slab, shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    )
+                    o, e = slab_run.communicate()
+                    std_out += o
+                    std_err += e
+                    with open('SLABSurfaceTemps.TXT') as f:
+                        append_text = f.read()
+                    with open('in.idf', 'a') as f:
+                        f.write("\n%s\n" % append_text)
+                    os.remove('SLABINP.TXT')
+                    os.remove('GHTIn.idf')
+                    os.remove('SLABSurfaceTemps.TXT')
+                    os.remove('SLABSplit Surface Temps.TXT')
+                    os.remove('SlabGHT.idd')
 
         # Set up environment
         os.environ["DISPLAYADVANCEDREPORTVARIABLES"] = "YES"
@@ -171,8 +172,11 @@ def execute_energyplus(e_args: ExecutionArguments):
 
         # Execute EnergyPlus
         try:
+            command_line = energyplus
+            if os.path.exists('in.epJSON'):
+                command_line = energyplus + ' in.epJSON'
             std_out += subprocess.check_output(
-                energyplus, shell=True, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE
+                command_line, shell=True, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE
             )
         except subprocess.CalledProcessError as e:  # pragma: no cover
             ...

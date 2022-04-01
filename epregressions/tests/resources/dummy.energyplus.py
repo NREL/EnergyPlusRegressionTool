@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import os
 
 """
 So we are going to replicate just a few of the core functions of E+ in this binary...in a super silly way
-1) We are going to make it expect an in.idf - not doing the full CLI
-2) We expect this file to be JSON
+1) We are going to make it expect an in.idf or an in.epJSON- not doing the full CLI
+2) We expect this file to be JSON regardless of file extension
   2a) If it's not JSON, E+ will just exit with zero and do nothing
   2b) If it is JSON, we will try to use the inputs to create the outputs...here are the possible config options
 {
@@ -22,7 +23,10 @@ So we are going to replicate just a few of the core functions of E+ in this bina
 import json
 import sys
 
-with open('in.idf') as f_idf:
+file_name = 'in.idf'
+if os.path.exists('in.epJSON'):
+    file_name = 'in.epJSON'
+with open(file_name) as f_idf:
     idf_body = f_idf.read()
     # noinspection PyBroadException
     try:

@@ -218,8 +218,10 @@ class SuiteRunner:
                         shutil.copy(
                             full_file_name, os.path.join(build_tree['build_dir'], this_test_dir, this_entry.basename)
                         )
+            elif full_input_file_path.endswith('.epJSON'):
+                ep_in_filename = "in.epJSON"
             else:
-                self.my_print(f"Could not determine file extension, must be idf or imf: {full_input_file_path}")
+                self.my_print(f"Invalid file extension, must be idf, imf, or epJSON: {full_input_file_path}")
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
 
