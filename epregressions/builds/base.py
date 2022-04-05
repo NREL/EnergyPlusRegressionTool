@@ -43,6 +43,7 @@ class BaseBuildDirectoryStructure(object):
         idf_path = Path(idf_dir)
         all_idfs_absolute_path = list(idf_path.rglob('*.idf'))
         all_idfs_absolute_path.extend(list(idf_path.rglob('*.imf')))
+        all_idfs_absolute_path.extend(list(idf_path.rglob('*.epJSON')))
         all_idfs_relative_path = set([idf.relative_to(idf_path) for idf in all_idfs_absolute_path])
         known_ignore_list = [
             # these files are for running EnergyPlus _as an FMU_ and we aren't doing that

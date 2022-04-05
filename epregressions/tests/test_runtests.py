@@ -1944,6 +1944,73 @@ class TestTestSuiteRunner(unittest.TestCase):
         results_dir = diff_results.results_dir_a
         self.assertIn('DDOnly', results_dir)
 
+    def test_epjson_file(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base"
+                }
+            },
+            alt_filename='my_file.epJSON'
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base"
+                }
+            },
+            alt_filename='my_file.epJSON'
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+
+        entries = [TestEntry('my_file.epJSON', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.DD,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries)
+        r.add_callbacks(
+            print_callback=TestTestSuiteRunner.dummy_callback,
+            simstarting_callback=TestTestSuiteRunner.dummy_callback,
+            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
+            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
+            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
+            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            cancel_callback=TestTestSuiteRunner.dummy_callback
+        )
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('my_file', results_for_file.basename)
+        # it should have succeeded in both base and mod cases
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        # it should have created a test directory and dropped the summaries there
+        results_dir = diff_results.results_dir_a
+        self.assertIn('DDOnly', results_dir)
+
     def test_both_success_no_diffs_annual(self):
         base = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(

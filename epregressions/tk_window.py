@@ -93,7 +93,7 @@ class MyApp(Frame):
 
         # high level GUI configuration
         self.root.geometry('1000x600')
-        self.root.resizable(width=1, height=1)
+        self.root.resizable(width=True, height=True)
         self.root.option_add('*tearOff', False)  # keeps file menus from looking weird
 
         # members related to the background thread and operator instance
@@ -223,7 +223,7 @@ class MyApp(Frame):
         group_run_options = LabelFrame(pane_run, text="Run Options")
         group_run_options.pack(fill=X, padx=5)
         Label(group_run_options, text="Number of threads for suite: ").grid(row=1, column=1, sticky=E)
-        self.num_threads_spinner = Spinbox(group_run_options, from_=1, to_=48, textvariable=self.num_threads_var)
+        self.num_threads_spinner = Spinbox(group_run_options, from_=1, to=48, textvariable=self.num_threads_var)
         self.num_threads_spinner.grid(row=1, column=2, sticky=W)
         Label(group_run_options, text="Test suite run configuration: ").grid(row=2, column=1, sticky=E)
         self.run_period_option_menu = OptionMenu(group_run_options, self.run_period_option, *ForceRunType.get_all())
@@ -370,7 +370,7 @@ class MyApp(Frame):
         except Exception:
             if auto_open:
                 return  # just quietly move along
-            simpledialog.messagebox.showerror("Load Error", "Could not load file contents as JSON!")
+            messagebox.showerror("Load Error", "Could not load file contents as JSON!")
             return
         try:
             self.num_threads_var.set(data['threads'])
@@ -387,7 +387,7 @@ class MyApp(Frame):
         except Exception:
             if auto_open:
                 return  # quietly leave
-            simpledialog.messagebox.showerror("Load Error", "Could not load data from project file")
+            messagebox.showerror("Load Error", "Could not load data from project file")
 
     def auto_save(self):
         if self.manually_saving or self.auto_saving:
@@ -668,11 +668,11 @@ class MyApp(Frame):
         if self.long_thread:
             return
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         current_selection = self.full_idf_listbox.curselection()
         if not current_selection:
-            simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
+            messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
         already_exist_count = 0
         for selection in current_selection:
@@ -686,19 +686,19 @@ class MyApp(Frame):
             self.active_idf_listbox.insert(END, currently_selected_idf)
             self.idf_refresh_count_status(currently_selected_idf, True)
         if already_exist_count > 0:
-            simpledialog.messagebox.showwarning("IDF Selection Warning", "At least one IDF was already in active list")
+            messagebox.showwarning("IDF Selection Warning", "At least one IDF was already in active list")
 
     def idf_remove_from_active(self, event=None):
         if self.long_thread:
             return
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         current_selection = self.active_idf_listbox.curselection()
         if not current_selection:
             if event:
                 return
-            simpledialog.messagebox.showerror("IDF Selection Error", "No IDF Selected")
+            messagebox.showerror("IDF Selection Error", "No IDF Selected")
             return
         for selection in reversed(current_selection):
             currently_selected_idf = self.active_idf_listbox.get(selection)
@@ -709,7 +709,7 @@ class MyApp(Frame):
     def idf_select_all(self):
         self.idf_deselect_all()
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         all_idfs = self.full_idf_listbox.get(0, END)
         for idf in all_idfs:
@@ -719,7 +719,7 @@ class MyApp(Frame):
     def idf_select_all_except_long_runs(self):
         self.idf_deselect_all()
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         all_idfs = self.full_idf_listbox.get(0, END)
         for idf in all_idfs:
@@ -736,14 +736,14 @@ class MyApp(Frame):
 
     def idf_deselect_all(self):
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         self.active_idf_listbox.delete(0, END)
         self.idf_refresh_count_status()
 
     def idf_select_random(self):
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         potential_number_to_select = simpledialog.askinteger("Input Amount", "How many would you like to select?")
         if not potential_number_to_select:
@@ -765,7 +765,7 @@ class MyApp(Frame):
 
     def idf_select_list(self):
         if not self.valid_idfs_in_listing:
-            simpledialog.messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
             return
         idf_names_to_select = simpledialog.askstring("Input IDF Names", "List them semicolon delimited")
         if not idf_names_to_select:
@@ -843,7 +843,7 @@ class MyApp(Frame):
             return
         status = self.try_to_set_build_1_to_dir(selected_dir)
         if not status:
-            simpledialog.messagebox.showerror(
+            messagebox.showerror(
                 "Build folder problem", f"Could not determine build type for build 1: {selected_dir}!"
             )
             return
@@ -877,7 +877,7 @@ class MyApp(Frame):
             return
         status = self.try_to_set_build_2_to_dir(selected_dir)
         if not status:
-            simpledialog.messagebox.showerror("Could not determine build type for build 2!")
+            messagebox.showerror("Could not determine build type for build 2!")
             return
         self.build_dir_2_var.set(selected_dir)
         self.build_idf_listing()
