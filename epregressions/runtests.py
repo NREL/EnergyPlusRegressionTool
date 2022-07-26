@@ -29,6 +29,7 @@ from epregressions.structures import (
     TableDifferences,
     CompletedStructure,
     ReportingFreq,
+    ForceOutputSQL,
     TestEntry
 )
 from multiprocessing import Pool
@@ -39,13 +40,15 @@ script_dir = os.path.abspath(path)
 
 
 class TestRunConfiguration:
-    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False):
+    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
+                 force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
         self.num_threads = num_threads
         self.buildA = build_a
         self.buildB = build_b
         self.report_freq = report_freq
+        self.force_output_sql = ForceOutputSQL(force_output_sql)
 
 
 class TestCaseCompleted:
@@ -83,6 +86,7 @@ class SuiteRunner:
         self.TestOneFile = run_config.TestOneFile
         self.number_of_threads = int(run_config.num_threads)
         self.min_reporting_freq = run_config.report_freq
+        self.force_output_sql = run_config.force_output_sql
 
         # File list brought in separately
         self.entries = these_entries
@@ -177,6 +181,30 @@ class SuiteRunner:
     def read_file_content(file_path):
         with codecs.open(file_path, encoding='utf-8', errors='ignore') as f_idf:
             idf_text = f_idf.read()
+        return idf_text
+
+    @staticmethod
+    def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL):
+        """Will add or modify the Output:SQLite object based on the provided enums that corresponds to the 'Option'"""
+        # Ensure we deal with the enum
+        if not isinstance(force_output_sql, ForceOutputSQL):
+            raise ValueError("Expected an Enum ForceOutputSQL, not {}".format(force_output_sql))
+
+        has_sqlite_object = False
+        for line in idf_text.splitlines():
+            if 'output:sqlite' in line.split('!')[0].lower():
+                has_sqlite_object = True
+                break
+        if has_sqlite_object:
+            import re
+            RE_SQLITE = re.compile('Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
+                                   re.IGNORECASE)
+            idf_text = RE_SQLITE.sub('Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
+                                     idf_text)
+        else:
+            print("Regular Append")
+            idf_text += '\n  Output:SQLite,\n    {};        !- Option Type\n'.format(force_output_sql.value)
+
         return idf_text
 
     def run_build(self, build_tree):
@@ -315,6 +343,10 @@ class SuiteRunner:
                             os.path.join(test_run_directory, 'datasets', 'FMUs')
                         )
                 idf_text = idf_text.replace('..\\datasets', 'datasets')
+
+            # Add Output:SQLite if requested
+            if self.force_output_sql != ForceOutputSQL.NOFORCE:
+                idf_text = self.add_or_modify_output_sqlite(idf_text=idf_text, force_output_sql=self.force_output_sql)
 
             # rewrite the idf with the (potentially) modified idf text
             with io.open(

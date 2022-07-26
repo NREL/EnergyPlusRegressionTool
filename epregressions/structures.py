@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 import json
 import os
-
+from enum import Enum
 
 class ForceRunType:
     DD = "Force Design-day-only simulations"
@@ -31,6 +31,12 @@ class ReportingFreq:
             ReportingFreq.DAILY, ReportingFreq.MONTHLY, ReportingFreq.RUN_PERIOD,
             ReportingFreq.ENVIRONMENT, ReportingFreq.ANNUAL
         ]
+
+
+class ForceOutputSQL(Enum):
+    NOFORCE = "Don't force anything"
+    SIMPLE = "Simple"
+    SIMPLEANDTABULAR = "SimpleAndTabular"
 
 
 class Results:

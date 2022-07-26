@@ -33,6 +33,7 @@ from epregressions.epw_map import get_epw_for_idf
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
     CompletedStructure,
+    ForceOutputSQL,
     ForceRunType,
     ReportingFreq,
     TestEntry,
@@ -108,6 +109,8 @@ class MyApp(Frame):
         self.run_period_option.set(ForceRunType.NONE)
         self.reporting_frequency = StringVar()
         self.reporting_frequency.set(ReportingFreq.HOURLY)
+        self.force_output_sql = StringVar()
+        self.force_output_sql.set(ForceOutputSQL.NOFORCE.value)
         self.num_threads_var = StringVar()
 
         # widgets that we might want to access later
@@ -148,6 +151,7 @@ class MyApp(Frame):
         self.idf_select_from_list_button = None
         self.run_period_option_menu = None
         self.reporting_frequency_option_menu = None
+        self.force_output_sql_option_menu = None
 
         # some data holders
         self.tree_folders = dict()
@@ -233,6 +237,13 @@ class MyApp(Frame):
             group_run_options, self.reporting_frequency, *ReportingFreq.get_all()
         )
         self.reporting_frequency_option_menu.grid(row=3, column=2, sticky=W)
+
+        Label(group_run_options, text="Force Output SQL: ").grid(row=4, column=1, sticky=E)
+        self.force_output_sql_option_menu = OptionMenu(
+            group_run_options, self.force_output_sql, *[x.value for x in ForceOutputSQL]
+        )
+        self.force_output_sql_option_menu.grid(row=4, column=2, sticky=W)
+
         self.main_notebook.add(pane_run, text='Configuration')
 
         # now let's set up a list of checkboxes for selecting IDFs to run
@@ -376,6 +387,8 @@ class MyApp(Frame):
             self.num_threads_var.set(data['threads'])
             self.run_period_option.set(data['config'])
             self.reporting_frequency.set(data['report_freq'])
+            self.force_output_sql.set(data['force_output_sql'])
+
             status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
@@ -417,6 +430,7 @@ class MyApp(Frame):
             json_object = {
                 'config': self.run_period_option.get(),
                 'report_freq': self.reporting_frequency.get(),
+                'force_output_sql': self.force_output_sql.get(),
                 'threads': num_threads,
                 'idfs': idfs,
                 'build_1_build_dir': self.build_1.build_directory,
@@ -812,6 +826,7 @@ class MyApp(Frame):
         self.remove_idf_from_active_button.configure(state=run_button_state)
         self.run_period_option_menu.configure(state=run_button_state)
         self.reporting_frequency_option_menu.configure(state=run_button_state)
+        self.force_output_sql_option_menu.configure(state=run_button_state)
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
         self.main_notebook.tab(3, text=results_tab_title)
@@ -917,6 +932,7 @@ class MyApp(Frame):
             force_run_type=self.run_period_option.get(),
             num_threads=num_threads,
             report_freq=self.reporting_frequency.get(),
+            force_output_sql=self.force_output_sql.get(),
             build_a=self.build_1,
             build_b=self.build_2
         )
