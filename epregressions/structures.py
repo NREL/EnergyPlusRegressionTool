@@ -39,6 +39,16 @@ class ForceOutputSQL(Enum):
     SIMPLEANDTABULAR = "SimpleAndTabular"
 
 
+class ForceOutputSQLUnitConversion(Enum):
+    NOFORCE = "Don't force anything"
+    NONE = "None"
+    UseOutputControlTableStyle = 'UseOutputControlTableStyle'
+    JtoKWH = 'JtoKWH'
+    JtoMJ = 'JtoMJ'
+    JtoGJ = 'JtoGJ'
+    InchPound = 'InchPound'
+
+
 class Results:
     def __init__(self):
         self.descriptions = {}

@@ -34,6 +34,7 @@ from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
     CompletedStructure,
     ForceOutputSQL,
+    ForceOutputSQLUnitConversion,
     ForceRunType,
     ReportingFreq,
     TestEntry,
@@ -111,6 +112,8 @@ class MyApp(Frame):
         self.reporting_frequency.set(ReportingFreq.HOURLY)
         self.force_output_sql = StringVar()
         self.force_output_sql.set(ForceOutputSQL.NOFORCE.value)
+        self.force_output_sql_unitconv = StringVar()
+        self.force_output_sql_unitconv.set(ForceOutputSQLUnitConversion.NOFORCE.value)
         self.num_threads_var = StringVar()
 
         # widgets that we might want to access later
@@ -152,6 +155,7 @@ class MyApp(Frame):
         self.run_period_option_menu = None
         self.reporting_frequency_option_menu = None
         self.force_output_sql_option_menu = None
+        self.force_output_sql_unitconv_option_menu = None
 
         # some data holders
         self.tree_folders = dict()
@@ -243,6 +247,12 @@ class MyApp(Frame):
             group_run_options, self.force_output_sql, *[x.value for x in ForceOutputSQL]
         )
         self.force_output_sql_option_menu.grid(row=4, column=2, sticky=W)
+
+        Label(group_run_options, text="Force Output SQL UnitConv: ").grid(row=5, column=1, sticky=E)
+        self.force_output_sql_unitconv_option_menu = OptionMenu(
+            group_run_options, self.force_output_sql_unitconv, *[x.value for x in ForceOutputSQLUnitConversion]
+        )
+        self.force_output_sql_unitconv_option_menu.grid(row=5, column=2, sticky=W)
 
         self.main_notebook.add(pane_run, text='Configuration')
 
@@ -388,6 +398,7 @@ class MyApp(Frame):
             self.run_period_option.set(data['config'])
             self.reporting_frequency.set(data['report_freq'])
             self.force_output_sql.set(data['force_output_sql'])
+            self.force_output_sql_unitconv.set(data['force_output_sql_unitconv'])
 
             status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
             if status:
@@ -431,6 +442,7 @@ class MyApp(Frame):
                 'config': self.run_period_option.get(),
                 'report_freq': self.reporting_frequency.get(),
                 'force_output_sql': self.force_output_sql.get(),
+                'force_output_sql_unitconv': self.force_output_sql_unitconv.get(),
                 'threads': num_threads,
                 'idfs': idfs,
                 'build_1_build_dir': self.build_1.build_directory,
@@ -827,6 +839,7 @@ class MyApp(Frame):
         self.run_period_option_menu.configure(state=run_button_state)
         self.reporting_frequency_option_menu.configure(state=run_button_state)
         self.force_output_sql_option_menu.configure(state=run_button_state)
+        self.force_output_sql_unitconv_option_menu.configure(state=run_button_state)
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
         self.main_notebook.tab(3, text=results_tab_title)
@@ -933,6 +946,7 @@ class MyApp(Frame):
             num_threads=num_threads,
             report_freq=self.reporting_frequency.get(),
             force_output_sql=self.force_output_sql.get(),
+            force_output_sql_unitconv=self.force_output_sql_unitconv.get(),
             build_a=self.build_1,
             build_b=self.build_2
         )

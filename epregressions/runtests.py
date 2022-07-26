@@ -30,6 +30,7 @@ from epregressions.structures import (
     CompletedStructure,
     ReportingFreq,
     ForceOutputSQL,
+    ForceOutputSQLUnitConversion,
     TestEntry
 )
 from multiprocessing import Pool
@@ -41,7 +42,8 @@ script_dir = os.path.abspath(path)
 
 class TestRunConfiguration:
     def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
-                 force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE):
+                 force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
+                 force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
         self.num_threads = num_threads
@@ -49,6 +51,7 @@ class TestRunConfiguration:
         self.buildB = build_b
         self.report_freq = report_freq
         self.force_output_sql = ForceOutputSQL(force_output_sql)
+        self.force_output_sql_unitconv = ForceOutputSQLUnitConversion(force_output_sql_unitconv)
 
 
 class TestCaseCompleted:
@@ -87,6 +90,7 @@ class SuiteRunner:
         self.number_of_threads = int(run_config.num_threads)
         self.min_reporting_freq = run_config.report_freq
         self.force_output_sql = run_config.force_output_sql
+        self.force_output_sql_unitconv = run_config.force_output_sql_unitconv
 
         # File list brought in separately
         self.entries = these_entries
@@ -184,11 +188,16 @@ class SuiteRunner:
         return idf_text
 
     @staticmethod
-    def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL):
+    def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL,
+                                    force_output_sql_unitconv: ForceOutputSQLUnitConversion):
         """Will add or modify the Output:SQLite object based on the provided enums that corresponds to the 'Option'"""
         # Ensure we deal with the enum
         if not isinstance(force_output_sql, ForceOutputSQL):
             raise ValueError("Expected an Enum ForceOutputSQL, not {}".format(force_output_sql))
+
+        if not isinstance(force_output_sql_unitconv, ForceOutputSQLUnitConversion):
+            raise ValueError("Expected an Enum ForceOutputSQLUnitConversion, not "
+                             "{}".format(force_output_sql_unitconv))
 
         has_sqlite_object = False
         for line in idf_text.splitlines():
@@ -199,11 +208,26 @@ class SuiteRunner:
             import re
             RE_SQLITE = re.compile('Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
                                    re.IGNORECASE)
-            idf_text = RE_SQLITE.sub('Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
-                                     idf_text)
+            if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
+                idf_text = RE_SQLITE.sub('Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
+                                         idf_text)
+            else:
+                new_obj = '''Output:SQLite,
+    {},        !- Option Type
+    {};        !- Unit Conversion
+    '''.format(force_output_sql.value, force_output_sql_unitconv.value)
+
+                idf_text = RE_SQLITE.sub(new_obj,
+                                         idf_text)
         else:
-            print("Regular Append")
-            idf_text += '\n  Output:SQLite,\n    {};        !- Option Type\n'.format(force_output_sql.value)
+            if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
+                idf_text += '\n  Output:SQLite,\n    {};        !- Option Type\n'.format(force_output_sql.value)
+            else:
+                idf_text += '''
+  Output:SQLite,
+    {},        !- Option Type
+    {};        !- Unit Conversion
+    '''.format(force_output_sql.value, force_output_sql_unitconv.value)
 
         return idf_text
 
@@ -346,7 +370,10 @@ class SuiteRunner:
 
             # Add Output:SQLite if requested
             if self.force_output_sql != ForceOutputSQL.NOFORCE:
-                idf_text = self.add_or_modify_output_sqlite(idf_text=idf_text, force_output_sql=self.force_output_sql)
+                idf_text = self.add_or_modify_output_sqlite(
+                    idf_text=idf_text, force_output_sql=self.force_output_sql,
+                    force_output_sql_unitconv=self.force_output_sql_unitconv,
+                )
 
             # rewrite the idf with the (potentially) modified idf text
             with io.open(
