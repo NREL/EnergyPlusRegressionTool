@@ -9,7 +9,8 @@ import unittest
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from epregressions.runtests import TestRunConfiguration, SuiteRunner
 from epregressions.structures import (
-    EndErrSummary, ForceRunType, ReportingFreq, TestEntry, TextDifferences
+    EndErrSummary, ForceRunType, ForceOutputSQL, ForceOutputSQLUnitConversion,
+    ReportingFreq, TestEntry, TextDifferences
 )
 
 
@@ -2254,3 +2255,107 @@ class TestTestSuiteRunner(unittest.TestCase):
         file_path_to_read = os.path.join(self.resources, 'BadUTF8Marker.idf')
         # this should simply pass without throwing an exception
         SuiteRunner.read_file_content(file_path_to_read)
+
+
+class TestSQLiteForce(unittest.TestCase):
+
+    def test_not_present(self):
+        idf_text = ""
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE)
+        self.assertEqual("""
+  Output:SQLite,
+    SimpleAndTabular;        !- Option Type
+""", mod_text)
+
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.JtoKWH)
+        self.assertEqual("""
+  Output:SQLite,
+    SimpleAndTabular,        !- Option Type
+    JtoKWH;        !- Unit Conversion
+""", mod_text)
+
+    def test_already_there_no_unit_conv(self):
+
+        idf_text = """
+
+  Zone,
+    Zone 1;
+
+  Output:SqliTe,SiMPle;
+"""
+
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE)
+        self.assertEqual("""
+
+  Zone,
+    Zone 1;
+
+  Output:SQLite,
+    SimpleAndTabular;
+
+""", mod_text)
+
+        # Force the UnitConv
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.JtoGJ)
+        self.assertEqual("""
+
+  Zone,
+    Zone 1;
+
+  Output:SQLite,
+    SimpleAndTabular,        !- Option Type
+    JtoGJ;        !- Unit Conversion
+
+""", mod_text)
+
+    def test_already_there_with_unit_conv(self):
+
+        idf_text = """
+
+  Zone,
+    Zone 1;
+
+  Output:Sqlite,Simple,JtoGJ;
+"""
+
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE)
+        self.assertEqual("""
+
+  Zone,
+    Zone 1;
+
+  Output:SQLite,
+    SimpleAndTabular,JtoGJ;
+
+""", mod_text)
+
+        # Force the UnitConv
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.InchPound)
+        self.assertEqual("""
+
+  Zone,
+    Zone 1;
+
+  Output:SQLite,
+    SimpleAndTabular,        !- Option Type
+    InchPound;        !- Unit Conversion
+
+""", mod_text)

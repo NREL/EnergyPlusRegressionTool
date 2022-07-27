@@ -215,7 +215,7 @@ class SuiteRunner:
                 new_obj = '''Output:SQLite,
     {},        !- Option Type
     {};        !- Unit Conversion
-    '''.format(force_output_sql.value, force_output_sql_unitconv.value)
+'''.format(force_output_sql.value, force_output_sql_unitconv.value)
 
                 idf_text = RE_SQLITE.sub(new_obj,
                                          idf_text)
@@ -227,7 +227,7 @@ class SuiteRunner:
   Output:SQLite,
     {},        !- Option Type
     {};        !- Unit Conversion
-    '''.format(force_output_sql.value, force_output_sql_unitconv.value)
+'''.format(force_output_sql.value, force_output_sql_unitconv.value)
 
         return idf_text
 
