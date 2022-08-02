@@ -2359,3 +2359,43 @@ class TestSQLiteForce(unittest.TestCase):
     InchPound;        !- Unit Conversion
 
 """, mod_text)
+
+    def test_not_present_epjson(self):
+        idf_text = "{}"
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
+            isEpJSON=True
+        )
+
+        expected_data = {'Output:SQLite': {'Output:SQLite 1': {'option_type': 'SimpleAndTabular'}}}
+        self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
+
+    def test_present_epjson(self):
+        ori_data = {'Output:SQLite': {'Output:SQLite 4': {'option_type': 'Simple', 'unit_conversion': 'JtoKWH'}}}
+        idf_text = json.dumps(ori_data)
+
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
+            isEpJSON=True
+        )
+
+        expected_data = {
+            'Output:SQLite': {'Output:SQLite 4': {'option_type': 'SimpleAndTabular', 'unit_conversion': 'JtoKWH'}}}
+        self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
+
+        mod_text = SuiteRunner.add_or_modify_output_sqlite(
+            idf_text=idf_text,
+            force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.InchPound,
+            isEpJSON=True
+        )
+
+        expected_data = {
+            'Output:SQLite': {'Output:SQLite 4': {'option_type': 'SimpleAndTabular', 'unit_conversion': 'InchPound'}}}
+        self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
+
+

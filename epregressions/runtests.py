@@ -189,7 +189,8 @@ class SuiteRunner:
 
     @staticmethod
     def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL,
-                                    force_output_sql_unitconv: ForceOutputSQLUnitConversion):
+                                    force_output_sql_unitconv: ForceOutputSQLUnitConversion,
+                                    isEpJSON: bool = False):
         """Will add or modify the Output:SQLite object based on the provided enums that corresponds to the 'Option'"""
         # Ensure we deal with the enum
         if not isinstance(force_output_sql, ForceOutputSQL):
@@ -199,6 +200,22 @@ class SuiteRunner:
             raise ValueError("Expected an Enum ForceOutputSQLUnitConversion, not "
                              "{}".format(force_output_sql_unitconv))
 
+        if isEpJSON:
+            data = json.loads(idf_text)
+            if "Output:SQLite" in data and len(data["Output:SQLite"]) >= 1:
+                sqlite_obj = data["Output:SQLite"][list(data["Output:SQLite"].keys())[0]]
+
+            else:
+                data["Output:SQLite"] = {"Output:SQLite 1": {}}
+                sqlite_obj = data["Output:SQLite"]["Output:SQLite 1"]
+
+            sqlite_obj['option_type'] = force_output_sql.value
+            if force_output_sql_unitconv != ForceOutputSQLUnitConversion.NOFORCE:
+                sqlite_obj['unit_conversion'] = force_output_sql_unitconv.value
+
+            return json.dumps(data, indent=4)
+
+        # IDF / IMF text manipulation
         has_sqlite_object = False
         for line in idf_text.splitlines():
             if 'output:sqlite' in line.split('!')[0].lower():
@@ -258,6 +275,7 @@ class SuiteRunner:
                 continue
 
             # copy macro files if it is an imf
+            isEpJSON: bool = False
             if full_input_file_path.endswith('.idf'):
                 ep_in_filename = "in.idf"
             elif full_input_file_path.endswith('.imf'):
@@ -272,6 +290,7 @@ class SuiteRunner:
                         )
             elif full_input_file_path.endswith('.epJSON'):
                 ep_in_filename = "in.epJSON"
+                isEpJSON = True
             else:
                 self.my_print(f"Invalid file extension, must be idf, imf, or epJSON: {full_input_file_path}")
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
@@ -373,6 +392,7 @@ class SuiteRunner:
                 idf_text = self.add_or_modify_output_sqlite(
                     idf_text=idf_text, force_output_sql=self.force_output_sql,
                     force_output_sql_unitconv=self.force_output_sql_unitconv,
+                    isEpJSON=isEpJSON
                 )
 
             # rewrite the idf with the (potentially) modified idf text
