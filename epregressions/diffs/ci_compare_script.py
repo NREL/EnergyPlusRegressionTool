@@ -268,41 +268,15 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
 <!doctype html>
 <html>
   <head>
-    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-    <link href="//alexgorbatchev.com/pub/sh/current/styles/shCore.css" rel="stylesheet" type="text/css" />
-    <link href="//alexgorbatchev.com/pub/sh/current/styles/shThemeDefault.css" rel="stylesheet" type="text/css" />
-    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shCore.js" type="text/javascript"></script>
-    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shAutoloader.js" type="text/javascript"></script>
-    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPhp.js" type="text/javascript"></script>
-    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushPlain.js" type="text/javascript"></script>
-    <script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushDiff.js" type="text/javascript"></script>
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/styles/default.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/highlight.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/languages/diff.min.js"></script>
   </head>
   <body>
-
-    <script>
-      filename = '/""" + file_path + """'
-    </script>
-
-    <div id="codeholder">
-    </div>
-
-    <script>
-      $.get(filename , function( data ) {
-        elem = document.createElement("pre");
-        brush = "plain";
-        if (filename.indexOf(".dif") != -1)
-        {
-          brush = "diff";
-        }
-        elem.setAttribute("class", "brush: " + brush + "; gutter: true;");
-        elem.appendChild(document.createTextNode(data.replace("<", "&lt;")));
-        document.getElementById("codeholder").appendChild(elem);
-        SyntaxHighlighter.highlight(elem);
-      });
-
-      SyntaxHighlighter.all();
-    </script>
+    <script>hljs.highlightAll();</script>
+    <pre><code class="diff">
+""" + file_to_send.read().replace('<', '&lt') + """
+    </code></pre>
   </body>
 </html>
                         """, headers={"Content-Type": "text/html"})
