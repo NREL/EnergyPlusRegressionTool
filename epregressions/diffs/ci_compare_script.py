@@ -10,6 +10,7 @@ from datetime import datetime
 
 # add the root of the repo to the python path so it can find things relative to it like the  epregressions package
 from os.path import dirname, realpath
+
 sys.path.append(os.path.join(dirname(realpath(__file__)), '..', '..'))
 
 from epregressions.builds.install import EPlusInstallDirectory
@@ -45,7 +46,6 @@ def process_diffs(diff_name, diffs, this_has_diffs, this_has_small_diffs):
 
 
 def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, device_id, test_mode):
-
     print("Device id: %s" % device_id)
 
     # build type really doesn't matter, so use the simplest one, the E+ install
@@ -257,14 +257,15 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
                 # print("Processing output file: {0}, uploading to: {1}".format(filepath_to_send, filepath))
 
                 key = boto.s3.key.Key(bucket, file_path)
-                file_to_send = open(file_path_to_send, 'r')
-                key.set_contents_from_string(file_to_send.read())
+                with open(file_path_to_send, 'r') as file_to_send:
+                    contents = file_to_send.read()
+                    key.set_contents_from_string(contents)
 
-                if make_public:
-                    key.make_public()
+                    if make_public:
+                        key.make_public()
 
-                htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
-                htmlkey.set_contents_from_string("""
+                    htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
+                    htmlkey.set_contents_from_string("""
 <!doctype html>
 <html>
   <head>
@@ -273,10 +274,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.6.0/languages/diff.min.js"></script>
   </head>
   <body>
-    <script>hljs.highlightAll();</script>
     <pre><code class="diff">
-""" + file_to_send.read().replace('<', '&lt') + """
+""" + contents + """
     </code></pre>
+    <script>hljs.highlightAll();</script>
   </body>
 </html>
                         """, headers={"Content-Type": "text/html"})
