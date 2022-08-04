@@ -267,7 +267,10 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
                     htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
 
                     if file_path_to_send.endswith('.htm'):
-                        htmlkey.set_contents_from_string(contents)
+                        htmlkey.set_contents_from_string(
+                            contents, 
+                            headers={"Content-Type": "text/html", "Content-Disposition": "inline"}
+                        )
                     else:
                         htmlkey.set_contents_from_string(
                             """
