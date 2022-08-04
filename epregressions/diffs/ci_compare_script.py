@@ -268,7 +268,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
 
                     if file_path_to_send.endswith('.htm'):
                         htmlkey.set_contents_from_string(
-                            contents, 
+                            contents,
                             headers={"Content-Type": "text/html", "Content-Disposition": "inline"}
                         )
                     else:
