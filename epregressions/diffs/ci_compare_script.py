@@ -265,7 +265,12 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
                         key.make_public()
 
                     htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
-                    htmlkey.set_contents_from_string("""
+
+                    if file_path_to_send.endswith('.htm'):
+                        htmlkey.set_contents_from_string(contents)
+                    else:
+                        htmlkey.set_contents_from_string(
+                            """
 <!doctype html>
 <html>
   <head>
@@ -280,7 +285,9 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     <script>hljs.highlightAll();</script>
   </body>
 </html>
-                        """, headers={"Content-Type": "text/html"})
+                            """,
+                            headers={"Content-Type": "text/html"}
+                        )
 
                 if make_public:
                     htmlkey.make_public()
