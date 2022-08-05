@@ -29,6 +29,8 @@ from epregressions.structures import (
     TableDifferences,
     CompletedStructure,
     ReportingFreq,
+    ForceOutputSQL,
+    ForceOutputSQLUnitConversion,
     TestEntry
 )
 from multiprocessing import Pool
@@ -39,13 +41,17 @@ script_dir = os.path.abspath(path)
 
 
 class TestRunConfiguration:
-    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False):
+    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
+                 force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
+                 force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
         self.num_threads = num_threads
         self.buildA = build_a
         self.buildB = build_b
         self.report_freq = report_freq
+        self.force_output_sql = ForceOutputSQL(force_output_sql)
+        self.force_output_sql_unitconv = ForceOutputSQLUnitConversion(force_output_sql_unitconv)
 
 
 class TestCaseCompleted:
@@ -83,6 +89,8 @@ class SuiteRunner:
         self.TestOneFile = run_config.TestOneFile
         self.number_of_threads = int(run_config.num_threads)
         self.min_reporting_freq = run_config.report_freq
+        self.force_output_sql = run_config.force_output_sql
+        self.force_output_sql_unitconv = run_config.force_output_sql_unitconv
 
         # File list brought in separately
         self.entries = these_entries
@@ -179,6 +187,67 @@ class SuiteRunner:
             idf_text = f_idf.read()
         return idf_text
 
+    @staticmethod
+    def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL,
+                                    force_output_sql_unitconv: ForceOutputSQLUnitConversion,
+                                    isEpJSON: bool = False):
+        """Will add or modify the Output:SQLite object based on the provided enums that corresponds to the 'Option'"""
+        # Ensure we deal with the enum
+        if not isinstance(force_output_sql, ForceOutputSQL):
+            raise ValueError("Expected an Enum ForceOutputSQL, not {}".format(force_output_sql))
+
+        if not isinstance(force_output_sql_unitconv, ForceOutputSQLUnitConversion):
+            raise ValueError("Expected an Enum ForceOutputSQLUnitConversion, not "
+                             "{}".format(force_output_sql_unitconv))
+
+        if isEpJSON:
+            data = json.loads(idf_text)
+            if "Output:SQLite" in data and len(data["Output:SQLite"]) >= 1:
+                sqlite_obj = data["Output:SQLite"][list(data["Output:SQLite"].keys())[0]]
+
+            else:
+                data["Output:SQLite"] = {"Output:SQLite 1": {}}
+                sqlite_obj = data["Output:SQLite"]["Output:SQLite 1"]
+
+            sqlite_obj['option_type'] = force_output_sql.value
+            if force_output_sql_unitconv != ForceOutputSQLUnitConversion.NOFORCE:
+                sqlite_obj['unit_conversion'] = force_output_sql_unitconv.value
+
+            return json.dumps(data, indent=4)
+
+        # IDF / IMF text manipulation
+        has_sqlite_object = False
+        for line in idf_text.splitlines():
+            if 'output:sqlite' in line.split('!')[0].lower():
+                has_sqlite_object = True
+                break
+        if has_sqlite_object:
+            import re
+            RE_SQLITE = re.compile('Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
+                                   re.IGNORECASE)
+            if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
+                idf_text = RE_SQLITE.sub('Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
+                                         idf_text)
+            else:
+                new_obj = '''Output:SQLite,
+    {},        !- Option Type
+    {};        !- Unit Conversion
+'''.format(force_output_sql.value, force_output_sql_unitconv.value)
+
+                idf_text = RE_SQLITE.sub(new_obj,
+                                         idf_text)
+        else:
+            if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
+                idf_text += '\n  Output:SQLite,\n    {};        !- Option Type\n'.format(force_output_sql.value)
+            else:
+                idf_text += '''
+  Output:SQLite,
+    {},        !- Option Type
+    {};        !- Unit Conversion
+'''.format(force_output_sql.value, force_output_sql_unitconv.value)
+
+        return idf_text
+
     def run_build(self, build_tree):
 
         this_test_dir = self.test_output_dir
@@ -206,6 +275,7 @@ class SuiteRunner:
                 continue
 
             # copy macro files if it is an imf
+            isEpJSON: bool = False
             if full_input_file_path.endswith('.idf'):
                 ep_in_filename = "in.idf"
             elif full_input_file_path.endswith('.imf'):
@@ -220,6 +290,7 @@ class SuiteRunner:
                         )
             elif full_input_file_path.endswith('.epJSON'):
                 ep_in_filename = "in.epJSON"
+                isEpJSON = True
             else:
                 self.my_print(f"Invalid file extension, must be idf, imf, or epJSON: {full_input_file_path}")
                 self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
@@ -315,6 +386,14 @@ class SuiteRunner:
                             os.path.join(test_run_directory, 'datasets', 'FMUs')
                         )
                 idf_text = idf_text.replace('..\\datasets', 'datasets')
+
+            # Add Output:SQLite if requested
+            if self.force_output_sql != ForceOutputSQL.NOFORCE:
+                idf_text = self.add_or_modify_output_sqlite(
+                    idf_text=idf_text, force_output_sql=self.force_output_sql,
+                    force_output_sql_unitconv=self.force_output_sql_unitconv,
+                    isEpJSON=isEpJSON
+                )
 
             # rewrite the idf with the (potentially) modified idf text
             with io.open(
