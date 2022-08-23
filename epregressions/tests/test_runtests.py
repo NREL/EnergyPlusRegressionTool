@@ -2397,5 +2397,3 @@ class TestSQLiteForce(unittest.TestCase):
         expected_data = {
             'Output:SQLite': {'Output:SQLite 4': {'option_type': 'SimpleAndTabular', 'unit_conversion': 'InchPound'}}}
         self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
-
-

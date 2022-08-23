@@ -223,10 +223,10 @@ class SuiteRunner:
                 break
         if has_sqlite_object:
             import re
-            RE_SQLITE = re.compile('Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
+            RE_SQLITE = re.compile(r'Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
                                    re.IGNORECASE)
             if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
-                idf_text = RE_SQLITE.sub('Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
+                idf_text = RE_SQLITE.sub(r'Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
                                          idf_text)
             else:
                 new_obj = '''Output:SQLite,
@@ -1106,7 +1106,7 @@ class SuiteRunner:
         else:  # for all other applications, run them in a multiprocessing pool
             p = Pool(self.number_of_threads)
             for run in diff_runs:
-                p.apply_async(self.diff_wrapper, (run, ), callback=self.diff_done, error_callback=self.diff_done)
+                p.apply_async(self.diff_wrapper, (run,), callback=self.diff_done, error_callback=self.diff_done)
             p.close()
             p.join()
 

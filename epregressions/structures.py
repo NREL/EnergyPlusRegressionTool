@@ -4,6 +4,7 @@ import json
 import os
 from enum import Enum
 
+
 class ForceRunType:
     DD = "Force Design-day-only simulations"
     ANNUAL = "Force Annual simulations"
