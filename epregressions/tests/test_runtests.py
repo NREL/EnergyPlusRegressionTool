@@ -2397,3 +2397,11 @@ class TestSQLiteForce(unittest.TestCase):
         expected_data = {
             'Output:SQLite': {'Output:SQLite 4': {'option_type': 'SimpleAndTabular', 'unit_conversion': 'InchPound'}}}
         self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
+
+    def test_modify_sqlite_with_bad_inputs(self):
+        with self.assertRaises(ValueError):
+            # noinspection PyTypeChecker
+            SuiteRunner.add_or_modify_output_sqlite("", "BLAH", ForceOutputSQLUnitConversion.NOFORCE)
+        with self.assertRaises(ValueError):
+            # noinspection PyTypeChecker
+            SuiteRunner.add_or_modify_output_sqlite("", ForceOutputSQL.NOFORCE, "BLAH")
