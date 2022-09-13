@@ -329,18 +329,6 @@ class SuiteRunner:
                     os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
                 )
 
-            if 'HybridZoneModel_TemperatureData.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
-                    os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
-                )
-
-            if 'LookupTable.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'LookupTable.csv'),
-                    os.path.join(test_run_directory, 'LookupTable.csv')
-                )
-
             if 'HybridModel' in this_entry.basename:
                 shutil.copy(
                     os.path.join(build_tree['test_files_dir'], 'HybridModel_Measurements_with_HVAC.csv'),
@@ -351,17 +339,20 @@ class SuiteRunner:
                     os.path.join(test_run_directory, 'HybridModel_Measurements_no_HVAC.csv')
                 )
 
-            if 'SolarShadingTest_Shading_Data.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
-                    os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
-                )
-
-            if 'LocalEnvData.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
-                    os.path.join(test_run_directory, 'LocalEnvData.csv')
-                )
+            # several checks that just bring a single file from the test files dir based on the filename as a keyword
+            single_file_checks = [
+                'HybridZoneModel_TemperatureData.csv',
+                'LookupTable.csv',
+                'SolarShadingTest_Shading_Data.csv',
+                'LocalEnvData.csv',
+                'SurfacePropGndSurfs.csv',
+            ]
+            for single_file_check in single_file_checks:
+                if single_file_check in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], single_file_check),
+                        os.path.join(test_run_directory, single_file_check)
+                    )
 
             if 'report variable dictionary' in idf_text:
                 idf_text = idf_text.replace('report variable dictionary', '')
@@ -386,6 +377,19 @@ class SuiteRunner:
                             os.path.join(test_run_directory, 'datasets', 'FMUs')
                         )
                 idf_text = idf_text.replace('..\\datasets', 'datasets')
+
+            if ':ASHRAE205' in idf_text:
+                # need to copy in the cbor data files so they can run
+                cbor_files = [
+                    'CoolSys1-Chiller.RS0001.a205.cbor',
+                    'A205ExampleChiller.RS0001.a205.cbor',
+                    'CoolSys1-Chiller-Detailed.RS0001.a205.cbor',
+                ]
+                for cbor_file in cbor_files:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], cbor_file),
+                        os.path.join(test_run_directory, cbor_file)
+                    )
 
             # Add Output:SQLite if requested
             if self.force_output_sql != ForceOutputSQL.NOFORCE:
