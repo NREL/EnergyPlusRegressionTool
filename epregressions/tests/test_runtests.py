@@ -37,9 +37,9 @@ class TestTestSuiteRunner(unittest.TestCase):
         read_vars_dir = os.path.join(target_source_dir, 'bin', 'EPMacro', 'Linux')
         os.makedirs(read_vars_dir)
         if system() == 'Windows':  # pragma: no cover  -- not running coverage results on Travis on Windows
-            # if we are on windows, we need to prepackage up the python scripts as exe files for them to run
+            # if we are on Windows, we need to prepackage up the python scripts as exe files for them to run
             # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
-            # variables and run them all.  Also we don't want to run them for every single test, just once if the dist/
+            # variables and run them all.  Also, we don't want to run them for every single test, just once if the dist/
             # folder hasn't been created yet.
             dist_folder = os.path.join(self.resources, 'dist')
             if not os.path.exists(dist_folder):
@@ -124,6 +124,14 @@ class TestTestSuiteRunner(unittest.TestCase):
             f_macro_extra.write('##MACROTEXT')
         with open(os.path.join(testfiles_dir, 'EMSTestMathAndKill.idf'), 'w') as f_kill:
             f_kill.write(json_text)
+        cbor_files_to_prepare = [
+            'CoolSys1-Chiller.RS0001.a205.cbor',
+            'A205ExampleChiller.RS0001.a205.cbor',
+            'CoolSys1-Chiller-Detailed.RS0001.a205.cbor',
+        ]
+        for cbor_file_to_prepare in cbor_files_to_prepare:
+            with open(os.path.join(testfiles_dir, cbor_file_to_prepare), 'w') as f_cbor:
+                f_cbor.write('CBOR')
         if py_file:
             with open(os.path.join(idf_dir, "my_file.py"), 'w') as f:
                 f.write("hello")
@@ -201,11 +209,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -772,11 +780,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -853,11 +861,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -995,17 +1003,17 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(2, len(diff_results.entries_by_file))
-        # these next blocks are pragma'd from coverage because we dont know which one will get hit
+        # these next blocks are pragma -ed from coverage because we don't know which one will get hit
         if diff_results.entries_by_file[0].basename == 'my_file':  # pragma: no cover
             results_for_file = diff_results.entries_by_file[0]
         else:  # if diff_results.entries_by_file[1].basename == 'my_file':  # pragma: no cover
@@ -1075,11 +1083,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1146,11 +1154,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1217,11 +1225,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1288,11 +1296,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1359,11 +1367,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1430,11 +1438,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1501,11 +1509,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1574,11 +1582,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1646,11 +1654,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1717,11 +1725,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1791,11 +1799,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1863,11 +1871,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1879,6 +1887,81 @@ class TestTestSuiteRunner(unittest.TestCase):
         # it should have been skipped in both cases, so missing
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
         self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+
+    def test_ashrae_205_files_execute(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": ':ASHRAE205'
+                }
+            }
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "extra_data": ':ASHRAE205'
+                }
+            }
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+
+        entries = [TestEntry('my_file.idf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod,
+            force_output_sql=ForceOutputSQL.SIMPLE,
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion.NONE
+        )
+        r = SuiteRunner(config, entries)
+        r.add_callbacks(
+            print_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
+            cancel_callback=TestTestSuiteRunner.dummy_callback
+        )
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # it should be named according to what we listed above
+        self.assertEqual('my_file', results_for_file.basename)
+        # it should have been skipped in both cases, so missing
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case1)
+        self.assertEqual(EndErrSummary.STATUS_SUCCESS, results_for_file.summary_result.simulation_status_case2)
+        results_dir = diff_results.results_dir_a
+        file_results_dir = os.path.join(results_dir, 'my_file')
+        cbor_files_to_check = [
+            'CoolSys1-Chiller.RS0001.a205.cbor',
+            'A205ExampleChiller.RS0001.a205.cbor',
+            'CoolSys1-Chiller-Detailed.RS0001.a205.cbor',
+        ]
+        for cbor_file_to_check in cbor_files_to_check:
+            self.assertTrue(os.path.exists(os.path.join(file_results_dir, cbor_file_to_check)))
 
     def test_both_success_no_diffs_dd_only(self):
         base = CMakeCacheMakeFileBuildDirectory()
@@ -1925,11 +2008,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -1992,11 +2075,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -2057,11 +2140,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -2122,11 +2205,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         r = SuiteRunner(config, entries)
         r.add_callbacks(
             print_callback=TestTestSuiteRunner.dummy_callback,
-            simstarting_callback=TestTestSuiteRunner.dummy_callback,
-            casecompleted_callback=TestTestSuiteRunner.dummy_callback,
-            simulationscomplete_callback=TestTestSuiteRunner.dummy_callback,
-            diffcompleted_callback=TestTestSuiteRunner.dummy_callback,
-            alldone_callback=TestTestSuiteRunner.dummy_callback,
+            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
+            case_completed_callback=TestTestSuiteRunner.dummy_callback,
+            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
+            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
+            all_done_callback=TestTestSuiteRunner.dummy_callback,
             cancel_callback=TestTestSuiteRunner.dummy_callback
         )
         diff_results = r.run_test_suite()
@@ -2281,7 +2364,6 @@ class TestSQLiteForce(unittest.TestCase):
 """, mod_text)
 
     def test_already_there_no_unit_conv(self):
-
         idf_text = """
 
   Zone,
@@ -2321,7 +2403,6 @@ class TestSQLiteForce(unittest.TestCase):
 """, mod_text)
 
     def test_already_there_with_unit_conv(self):
-
         idf_text = """
 
   Zone,
@@ -2366,7 +2447,7 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {'Output:SQLite': {'Output:SQLite 1': {'option_type': 'SimpleAndTabular'}}}
@@ -2380,7 +2461,7 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {
@@ -2391,9 +2472,17 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.InchPound,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {
             'Output:SQLite': {'Output:SQLite 4': {'option_type': 'SimpleAndTabular', 'unit_conversion': 'InchPound'}}}
         self.assertEqual(json.dumps(expected_data, indent=4), mod_text)
+
+    def test_modify_sqlite_with_bad_inputs(self):
+        with self.assertRaises(ValueError):
+            # noinspection PyTypeChecker
+            SuiteRunner.add_or_modify_output_sqlite("", "BLAH", ForceOutputSQLUnitConversion.NOFORCE)
+        with self.assertRaises(ValueError):
+            # noinspection PyTypeChecker
+            SuiteRunner.add_or_modify_output_sqlite("", ForceOutputSQL.NOFORCE, "BLAH")

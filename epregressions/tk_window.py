@@ -962,11 +962,11 @@ class MyApp(Frame):
             return
         self.background_operator = SuiteRunner(run_configuration, idfs_to_run)
         self.background_operator.add_callbacks(print_callback=MyApp.print_listener,
-                                               simstarting_callback=MyApp.starting_listener,
-                                               casecompleted_callback=MyApp.case_completed_listener,
-                                               simulationscomplete_callback=MyApp.runs_complete_listener,
-                                               diffcompleted_callback=MyApp.diff_complete_listener,
-                                               alldone_callback=MyApp.done_listener,
+                                               sim_starting_callback=MyApp.starting_listener,
+                                               case_completed_callback=MyApp.case_completed_listener,
+                                               simulations_complete_callback=MyApp.runs_complete_listener,
+                                               diff_completed_callback=MyApp.diff_complete_listener,
+                                               all_done_callback=MyApp.done_listener,
                                                cancel_callback=MyApp.cancelled_listener)
         self.set_gui_status_for_run(True)
         self.long_thread = Thread(target=self.background_operator.run_test_suite)

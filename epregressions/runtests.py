@@ -142,7 +142,7 @@ class SuiteRunner:
         if self.id_like_to_stop_now:  # pragma: no cover
             self.my_cancelled()
             return
-        self.my_simulationscomplete()
+        self.my_simulations_complete()
 
         self.diff_logs_for_build()
 
@@ -167,7 +167,7 @@ class SuiteRunner:
         self.my_print(" --build-2--> %s" % self.build_tree_b['build_dir'])
         self.my_print("Test suite complete")
 
-        self.my_alldone(self.completed_structure)
+        self.my_all_done(self.completed_structure)
         return self.completed_structure
 
     def prepare_dir_structure(self, b_a, b_b, d_test):
@@ -190,7 +190,7 @@ class SuiteRunner:
     @staticmethod
     def add_or_modify_output_sqlite(idf_text, force_output_sql: ForceOutputSQL,
                                     force_output_sql_unitconv: ForceOutputSQLUnitConversion,
-                                    isEpJSON: bool = False):
+                                    is_ep_json: bool = False):
         """Will add or modify the Output:SQLite object based on the provided enums that corresponds to the 'Option'"""
         # Ensure we deal with the enum
         if not isinstance(force_output_sql, ForceOutputSQL):
@@ -200,7 +200,13 @@ class SuiteRunner:
             raise ValueError("Expected an Enum ForceOutputSQLUnitConversion, not "
                              "{}".format(force_output_sql_unitconv))
 
-        if isEpJSON:
+        # special ugly case for handling unit testing -- note that the unit testing here is based around a "dummy"
+        # energyplus which reads in a small JSON configuration blob, even though it thinks it is an IDF.  This confuses
+        # this function, so I'll put in a small trick to just let the code pass through
+        if idf_text.startswith('{"config"'):
+            return idf_text
+
+        if is_ep_json:
             data = json.loads(idf_text)
             if "Output:SQLite" in data and len(data["Output:SQLite"]) >= 1:
                 sqlite_obj = data["Output:SQLite"][list(data["Output:SQLite"].keys())[0]]
@@ -223,10 +229,10 @@ class SuiteRunner:
                 break
         if has_sqlite_object:
             import re
-            RE_SQLITE = re.compile(r'Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
+            re_sqlite = re.compile(r'Output:SQlite\s*,(?P<Option>[^,;]*?)\s*(?P<TabularUnitConv>,[^,;]*?\s*)?;',
                                    re.IGNORECASE)
             if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
-                idf_text = RE_SQLITE.sub(r'Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
+                idf_text = re_sqlite.sub(r'Output:SQLite,\n    {}\g<TabularUnitConv>;\n'.format(force_output_sql.value),
                                          idf_text)
             else:
                 new_obj = '''Output:SQLite,
@@ -234,7 +240,7 @@ class SuiteRunner:
     {};        !- Unit Conversion
 '''.format(force_output_sql.value, force_output_sql_unitconv.value)
 
-                idf_text = RE_SQLITE.sub(new_obj,
+                idf_text = re_sqlite.sub(new_obj,
                                          idf_text)
         else:
             if force_output_sql_unitconv == ForceOutputSQLUnitConversion.NOFORCE:
@@ -271,11 +277,11 @@ class SuiteRunner:
             parametric_file = False
             if not os.path.exists(full_input_file_path):
                 self.my_print(f"Input file does not exist: {full_input_file_path}")
-                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
+                self.my_case_completed(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
 
             # copy macro files if it is an imf
-            isEpJSON: bool = False
+            is_ep_json: bool = False
             if full_input_file_path.endswith('.idf'):
                 ep_in_filename = "in.idf"
             elif full_input_file_path.endswith('.imf'):
@@ -290,10 +296,10 @@ class SuiteRunner:
                         )
             elif full_input_file_path.endswith('.epJSON'):
                 ep_in_filename = "in.epJSON"
-                isEpJSON = True
+                is_ep_json = True
             else:
                 self.my_print(f"Invalid file extension, must be idf, imf, or epJSON: {full_input_file_path}")
-                self.my_casecompleted(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
+                self.my_case_completed(TestCaseCompleted(this_test_dir, this_entry.basename, False, False))
                 continue
 
             # copy the input file into the test directory, renaming to in.idf or in.imf
@@ -329,18 +335,6 @@ class SuiteRunner:
                     os.path.join('datasets', 'TDV', 'TDV_2008_kBtu_CTZ06.csv')
                 )
 
-            if 'HybridZoneModel_TemperatureData.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'HybridZoneModel_TemperatureData.csv'),
-                    os.path.join(test_run_directory, 'HybridZoneModel_TemperatureData.csv')
-                )
-
-            if 'LookupTable.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'LookupTable.csv'),
-                    os.path.join(test_run_directory, 'LookupTable.csv')
-                )
-
             if 'HybridModel' in this_entry.basename:
                 shutil.copy(
                     os.path.join(build_tree['test_files_dir'], 'HybridModel_Measurements_with_HVAC.csv'),
@@ -351,17 +345,20 @@ class SuiteRunner:
                     os.path.join(test_run_directory, 'HybridModel_Measurements_no_HVAC.csv')
                 )
 
-            if 'SolarShadingTest_Shading_Data.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'SolarShadingTest_Shading_Data.csv'),
-                    os.path.join(test_run_directory, 'SolarShadingTest_Shading_Data.csv')
-                )
-
-            if 'LocalEnvData.csv' in idf_text:
-                shutil.copy(
-                    os.path.join(build_tree['test_files_dir'], 'LocalEnvData.csv'),
-                    os.path.join(test_run_directory, 'LocalEnvData.csv')
-                )
+            # several checks that just bring a single file from the test files dir based on the filename as a keyword
+            single_file_checks = [
+                'HybridZoneModel_TemperatureData.csv',
+                'LookupTable.csv',
+                'SolarShadingTest_Shading_Data.csv',
+                'LocalEnvData.csv',
+                'SurfacePropGndSurfs.csv',
+            ]
+            for single_file_check in single_file_checks:
+                if single_file_check in idf_text:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], single_file_check),
+                        os.path.join(test_run_directory, single_file_check)
+                    )
 
             if 'report variable dictionary' in idf_text:
                 idf_text = idf_text.replace('report variable dictionary', '')
@@ -387,12 +384,25 @@ class SuiteRunner:
                         )
                 idf_text = idf_text.replace('..\\datasets', 'datasets')
 
+            if ':ASHRAE205' in idf_text:
+                # need to copy in the cbor data files so that they can run
+                cbor_files = [
+                    'CoolSys1-Chiller.RS0001.a205.cbor',
+                    'A205ExampleChiller.RS0001.a205.cbor',
+                    'CoolSys1-Chiller-Detailed.RS0001.a205.cbor',
+                ]
+                for cbor_file in cbor_files:
+                    shutil.copy(
+                        os.path.join(build_tree['test_files_dir'], cbor_file),
+                        os.path.join(test_run_directory, cbor_file)
+                    )
+
             # Add Output:SQLite if requested
             if self.force_output_sql != ForceOutputSQL.NOFORCE:
                 idf_text = self.add_or_modify_output_sqlite(
                     idf_text=idf_text, force_output_sql=self.force_output_sql,
                     force_output_sql_unitconv=self.force_output_sql_unitconv,
-                    isEpJSON=isEpJSON
+                    is_ep_json=is_ep_json
                 )
 
             # rewrite the idf with the (potentially) modified idf text
@@ -474,7 +484,7 @@ class SuiteRunner:
         return execute_energyplus(run_args)
 
     def ep_done(self, results):
-        self.my_casecompleted(TestCaseCompleted(*results))
+        self.my_case_completed(TestCaseCompleted(*results))
 
     @staticmethod
     def both_files_exist(base_path_a, base_path_b, common_relative_path):
@@ -640,27 +650,27 @@ class SuiteRunner:
                             ))
                     response_factors_1 = glhe_in_file_1['Response Factors']
                     response_factors_2 = glhe_in_file_2['Response Factors']
-                    gfnc_1 = response_factors_1['GFNC']
-                    gfnc_2 = response_factors_2['GFNC']
-                    lntts_1 = response_factors_1['LNTTS']
-                    lntts_2 = response_factors_2['LNTTS']
+                    g_function_1 = response_factors_1['GFNC']
+                    g_function_2 = response_factors_2['GFNC']
+                    ln_t_ts_1 = response_factors_1['LNTTS']
+                    ln_t_ts_2 = response_factors_2['LNTTS']
                     time_1 = response_factors_1['time']
                     time_2 = response_factors_2['time']
                     counts_match = True
-                    if not len(gfnc_1) == len(gfnc_2):
+                    if not len(g_function_1) == len(g_function_2):
                         diffs.append("Mismatched GFNC count for GLHE \"%s\"" % glhe_name)
                         counts_match = False
-                    if not len(lntts_1) == len(lntts_2):
+                    if not len(ln_t_ts_1) == len(ln_t_ts_2):
                         diffs.append("Mismatched LNTTS count for GLHE \"%s\"" % glhe_name)
                         counts_match = False
                     if not len(time_1) == len(time_2):
                         diffs.append("Mismatched TIME count for GLHE \"%s\"" % glhe_name)
                         counts_match = False
                     if counts_match:
-                        for i in range(len(gfnc_1)):
-                            if not gfnc_1[i] == gfnc_2[i]:
+                        for i in range(len(g_function_1)):
+                            if not g_function_1[i] == g_function_2[i]:
                                 diffs.append("GFNC value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
-                            if not lntts_1[i] == lntts_2[i]:
+                            if not ln_t_ts_1[i] == ln_t_ts_2[i]:
                                 diffs.append("LNTTS value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
                             if not time_1[i] == time_2[i]:
                                 diffs.append("TIME value diff for GLHE \"%s\"; index \"%s\"" % (glhe_name, i))
@@ -861,7 +871,7 @@ class SuiteRunner:
                 thresh_dict,
                 join(case_result_dir_1, 'eplusout.csv'),
                 join(case_result_dir_2, 'eplusout.csv'),
-                join(out_dir, 'eplusout.csv.absdiff.csv'),
+                join(out_dir, "eplusout.csv.absdiff.csv"),
                 join(out_dir, 'eplusout.csv.percdiff.csv'),
                 join(out_dir, 'eplusout.csv.diffsummary.csv'),
                 path_to_math_diff_log)), MathDifferences.ESO)
@@ -1048,7 +1058,7 @@ class SuiteRunner:
         # fatal:
         #     EnergyPlus Terminated--Fatal Error Detected. 0 Warning; 4 Severe Errors; Elapse
         #      d Time=00hr 00min  0.59sec
-        # A NEWLINE?? Gotta sanitize it.
+        # A NEWLINE?? Got to sanitize it.
         with io.open(end_path, encoding='utf-8') as f_end:
             end_contents = f_end.read().replace("\n", "")
 
@@ -1125,18 +1135,19 @@ class SuiteRunner:
     def diff_done(self, results):
         this_entry, message = results
         self.my_print(message)
-        self.my_diffcompleted(this_entry.basename)
+        self.my_diff_completed(this_entry.basename)
         self.completed_structure.add_test_entry(this_entry)
 
-    def add_callbacks(self, print_callback, simstarting_callback, casecompleted_callback, simulationscomplete_callback,
-                      diffcompleted_callback, alldone_callback, cancel_callback):
+    def add_callbacks(self, print_callback, sim_starting_callback, case_completed_callback,
+                      simulations_complete_callback,
+                      diff_completed_callback, all_done_callback, cancel_callback):
         self.mute = False
         self.print_callback = print_callback
-        self.starting_callback = simstarting_callback
-        self.case_completed_callback = casecompleted_callback
-        self.simulations_complete_callback = simulationscomplete_callback
-        self.diff_completed_callback = diffcompleted_callback
-        self.all_done_callback = alldone_callback
+        self.starting_callback = sim_starting_callback
+        self.case_completed_callback = case_completed_callback
+        self.simulations_complete_callback = simulations_complete_callback
+        self.diff_completed_callback = diff_completed_callback
+        self.all_done_callback = all_done_callback
         self.cancel_callback = cancel_callback
 
     def my_print(self, msg):
@@ -1160,7 +1171,7 @@ class SuiteRunner:
                 )
             )
 
-    def my_casecompleted(self, test_case_completed_instance):
+    def my_case_completed(self, test_case_completed_instance):
         if self.mute:
             return
         if self.case_completed_callback:
@@ -1173,7 +1184,7 @@ class SuiteRunner:
                 )
             )
 
-    def my_simulationscomplete(self):
+    def my_simulations_complete(self):
         if self.mute:
             return
         if self.simulations_complete_callback:
@@ -1181,7 +1192,7 @@ class SuiteRunner:
         else:  # pragma: no cover
             self.my_print("Completed all simulations")
 
-    def my_diffcompleted(self, case_name):
+    def my_diff_completed(self, case_name):
         if self.mute:
             return
         if self.diff_completed_callback:
@@ -1189,7 +1200,7 @@ class SuiteRunner:
         else:  # pragma: no cover
             self.my_print("Completed diffing case: %s" % case_name)
 
-    def my_alldone(self, results: CompletedStructure):
+    def my_all_done(self, results: CompletedStructure):
         if self.mute:
             return
         results.extra.set_end_time()
@@ -1242,7 +1253,7 @@ if __name__ == "__main__":  # pragma: no cover
     base.run = True
     base.set_build_directory(args.a_build)
 
-    # If using ReverseDD, builB can just be None
+    # For now all runs use build B as well (If using ReverseDD, build B can just be None)
     mod = CMakeCacheMakeFileBuildDirectory()
     mod.run = True
     mod.set_build_directory(args.b_build)
