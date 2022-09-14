@@ -37,9 +37,9 @@ class TestTestSuiteRunner(unittest.TestCase):
         read_vars_dir = os.path.join(target_source_dir, 'bin', 'EPMacro', 'Linux')
         os.makedirs(read_vars_dir)
         if system() == 'Windows':  # pragma: no cover  -- not running coverage results on Travis on Windows
-            # if we are on windows, we need to prepackage up the python scripts as exe files for them to run
+            # if we are on Windows, we need to prepackage up the python scripts as exe files for them to run
             # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
-            # variables and run them all.  Also we don't want to run them for every single test, just once if the dist/
+            # variables and run them all.  Also, we don't want to run them for every single test, just once if the dist/
             # folder hasn't been created yet.
             dist_folder = os.path.join(self.resources, 'dist')
             if not os.path.exists(dist_folder):
@@ -1013,7 +1013,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_results = r.run_test_suite()
         # there should be 1 file result
         self.assertEqual(2, len(diff_results.entries_by_file))
-        # these next blocks are pragma'd from coverage because we dont know which one will get hit
+        # these next blocks are pragma -ed from coverage because we don't know which one will get hit
         if diff_results.entries_by_file[0].basename == 'my_file':  # pragma: no cover
             results_for_file = diff_results.entries_by_file[0]
         else:  # if diff_results.entries_by_file[1].basename == 'my_file':  # pragma: no cover
@@ -2447,7 +2447,7 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {'Output:SQLite': {'Output:SQLite 1': {'option_type': 'SimpleAndTabular'}}}
@@ -2461,7 +2461,7 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.NOFORCE,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {
@@ -2472,7 +2472,7 @@ class TestSQLiteForce(unittest.TestCase):
             idf_text=idf_text,
             force_output_sql=ForceOutputSQL.SIMPLEANDTABULAR,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.InchPound,
-            isEpJSON=True
+            is_ep_json=True
         )
 
         expected_data = {
