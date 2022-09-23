@@ -156,6 +156,7 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu = None
         self.force_output_sql_option_menu = None
         self.force_output_sql_unitconv_option_menu = None
+        self.idf_select_from_containing_button = None
 
         # some data holders
         self.tree_folders = dict()
@@ -277,13 +278,17 @@ class MyApp(Frame):
         )
         self.idf_deselect_all_button.pack(side=LEFT, expand=1)
         self.idf_select_n_random_button = ttk.Button(
-            group_idf_tools, text="Select N Random", command=self.idf_select_random, style="C.TButton"
+            group_idf_tools, text="Select N Random...", command=self.idf_select_random, style="C.TButton"
         )
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
         self.idf_select_from_list_button = ttk.Button(
-            group_idf_tools, text="Select From List", command=self.idf_select_list, style="C.TButton"
+            group_idf_tools, text="Select From List...", command=self.idf_select_list, style="C.TButton"
         )
         self.idf_select_from_list_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_containing_button = ttk.Button(
+            group_idf_tools, text="Select Files Containing...", command=self.idf_select_containing, style="C.TButton"
+        )
+        self.idf_select_from_containing_button.pack(side=LEFT, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
@@ -805,6 +810,25 @@ class MyApp(Frame):
                 this_idf_possibility = self.full_idf_listbox.get(i)
                 if this_idf_possibility == idf_name or this_idf_possibility == imf_name:
                     self.active_idf_listbox.insert(END, this_idf_possibility)
+        self.idf_refresh_count_status()
+
+    def idf_select_containing(self):
+        if not self.valid_idfs_in_listing:
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            return
+        search_string = simpledialog.askstring("Input IDF String", "Plain string to search inside IDFs")
+        if not search_string:
+            return
+        search_string = search_string.upper()
+        self.idf_deselect_all()
+        for i in range(self.full_idf_listbox.size()):
+            this_idf_possibility = self.full_idf_listbox.get(i)
+            this_idf_full_path = Path(self.build_1.get_idf_directory()) / this_idf_possibility
+            if not this_idf_full_path.exists():
+                print(f"Missing IDF at: {this_idf_full_path}")  # some warning?
+            contents = this_idf_full_path.read_text().upper()
+            if search_string in contents:
+                self.active_idf_listbox.insert(END, this_idf_possibility)
         self.idf_refresh_count_status()
 
     def idf_refresh_count_status(self, test_case=None, checked=False):
