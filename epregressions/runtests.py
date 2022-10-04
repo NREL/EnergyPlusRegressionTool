@@ -131,6 +131,7 @@ class SuiteRunner:
             self.my_cancelled()
             return
 
+        start_time = datetime.now()
         self.my_starting(len(self.entries))
 
         # run the energyplus script
@@ -144,7 +145,7 @@ class SuiteRunner:
             return
         self.my_simulations_complete()
 
-        self.diff_logs_for_build()
+        self.diff_logs_for_build(start_time)
 
         try:
             self.my_print('Writing runtime summary file')
@@ -1087,13 +1088,14 @@ class SuiteRunner:
         return [status, total_runtime_seconds]
 
     # diff_logs_for_build creates diff logs between simulations in two build directories
-    def diff_logs_for_build(self):
+    def diff_logs_for_build(self, original_start_time):
 
         self.completed_structure = CompletedStructure(
             self.build_tree_a['source_dir'], self.build_tree_a['build_dir'],
             self.build_tree_b['source_dir'], self.build_tree_b['build_dir'],
             os.path.join(self.build_tree_a['build_dir'], self.test_output_dir),
-            os.path.join(self.build_tree_b['build_dir'], self.test_output_dir)
+            os.path.join(self.build_tree_b['build_dir'], self.test_output_dir),
+            original_start_time
         )
         diff_runs = []
         for this_entry in self.entries:

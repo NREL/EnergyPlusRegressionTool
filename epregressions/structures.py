@@ -376,10 +376,10 @@ class TestEntry:
 
 
 class ExtraInfo:
-    def __init__(self):
+    def __init__(self, start_time):
         self.descriptions = {
             'time_stamps': [
-                f"Start time: {datetime.now()}", "End time initialized"
+                f"Start time: {start_time}", "End time initialized"
             ]
         }
 
@@ -389,7 +389,7 @@ class ExtraInfo:
 
 class CompletedStructure:
     def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir,
-                 case_b_build_dir, results_dir_a, results_dir_b):
+                 case_b_build_dir, results_dir_a, results_dir_b, original_start_time):
         self.case_a_source_dir = case_a_source_dir
         self.case_a_build_dir = case_a_build_dir
         self.case_b_source_dir = case_b_source_dir
@@ -411,7 +411,7 @@ class CompletedStructure:
         self.small_table_diffs = Results()
         self.text_diffs = Results()
         # extra info
-        self.extra = ExtraInfo()
+        self.extra = ExtraInfo(original_start_time)
 
     def add_test_entry(self, this_entry):
         self.entries_by_file.append(this_entry)
