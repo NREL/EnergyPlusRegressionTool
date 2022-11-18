@@ -3,7 +3,6 @@ import os
 from platform import system
 import shutil
 import tempfile
-from time import sleep
 import unittest
 
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
