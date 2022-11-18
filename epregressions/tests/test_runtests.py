@@ -1,9 +1,12 @@
 import json
 import os
+from pathlib import Path
 from platform import system
 import shutil
 from subprocess import check_call
+from sys import executable
 import tempfile
+from time import sleep
 import unittest
 
 from epregressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
@@ -42,24 +45,32 @@ class TestTestSuiteRunner(unittest.TestCase):
             # variables and run them all.  Also, we don't want to run them for every single test, just once if the dist/
             # folder hasn't been created yet.
             dist_folder = os.path.join(self.resources, 'dist')
-            if not os.path.exists(dist_folder):
-                # find pyinstaller -- it should be available in path I think
-                pyinstaller = "pyinstaller.exe"
-                # pyinstaller = r"C:\EnergyPlus\repos\EnergyPlusRegressionTool\venv\Scripts\pyinstaller.exe"
-                # run it on all these
-                conversions = [
-                    ['dummy.basement.py', 'basement'],
-                    ['dummy.energyplus.py', 'energyplus'],
-                    ['dummy.expandobjects.py', 'expandobjects'],
-                    ['dummy.parametric.py', 'parametric'],
-                    ['dummy.readvars.py', 'readvars'],
-                    ['dummy.slab.py', 'slab'],
-                    ['dummy.epmacro.py', 'epmacro'],
-                ]
-                working_dir = self.resources
-                for conv in conversions:
-                    cmd = [pyinstaller, '--onefile', '--log-level=WARN', '-n', conv[1], conv[0]]
+            # find pyinstaller next to the python binary
+            pyinstaller_path = Path(executable).resolve().parent / 'pyinstaller.exe'
+            pyinstaller = str(pyinstaller_path)
+            # pyinstaller = r"C:\EnergyPlus\repos\EnergyPlusRegressionTool\venv\Scripts\pyinstaller.exe"
+            # run it on all these
+            conversions = [
+                ['dummy.basement.py', 'basement'],
+                ['dummy.energyplus.py', 'energyplus'],
+                ['dummy.expandobjects.py', 'expandobjects'],
+                ['dummy.parametric.py', 'parametric'],
+                ['dummy.readvars.py', 'readvars'],
+                ['dummy.slab.py', 'slab'],
+                ['dummy.epmacro.py', 'epmacro'],
+            ]
+            working_dir = self.resources
+            for conv in conversions:
+                if os.path.exists(os.path.join(dist_folder, conv[1] + ".exe")):
+                    continue
+                cmd = [pyinstaller, '--onefile', '--log-level=WARN', '-n', conv[1], conv[0]]
+                try:
                     check_call(cmd, cwd=working_dir)
+                    sleep(2)
+                except Exception as e:
+                    print("cmd: " + ', '.join(cmd))
+                    print("Working dir: " + working_dir)
+                    print("Error: " + str(e))
             products_map = {
                 os.path.join(self.resources, 'dummy.basement.idd'): os.path.join(products_dir, 'BasementGHT.idd'),
                 os.path.join(dist_folder, 'basement.exe'): os.path.join(products_dir, 'Basement.exe'),
