@@ -9,7 +9,7 @@ with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_fil
     long_description = i_file.read()
 
 setup(
-    name='EnergyPlusRegressionTool',
+    name='energyplus_regressions',
     version=VERSION,
     packages=find_packages(exclude=['test', 'tests', 'test.*']),
     url='https://github.com/NREL/EnergyPlusRegressionTool',

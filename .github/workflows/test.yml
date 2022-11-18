@@ -1,0 +1,29 @@
+name: Run Tests
+
+on: [push]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit_tests:
+    strategy:
+      matrix:
+        os: [ windows-latest, macos-11, ubuntu-20.04, ubuntu-22.04 ]  # macos-12 is not playing well with Tk
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8  # v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@b55428b1882923874294fa556849718a1d7f2ca5  # v4.2.0
+        with:
+          python-version: 3.8
+      - name: Install Pip Dependencies
+        run: pip install -r requirements.txt
+      - name: Run Tests
+        run: nosetests
+      - name: Coveralls
+        if: ${{ matrix.os == 'ubuntu-22.04' }}
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

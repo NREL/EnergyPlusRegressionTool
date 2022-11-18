@@ -15,5 +15,4 @@ Sphinx==3.2.1
 docutils==0.16   # pinning this because it breaks at 0.18
 
 # for packaging
-pyinstaller
 wheel
