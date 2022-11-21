@@ -10,10 +10,12 @@ coveralls==2.1.2
 flake8==3.8.4
 nose==1.3.7
 
+# on windows, if you need to rebuild the unit test resource exes, just install pyinstaller and follow the directions in epregressions/tests/resources/README.md
+# pyinstaller; platform_system == "Windows"
+
 # to generate documentation
 Sphinx==3.2.1
 docutils==0.16   # pinning this because it breaks at 0.18
 
 # for packaging
-pyinstaller
 wheel

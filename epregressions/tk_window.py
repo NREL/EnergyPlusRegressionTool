@@ -1,6 +1,6 @@
 import os
 import random
-import subprocess
+from subprocess import check_output, CalledProcessError, Popen, call
 import sys
 import webbrowser
 from datetime import datetime
@@ -72,6 +72,57 @@ class ResultsTreeRoots:
         ]
 
 
+class Notification:
+    """
+    A thin notification class using gdbus command line calls to avoid any dependencies.
+    This should work on most modern Linux distributions.
+    """
+    def __init__(self, app_name):
+        """Construct a new notification class, persisting the app name only"""
+        self.command = 'gdbus'
+        self.action = 'call'
+        self.bus = '--session'
+        self.destination = ("--dest", "org.freedesktop.Notifications")
+        self.path = ("--object-path", "/org/freedesktop/Notifications")
+        self.method = ("--method", "org.freedesktop.Notifications.Notify")
+        self.app_name = app_name
+        self.notification_id = '0'
+        self.actions = '[]'
+        self.hint = "{'x-canonical-private-synchronous': <''>, 'transient': <false>, 'value': <20>}"
+        self.time_out = '0'  # seems to be ignored, but the notification should stay in the drop-down tray
+
+    def _build_argument_list(self, title: str, message: str, icon_path: Path) -> List[str]:
+        """Internal function to construct the full command line based on dynamic arguments"""
+        return [
+            self.command,
+            self.action,
+            self.bus,
+            self.destination[0], self.destination[1],
+            self.path[0], self.path[1],
+            self.method[0], self.method[1],
+            self.app_name,
+            self.notification_id,
+            str(icon_path),
+            title,
+            message,
+            self.actions,
+            self.hint,
+            self.time_out
+        ]
+
+    def send_notification(self, title: str, message: str, icon: Path) -> bool:
+        """Main action for this class, emits a notification and stores the ID to be reused later"""
+        command_line = self._build_argument_list(title, message, icon)
+        try:
+            # returns: b'(uint32 X,)\n' where X is some int of variable length, so trim from both sides
+            std_out = check_output(command_line)
+            self.notification_id = std_out[7:-3]
+            return True
+        except CalledProcessError:
+            self.notification_id = '0'
+            return False
+
+
 class PubSubMessageTypes:
     PRINT = '10'
     STARTING = '20'
@@ -89,8 +140,9 @@ class MyApp(Frame):
         Frame.__init__(self, self.root)
 
         # add the taskbar icon, but its having issues reading the png on Mac, not sure.
+        self.icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png')
         if system() != 'Darwin':
-            img = PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png'))
+            img = PhotoImage(file=self.icon_path)
             self.root.iconphoto(False, img)
 
         # high level GUI configuration
@@ -156,6 +208,7 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu = None
         self.force_output_sql_option_menu = None
         self.force_output_sql_unitconv_option_menu = None
+        self.idf_select_from_containing_button = None
 
         # some data holders
         self.tree_folders = dict()
@@ -183,6 +236,12 @@ class MyApp(Frame):
         pub.subscribe(self.diff_complete_handler, PubSubMessageTypes.DIFF_COMPLETE)
         pub.subscribe(self.done_handler, PubSubMessageTypes.ALL_DONE)
         pub.subscribe(self.cancelled_handler, PubSubMessageTypes.CANCELLED)
+
+        # on Linux, initialize the notification class instance
+        self.notification = None
+        if system() == 'Linux':
+            self.notification_icon = Path(self.icon_path)
+            self.notification = Notification('eplus_regression_runner')
 
     def init_window(self):
         # changing the title of our master widget
@@ -277,13 +336,17 @@ class MyApp(Frame):
         )
         self.idf_deselect_all_button.pack(side=LEFT, expand=1)
         self.idf_select_n_random_button = ttk.Button(
-            group_idf_tools, text="Select N Random", command=self.idf_select_random, style="C.TButton"
+            group_idf_tools, text="Select N Random...", command=self.idf_select_random, style="C.TButton"
         )
         self.idf_select_n_random_button.pack(side=LEFT, expand=1)
         self.idf_select_from_list_button = ttk.Button(
-            group_idf_tools, text="Select From List", command=self.idf_select_list, style="C.TButton"
+            group_idf_tools, text="Select From List...", command=self.idf_select_list, style="C.TButton"
         )
         self.idf_select_from_list_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_containing_button = ttk.Button(
+            group_idf_tools, text="Select Files Containing...", command=self.idf_select_containing, style="C.TButton"
+        )
+        self.idf_select_from_containing_button.pack(side=LEFT, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
         group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
@@ -526,19 +589,19 @@ class MyApp(Frame):
         p = None
         if this_platform == 'Linux':
             try:
-                p = subprocess.Popen(['xdg-open', dir_to_open])
+                p = Popen(['xdg-open', dir_to_open])
             except Exception as this_exception:  # pragma: no cover - not covering bad directories
                 print("Could not open file:")
                 print(this_exception)
         elif this_platform == 'Windows':  # pragma: no cover - only testing on Linux
             try:
-                p = subprocess.Popen(['start', dir_to_open], shell=True)
+                p = Popen(['start', dir_to_open], shell=True)
             except Exception as this_exception:
                 print("Could not open file:")
                 print(this_exception)
         elif this_platform == 'Darwin':  # pragma: no cover - only testing on Linux
             try:
-                p = subprocess.Popen(['open', dir_to_open])
+                p = Popen(['open', dir_to_open])
             except Exception as this_exception:
                 print("Could not open file:")
                 print(this_exception)
@@ -807,6 +870,25 @@ class MyApp(Frame):
                     self.active_idf_listbox.insert(END, this_idf_possibility)
         self.idf_refresh_count_status()
 
+    def idf_select_containing(self):
+        if not self.valid_idfs_in_listing:
+            messagebox.showerror("IDF Selection Error", "Invalid build folders or IDF list")
+            return
+        search_string = simpledialog.askstring("Input IDF String", "Plain string to search inside IDFs")
+        if not search_string:
+            return
+        search_string = search_string.upper()
+        self.idf_deselect_all()
+        for i in range(self.full_idf_listbox.size()):
+            this_idf_possibility = self.full_idf_listbox.get(i)
+            this_idf_full_path = Path(self.build_1.get_idf_directory()) / this_idf_possibility
+            if not this_idf_full_path.exists():
+                print(f"Missing IDF at: {this_idf_full_path}")  # some warning?
+            contents = this_idf_full_path.read_text().upper()
+            if search_string in contents:
+                self.active_idf_listbox.insert(END, this_idf_possibility)
+        self.idf_refresh_count_status()
+
     def idf_refresh_count_status(self, test_case=None, checked=False):
         if not self.valid_idfs_in_listing:
             return
@@ -1029,9 +1111,22 @@ class MyApp(Frame):
         self.add_to_log("All done, finished")
         self.label_string.set("Hey, all done!")
         if system() == 'Linux':
-            subprocess.call(['notify-send', 'EnergyPlus Regression Tool', 'Regressions Finished'])
+            time_format = '%Y-%m-%d %H:%M:%S.%f'
+            time_stamps = results.extra.descriptions['time_stamps']
+            start_string = time_stamps[0][12:]
+            start_time = datetime.strptime(start_string, time_format)
+            end_string = time_stamps[1][10:]
+            end_time = datetime.strptime(end_string, time_format)
+            time_report = ''
+            whole_minutes, remaining_time = divmod((end_time - start_time).total_seconds(), 60)
+            if int(whole_minutes) > 0:
+                time_report += f'{whole_minutes:.0f}m '
+            time_report += f'{remaining_time:.0f}s'
+            self.notification.send_notification(
+                'EnergyPlus Regression Tool', f'Regressions Finished ({time_report})', self.notification_icon
+            )
         elif system() == 'Darwin':
-            subprocess.call([
+            call([
                 'osascript',
                 '-e',
                 'display notification "Regressions Finished" with title "EnergyPlus Regression Tool"'

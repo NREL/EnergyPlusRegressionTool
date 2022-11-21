@@ -1,3 +1,6 @@
+[run]
+source = epregressions
+
 [report]
 omit =
   epregressions/runner.py

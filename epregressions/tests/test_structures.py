@@ -177,7 +177,9 @@ class TestTestEntry(unittest.TestCase):
 class TestCompletedStructure(unittest.TestCase):
 
     def test_workflow(self):
-        c = CompletedStructure('/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2')
+        c = CompletedStructure(
+            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+        )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
@@ -190,7 +192,9 @@ class TestCompletedStructure(unittest.TestCase):
         c.add_test_entry(t)
 
     def test_to_csv(self):
-        c = CompletedStructure('/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2')
+        c = CompletedStructure(
+            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+        )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
@@ -200,7 +204,9 @@ class TestCompletedStructure(unittest.TestCase):
             c.to_runtime_summary('/invalid/path')
 
     def test_to_json(self):
-        c = CompletedStructure('/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2')
+        c = CompletedStructure(
+            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+        )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
@@ -215,7 +221,9 @@ class TestCompletedStructure(unittest.TestCase):
             self.assertIn('results_by_file', obj)
 
     def test_to_json_object_response(self):
-        c = CompletedStructure('/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2')
+        c = CompletedStructure(
+            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+        )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
