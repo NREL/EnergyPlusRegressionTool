@@ -1,8 +1,9 @@
 # EnergyPlus Regressions
 
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
-[![Test/Package Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Flake8/master?label=flake8)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/flake8.yml)
-[![Flake8 Status](https://img.shields.io/github/workflow/status/NREL/EnergyPlusRegressionTool/Build%20Package%20and%20Run%20Tests/master?label=build%2Fpackage)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/build_and_test.yml)
+[![Run Tests](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/test.yml/badge.svg)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/test.yml)
+[![PyPIRelease](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/release.yml/badge.svg)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/release.yml)
+[![Flake8](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/flake8.yml/badge.svg)](https://github.com/NREL/EnergyPlusRegressionTool/actions/workflows/flake8.yml)
 [![Coverage Status](https://coveralls.io/repos/github/NREL/EnergyPlusRegressionTool/badge.svg?branch=master)](https://coveralls.io/github/NREL/EnergyPlusRegressionTool?branch=master)
 
 ## Overview
@@ -20,32 +21,14 @@ This set of tools provides a way to run these regressions locally.
 
 ## Usage
 
-This tool works on all three major platforms: Windows, Mac, and Ubuntu LTS (18.04 and 20.04).
-Travis runs tests on all the platforms, and it is regularly used on all three as well.
+This tool works on all three major platforms: Windows, Mac, and Ubuntu (LTS).
+GitHub Actions test on multiple platforms, and it is regularly used on all three as well.
 
-There are two ways to install this tool:
- - Download a pre-built (by Travis) binary package 
-   - Downloaded from the Github release [page](https://github.com/NREL/EnergyPlusRegressionTool/releases/latest).
-   - The user should not need any extra tools, including Python itself.
-   - The downloaded package should be extracted and then the extracted binary should be run directly.
- - Install the library into an existing Python install from [Pypi](https://pypi.org/project/EnergyPlusRegressionTool/1.8.7/) 
+To install the tool, simply `pip` install it into your Python environment (either system or virtual environment)
+The project page on PyPi is: https://pypi.org/project/EnergyPlusRegressionTool/. 
+   
    - Download using Pip (`pip install energyplusregressiontool`).
-   - Obviously the user will need the existing Python install, but other dependencies are automatically installed by Pip.
    - Once installed into the Python install, there will be a binary available to run: `eplus_regression_runner`. 
-
-### Limitations
-
-There are a couple limitation "gotchas" in here, however.  A couple statements ahead of this:
- - When we create the standalone installer, we use `pyinstaller` to _freeze_ the program and all dependencies.
- - When we run EnergyPlus, we have to run in multiple processes, not just multiple threads, because of thread-unsafety within EnergyPlus itself.
- 
-There is an issue with the combination of these two things that cause the program to not work well on Windows and Mac.
-If you try to freeze the program but use the multiprocessing library to create child instances, it fails.
-There are notes on the web about how to remedy this by calling special functions at the entry of the code, but I could not get them to work fully.
-So for now, if you use the frozen downloadable version of the program on Windows or Mac, it will not run EnergyPlus in multiple processes.
-
-However, if you install the library into a Python install using Pip, the program is never frozen using `pyinstaller`, and seems to work just fine across platforms even with multiprocessing.
-The best install path is to run in that fashion, but if you cannot, you can download the frozen version and just accept the single process for now.
 
 ## Development
 
