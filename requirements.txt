@@ -1,21 +1,21 @@
 # the core dependencies actually needed
-pypubsub==4.0.3
-beautifulsoup4==4.9.3
+pypubsub
+beautifulsoup4
 
 # if running with CI, this is needed for talking to s3
-boto==2.49.0
+boto
 
 # for running tests
-coveralls==2.1.2
-flake8==3.8.4
-nose==1.3.7
+coveralls
+flake8
+nose
 
 # on windows, if you need to rebuild the unit test resource exes, just install pyinstaller and follow the directions in epregressions/tests/resources/README.md
 # pyinstaller; platform_system == "Windows"
 
 # to generate documentation
-Sphinx==3.2.1
-docutils==0.16   # pinning this because it breaks at 0.18
+sphinx
+docutils   # pinning this because it breaks at 0.18
 
 # for packaging
 wheel
