@@ -435,7 +435,7 @@ class SuiteRunner:
                     )
                 )
 
-            epw_path = os.path.join(build_tree['source_dir'], 'weather', self.default_weather_filename)
+            epw_path = os.path.join(build_tree['weather_dir'], self.default_weather_filename)
             if this_entry.epw:
                 epw_path = os.path.join(build_tree['weather_dir'], this_entry.epw + '.epw')
                 epw_exists = os.path.exists(epw_path)
