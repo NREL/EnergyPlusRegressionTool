@@ -1,2 +1,2 @@
-recursive-include epregressions *.config
-recursive-include epregressions *.png
+recursive-include energyplus_regressions *.config
+recursive-include energyplus_regressions *.png

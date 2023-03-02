@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=EnergyPlus Regression Tool
+Comment=An EnergyPlus test suite utility
+Exec={PATH_TO_PYTHON} {RUNNER_SCRIPT}
+Icon={ICON_PATH}
+Terminal=false
+StartupWMClass=energyplus_regression_runner

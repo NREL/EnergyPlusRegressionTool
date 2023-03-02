@@ -109,7 +109,7 @@ usage of the script is available here:
 
 ::
 
-    $ ./epregressions/runtests.py --help
+    $ ./energyplus_regressions/runtests.py --help
     usage: runtests.py [-h] [-a] [-b] [-f {DD,Annual}] [-j J] [-t]
                        a_src a_build b_src b_build idf_list_file
 
