@@ -5,4 +5,4 @@ Comment=An EnergyPlus test suite utility
 Exec={PATH_TO_PYTHON} {RUNNER_SCRIPT}
 Icon={ICON_PATH}
 Terminal=false
-StartupWMClass=eplus_regression_runner
+StartupWMClass=energyplus_regression_runner

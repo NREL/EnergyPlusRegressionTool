@@ -27,6 +27,6 @@ dist
 /energyplus_regressions/tests/resources/energyplus.spec
 /energyplus_regressions/tests/resources/basement.spec
 deploy
-eplus_regression_runner.spec
+energyplus_regression_runner.spec
 cover/
 runner.spec

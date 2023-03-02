@@ -28,7 +28,7 @@ To install the tool, simply `pip` install it into your Python environment (eithe
 The project page on PyPi is: https://pypi.org/project/EnergyPlusRegressionTool/. 
    
    - Download using Pip (`pip install energyplusregressiontool`).
-   - Once installed into the Python install, there will be a binary available to run: `eplus_regression_runner`. 
+   - Once installed into the Python install, there will be a binary available to run: `energyplus_regression_runner`. 
 
 ## Development
 

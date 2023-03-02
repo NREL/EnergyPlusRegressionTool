@@ -136,7 +136,7 @@ class PubSubMessageTypes:
 class MyApp(Frame):
 
     def __init__(self):
-        self.root = Tk(className='eplus_regression_runner')
+        self.root = Tk(className='energyplus_regression_runner')
         Frame.__init__(self, self.root)
 
         # add the taskbar icon, but its having issues reading the png on Mac, not sure.
@@ -241,7 +241,7 @@ class MyApp(Frame):
         self.notification = None
         if system() == 'Linux':
             self.notification_icon = Path(self.icon_path)
-            self.notification = Notification('eplus_regression_runner')
+            self.notification = Notification('energyplus_regression_runner')
 
     def init_window(self):
         # changing the title of our master widget
