@@ -3,7 +3,7 @@ These are extremely lightweight executable scripts that mimic the actual E+ tool
 There are also other files in here such as example weather files and E+ run files.
 
 The windows versions of these are prebuilt using pyinstaller and placed in the `dist/` directory
-To rebuild them, ensure you have pyinstaller on Windows, change dir into the `epregressions/tests/resources` directory, and run:
+To rebuild them, ensure you have pyinstaller on Windows, change dir into the `energyplus_regressions/tests/resources` directory, and run:
 
 ```
 PYTHONPATH=. ../../../venv/Scripts/pyinstaller.exe --onefile --log-level=WARN -n basement dummy.basement.py

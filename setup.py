@@ -26,7 +26,7 @@ setup(
     install_requires=['PyPubSub', 'beautifulsoup4'],
     entry_points={
         'console_scripts': [
-            'eplus_regression_runner=epregressions.runner:main_gui',
+            'eplus_regression_runner=energyplus_regressions.runner:main_gui',
         ],
     },
     python_requires='>=3.5',

@@ -8,7 +8,8 @@ import os
 import sys
 from datetime import datetime
 
-# add the root of the repo to the python path so it can find things relative to it like the  epregressions package
+# add the root of the repo to the python path so it can find things relative to it
+# like the energyplus_regressions package
 from os.path import dirname, realpath
 
 sys.path.append(os.path.join(dirname(realpath(__file__)), '..', '..'))
