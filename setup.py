@@ -2,7 +2,7 @@ import codecs
 import os
 from setuptools import setup, find_packages
 
-from epregressions import VERSION
+from energyplus_regressions import VERSION
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:

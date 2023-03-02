@@ -15,9 +15,9 @@ Starting the GUI program will depend on how the package is installed/downloaded.
 - Downloaded binary from Github release page:
   - In this case, the user will simply run the downloaded binary
 - Installed via Pip:
-  - In this case, a binary (`eplus_regression_runner`) will be installed with the package that will allow running the GUI
+  - In this case, a binary (`energyplus_regression_runner`) will be installed with the package that will allow running the GUI
 - Cloned the repo for development:
-  - In this case, the user will run the `epregressions/runner.py` script at the root of the repo
+  - In this case, the user will run the `energyplus_regressions/runner.py` script at the root of the repo
 
 In some cases, a command window is launched prior to showing the graphical interface.
 This can be ignored.  When the GUI launches, it should look similar to this figure.
