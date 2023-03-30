@@ -25,9 +25,9 @@ This tool works on all three major platforms: Windows, Mac, and Ubuntu (LTS).
 GitHub Actions test on multiple platforms, and it is regularly used on all three as well.
 
 To install the tool, simply `pip` install it into your Python environment (either system or virtual environment)
-The project page on PyPi is: https://pypi.org/project/EnergyPlusRegressionTool/. 
+The project page on PyPi is: https://pypi.org/project/energyplus-regressions/. 
    
-   - Download using Pip (`pip install energyplusregressiontool`).
+   - Download using Pip (`pip install energyplus-regressions`).
    - Once installed into the Python install, there will be a binary available to run: `energyplus_regression_runner`. 
 
 ## Development
