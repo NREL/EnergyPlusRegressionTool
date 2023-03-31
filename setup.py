@@ -27,7 +27,7 @@ setup(
     test_suite='nose.collector',
     tests_require=['nose'],
     keywords='energyplus',
-    include_package_data=True,
+    include_package_data=True,  # use /MANIFEST.in file for declaring package data
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
