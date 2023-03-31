@@ -39,14 +39,21 @@ def configure() -> int:
     if system() == 'Windows':
         from winreg import OpenKey, QueryValueEx, CloseKey, HKEY_CURRENT_USER as HKCU, KEY_READ as READ
         scripts_dir = Path(get_path('scripts'))
+        print(f"{scripts_dir=}")
         icon_file = regressions_lib_root.parent / 'ep.ico'
+        print(f"{icon_file=}")
         target_exe = scripts_dir / 'energyplus_regression_runner.exe'
+        print(f"{target_exe=}")
         link_name = energyplus_regressions.NAME + '.lnk'
+        print(f"{link_name=}")
         key = OpenKey(HKCU, r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders', 0, READ)
         desktop_value, _ = QueryValueEx(key, 'Desktop')
         CloseKey(key)
+        print(f"{desktop_value=}")
         desktop = Path(desktop_value)
+        print(f"{desktop=}")
         path_link = desktop / link_name
+        print(f"{path_link=}")
         from win32com.client import Dispatch
         shell = Dispatch('WScript.Shell')
         s = shell.CreateShortCut(str(path_link))
