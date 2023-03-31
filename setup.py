@@ -1,5 +1,6 @@
 import codecs
 import os
+from platform import system
 from setuptools import setup, find_packages
 
 from energyplus_regressions import NAME, VERSION
@@ -7,6 +8,10 @@ from energyplus_regressions import NAME, VERSION
 this_dir = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
     long_description = i_file.read()
+
+install_requires = ['PyPubSub', 'beautifulsoup4']
+if system() == 'Windows':
+    install_requires.append('pywin32')
 
 setup(
     name=NAME,
@@ -23,7 +28,7 @@ setup(
     tests_require=['nose'],
     keywords='energyplus',
     include_package_data=True,
-    install_requires=['PyPubSub', 'beautifulsoup4'],
+    install_requires=install_requires,
     entry_points={
         'console_scripts': [
             'energyplus_regression_runner=energyplus_regressions.runner:main_gui',

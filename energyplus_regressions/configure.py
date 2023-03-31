@@ -49,7 +49,7 @@ def configure() -> int:
         path_link = desktop / link_name
         from win32com.client import Dispatch
         shell = Dispatch('WScript.Shell')
-        with shell.CreateShortCut(path_link) as s:
+        with shell.CreateShortCut(str(path_link)) as s:
             s.Targetpath = str(target_exe)
             s.WorkingDirectory = str(scripts_dir)
             s.IconLocation = str(icon_file)
