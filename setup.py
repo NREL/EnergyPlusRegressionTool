@@ -2,14 +2,14 @@ import codecs
 import os
 from setuptools import setup, find_packages
 
-from energyplus_regressions import VERSION
+from energyplus_regressions import NAME, VERSION
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
     long_description = i_file.read()
 
 setup(
-    name='energyplus_regressions',
+    name=NAME,
     version=VERSION,
     packages=find_packages(exclude=['test', 'tests', 'test.*']),
     url='https://github.com/NREL/EnergyPlusRegressionTool',
@@ -27,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'energyplus_regression_runner=energyplus_regressions.runner:main_gui',
+            'energyplus_regression_configure=energyplus_regressions.configure:configure_cli',
         ],
     },
     python_requires='>=3.5',
