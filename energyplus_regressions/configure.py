@@ -2,9 +2,8 @@ from os import chmod, stat
 from pathlib import Path
 from platform import system
 from site import USER_BASE
-from sys import argv, exit
+from sys import exit
 from sysconfig import get_path
-from typing import List
 
 import energyplus_regressions
 
