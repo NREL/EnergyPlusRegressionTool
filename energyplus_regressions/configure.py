@@ -1,4 +1,4 @@
-from os import chmod, stat
+from os import chmod, path, stat
 from pathlib import Path
 from platform import system
 from site import USER_BASE
@@ -50,7 +50,7 @@ def configure() -> int:
         desktop_value, _ = QueryValueEx(key, 'Desktop')
         CloseKey(key)
         print(f"{desktop_value=}")
-        desktop = Path(desktop_value)
+        desktop = Path(path.expandvars(desktop_value))
         print(f"{desktop=}")
         path_link = desktop / link_name
         print(f"{path_link=}")
