@@ -42,18 +42,18 @@ def configure() -> int:
         icon_file = regressions_lib_root.parent / 'ep.ico'
         target_exe = scripts_dir / 'energyplus_regression_runner.exe'
         link_name = energyplus_regressions.NAME + '.lnk'
-        with OpenKey(HKCU, r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders', 0, READ) as key:
-            desktop_value, _ = QueryValueEx(key, 'Desktop')
-            CloseKey(key)
+        key = OpenKey(HKCU, r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders', 0, READ)
+        desktop_value, _ = QueryValueEx(key, 'Desktop')
+        CloseKey(key)
         desktop = Path(desktop_value)
         path_link = desktop / link_name
         from win32com.client import Dispatch
         shell = Dispatch('WScript.Shell')
-        with shell.CreateShortCut(str(path_link)) as s:
-            s.Targetpath = str(target_exe)
-            s.WorkingDirectory = str(scripts_dir)
-            s.IconLocation = str(icon_file)
-            s.save()
+        s = shell.CreateShortCut(str(path_link))
+        s.Targetpath = str(target_exe)
+        s.WorkingDirectory = str(scripts_dir)
+        s.IconLocation = str(icon_file)
+        s.save()
     elif system() == 'Linux':
         # try assuming user install
         user_exe = Path(get_path('scripts')) / 'energyplus_regression_runner'
