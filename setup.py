@@ -30,8 +30,10 @@ setup(
     include_package_data=True,  # use /MANIFEST.in file for declaring package data
     install_requires=install_requires,
     entry_points={
-        'console_scripts': [
+        'gui_scripts': [
             'energyplus_regression_runner=energyplus_regressions.runner:main_gui',
+        ],
+        'console_scripts': [
             'energyplus_regression_configure=energyplus_regressions.configure:configure_cli',
         ],
     },
