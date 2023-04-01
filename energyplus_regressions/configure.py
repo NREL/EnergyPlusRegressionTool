@@ -5,8 +5,6 @@ from site import USER_BASE
 from sys import exit
 from sysconfig import get_path
 
-import energyplus_regressions
-
 r"""
 # Installation
 
@@ -34,26 +32,41 @@ So on Windows, the Pip binary will be at %PythonInstall%\Scripts\pip.exe;
 """
 
 
-def configure() -> int:
-    regressions_lib_root = Path(energyplus_regressions.__file__)
-    if system() == 'Windows':
+class SingleScript:
+    def __init__(self, package_dir_name: str, icon_file_name_ico: str, icon_file_name_png: str,
+                 binary_name_without_exe: str, pretty_link_name: str, description: str, wm_class: str):
+        self.package_dir_name = package_dir_name  # the source code directory package name where installed
+        self.icon_file_name_ico = icon_file_name_ico  # ideally just a filename at the package root folder
+        self.icon_file_name_png = icon_file_name_png  # ideally just a filename at the package root folder
+        self.pretty_link_name = pretty_link_name  # don't include the .lnk extension
+        self.description = description
+        self.wm_class = wm_class
+        self.installed_binary_name = binary_name_without_exe
+        if system() == 'Windows':
+            self.installed_binary_name += '.exe'
+
+
+class InstallConfigure:
+    def __init__(self):
+        self.this_package_root = Path(__file__).parent
+
+    def add_desktop_icon(self, script: SingleScript):
+        if system() == 'Windows':
+            self._add_desktop_icon_on_windows(script)
+        elif system() == 'Linux':
+            self._add_desktop_file_on_linux(script)
+
+    def _add_desktop_icon_on_windows(self, script: SingleScript):
         from winreg import OpenKey, QueryValueEx, CloseKey, HKEY_CURRENT_USER as HKCU, KEY_READ as READ
         scripts_dir = Path(get_path('scripts'))
-        print(f"{scripts_dir=}")
-        icon_file = regressions_lib_root.parent / 'ep.ico'
-        print(f"{icon_file=}")
-        target_exe = scripts_dir / 'energyplus_regression_runner.exe'
-        print(f"{target_exe=}")
-        link_name = energyplus_regressions.NAME + '.lnk'
-        print(f"{link_name=}")
+        icon_file = self.this_package_root / script.icon_file_name_ico
+        target_exe = scripts_dir / script.installed_binary_name
+        link_name = f"{script.pretty_link_name}.lnk"
         key = OpenKey(HKCU, r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders', 0, READ)
         desktop_value, _ = QueryValueEx(key, 'Desktop')
         CloseKey(key)
-        print(f"{desktop_value=}")
         desktop = Path(path.expandvars(desktop_value))
-        print(f"{desktop=}")
         path_link = desktop / link_name
-        print(f"{path_link=}")
         from win32com.client import Dispatch
         shell = Dispatch('WScript.Shell')
         s = shell.CreateShortCut(str(path_link))
@@ -61,12 +74,13 @@ def configure() -> int:
         s.WorkingDirectory = str(scripts_dir)
         s.IconLocation = str(icon_file)
         s.save()
-    elif system() == 'Linux':
+
+    def _add_desktop_file_on_linux(self, script: SingleScript):
         # try assuming user install
-        user_exe = Path(get_path('scripts')) / 'energyplus_regression_runner'
-        global_exe = Path(USER_BASE) / 'bin' / 'energyplus_regression_runner'
+        user_exe = Path(get_path('scripts')) / script.installed_binary_name
+        global_exe = Path(USER_BASE) / 'bin' / script.installed_binary_name
         if user_exe.exists() and global_exe.exists():
-            print("Detected the energyplus_regression_runner binary in both user and global locations.")
+            print(f"Detected the {script.installed_binary_name} binary in both user and global locations.")
             print("Due to this ambiguity, I cannot figure out to which one I should link.")
             print(f"User install location: {user_exe}")
             print(f"Global install location: {global_exe}")
@@ -77,30 +91,35 @@ def configure() -> int:
         elif global_exe.exists():
             target_exe = global_exe
         else:
-            print("Could not find energyplus_regression_runner binary at either user or global location.")
+            print(f"Could not find {script.installed_binary_name} binary at either user or global location.")
             print("This is weird since you are running this script...did you actually pip install this tool?")
-            print("Make sure to pip install energyplus_regressions and then retry")
+            print("Make sure to pip install the tool and then retry")
             return 1
-        icon_file = regressions_lib_root.parent / 'ep.png'
-        desktop_file = Path.home() / '.local' / 'share' / 'applications' / 'energyplus_regression_runner.desktop'
+        icon_file = self.this_package_root / script.icon_file_name_png
+        desktop_file = Path.home() / '.local' / 'share' / 'applications' / f'{script.installed_binary_name}.desktop'
         with open(desktop_file, 'w') as f:
             f.write(f"""[Desktop Entry]
-Name=EnergyPlus Regression Tool
-Comment=An EnergyPlus test suite utility
+Name={script.pretty_link_name}
+Comment={script.description}
 Exec={target_exe}
 Icon={icon_file}
 Type=Application
 Terminal=false
-StartupWMClass=energyplus_regression_runner""")
+StartupWMClass={script.wm_class}""")
         mode = stat(desktop_file).st_mode
         mode |= (mode & 0o444) >> 2  # copy R bits to X
-        chmod(desktop_file, mode)
+        chmod(desktop_file, mode)  # make it executable
+
+
+def configure() -> int:
+    s = SingleScript(
+        "energyplus_regressions", "ep.ico", "ep.png", "energyplus_regression_runner", "EnergyPlus Regression Tool",
+        "An EnergyPlus test suite utility", "energyplus_regression_runner"
+    )
+    con = InstallConfigure()
+    con.add_desktop_icon(s)
     return 0
 
 
-def configure_cli() -> int:
-    return configure()
-
-
 if __name__ == '__main__':
-    exit(configure_cli())
+    exit(configure())
