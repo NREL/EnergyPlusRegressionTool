@@ -9,7 +9,7 @@ this_dir = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
     long_description = i_file.read()
 
-install_requires = ['PyPubSub', 'beautifulsoup4']
+install_requires = ['PyPubSub', 'beautifulsoup4', 'PLAN-Tools']
 if system() == 'Windows':
     install_requires.append('pywin32')
 
