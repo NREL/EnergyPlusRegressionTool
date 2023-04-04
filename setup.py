@@ -4,7 +4,6 @@ from platform import system
 from setuptools import setup, find_packages
 
 from energyplus_regressions import NAME, VERSION
-from energyplus_regressions.configure import configure
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
@@ -35,7 +34,7 @@ setup(
             'energyplus_regression_runner=energyplus_regressions.runner:main_gui',
         ],
         'console_scripts': [
-            'energyplus_regression_configure=energyplus_regressions.configure:configure',
+            'energyplus_regression_configure=energyplus_regressions.configure:configure_cli',
         ],
     },
     python_requires='>=3.5',

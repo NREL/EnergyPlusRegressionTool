@@ -1,3 +1,4 @@
 recursive-include energyplus_regressions *.config
 recursive-include energyplus_regressions *.png
 recursive-include energyplus_regressions *.ico
+recursive-include energyplus_regressions *.icns
