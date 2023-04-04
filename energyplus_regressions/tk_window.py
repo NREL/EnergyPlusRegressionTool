@@ -149,7 +149,7 @@ class MyApp(Frame):
             else:
                 print(f"Could not set icon for Mac, expecting to find it at {self.icon_path}")
         elif system() == 'Windows':
-            self.icon_path = Path(__file__).resolve().parent / 'icons' / 'icon.ico'
+            self.icon_path = Path(__file__).resolve().parent / 'icons' / 'icon.png'
             img = PhotoImage(file=str(self.icon_path))
             if self.icon_path.exists():
                 self.root.iconphoto(False, img)
