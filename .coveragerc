@@ -4,4 +4,5 @@ source = energyplus_regressions
 [report]
 omit =
   energyplus_regressions/runner.py
+  energyplus_regressions/configure.py
   energyplus_regressions/tk_window.py

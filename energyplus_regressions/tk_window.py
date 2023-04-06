@@ -22,8 +22,10 @@ from tkinter import (
 )
 from typing import List, Union
 
+from plan_tools.runtime import fixup_taskbar_icon_on_windows
 from pubsub import pub
 
+import energyplus_regressions
 from energyplus_regressions import VERSION
 from energyplus_regressions.builds.base import KnownBuildTypes, autodetect_build_dir_type, BaseBuildDirectoryStructure
 from energyplus_regressions.builds.install import EPlusInstallDirectory
@@ -140,10 +142,27 @@ class MyApp(Frame):
         Frame.__init__(self, self.root)
 
         # add the taskbar icon, but its having issues reading the png on Mac, not sure.
-        self.icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ep.png')
-        if system() != 'Darwin':
-            img = PhotoImage(file=self.icon_path)
-            self.root.iconphoto(False, img)
+        if system() == 'Darwin':
+            self.icon_path = Path(__file__).resolve().parent / 'icons' / 'icon.icns'
+            if self.icon_path.exists():
+                self.root.iconbitmap(str(self.icon_path))
+            else:
+                print(f"Could not set icon for Mac, expecting to find it at {self.icon_path}")
+        elif system() == 'Windows':
+            self.icon_path = Path(__file__).resolve().parent / 'icons' / 'icon.png'
+            img = PhotoImage(file=str(self.icon_path))
+            if self.icon_path.exists():
+                self.root.iconphoto(False, img)
+            else:
+                print(f"Could not set icon for Windows, expecting to find it at {self.icon_path}")
+        else:  # Linux
+            self.icon_path = Path(__file__).resolve().parent / 'icons' / 'icon.png'
+            img = PhotoImage(file=str(self.icon_path))
+            if self.icon_path.exists():
+                self.root.iconphoto(False, img)
+            else:
+                print(f"Could not set icon for Windows, expecting to find it at {self.icon_path}")
+        fixup_taskbar_icon_on_windows(energyplus_regressions.NAME)
 
         # high level GUI configuration
         self.root.geometry('1000x600')

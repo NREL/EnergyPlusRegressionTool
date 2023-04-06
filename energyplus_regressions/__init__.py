@@ -1,1 +1,2 @@
-VERSION = '2.0.0'
+NAME = 'energyplus_regressions'
+VERSION = '2.0.2'
