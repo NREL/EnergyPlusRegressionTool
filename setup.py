@@ -10,7 +10,7 @@ with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_fil
     long_description = i_file.read()
 
 
-install_requires = ['PyPubSub', 'beautifulsoup4', 'PLAN-Tools==0.41']
+install_requires = ['PyPubSub', 'beautifulsoup4', 'PLAN-Tools==0.5']
 if system() == 'Windows':
     install_requires.append('pypiwin32')
 
