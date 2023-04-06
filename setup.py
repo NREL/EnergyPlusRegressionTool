@@ -23,7 +23,7 @@ setup(
     tests_require=['nose'],
     keywords='energyplus',
     include_package_data=True,  # use /MANIFEST.in file for declaring package data
-    install_requires=['PyPubSub', 'beautifulsoup4', 'PLAN-Tools===0.4'],
+    install_requires=['PyPubSub', 'beautifulsoup4', 'PLAN-Tools==0.4'],
     entry_points={
         'gui_scripts': [
             'energyplus_regression_runner=energyplus_regressions.runner:main_gui',
