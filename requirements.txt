@@ -21,5 +21,5 @@ docutils   # pinning this because it breaks at 0.18
 wheel
 
 # for polishing up the Pip install
-PLAN-Tools==0.4
+PLAN-Tools==0.41
 
