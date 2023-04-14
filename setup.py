@@ -10,7 +10,7 @@ with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_fil
     long_description = i_file.read()
 
 
-install_requires = ['PyPubSub', 'beautifulsoup4', 'PLAN-Tools==0.5']
+install_requires = ['PyPubSub', 'beautifulsoup4', 'PLAN-Tools>=0.5']
 if system() == 'Windows':
     install_requires.append('pypiwin32')
 
@@ -19,15 +19,13 @@ setup(
     version=VERSION,
     packages=find_packages(exclude=['test', 'tests', 'test.*']),
     url='https://github.com/NREL/EnergyPlusRegressionTool',
-    license='',
-    author='Edwin Lee',
-    author_email='',
+    license='ModifiedBSD',
+    author='Edwin Lee, for NREL, for United States Department of Energy',
     description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     test_suite='nose.collector',
     tests_require=['nose'],
-    keywords='energyplus',
     include_package_data=True,  # use /MANIFEST.in file for declaring package data
     install_requires=install_requires,
     entry_points={
@@ -39,4 +37,24 @@ setup(
         ],
     },
     python_requires='>=3.5',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Topic :: Utilities',
+    ],
+    platforms=[
+        'Linux (Tested on Ubuntu)', 'MacOSX', 'Windows'
+    ],
+    keywords=[
+        'energyplus_launch', 'ep_launch',
+        'EnergyPlus', 'eplus', 'Energy+',
+        'Building Simulation', 'Whole Building Energy Simulation',
+        'Heat Transfer', 'HVAC', 'Modeling',
+    ]
 )
