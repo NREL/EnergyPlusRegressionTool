@@ -87,7 +87,7 @@ def ismatrice(mat):
         return False
     # test for rows
     for row in mat:
-        if row is not list:
+        if not isinstance(row, list):
             return False
     # test if cell is float, int or string
     for row in mat:
