@@ -131,7 +131,7 @@ def prev_sib(entity):
     i = 0
     while i == 0:
         prevs = prevs.previousSibling
-        if type(prevs) == NavigableString:
+        if isinstance(prevs, NavigableString):
             utxt = prevs.strip()
             if utxt == '':
                 continue
