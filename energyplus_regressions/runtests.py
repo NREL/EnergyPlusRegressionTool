@@ -41,6 +41,8 @@ script_dir = os.path.abspath(path)
 
 
 class TestRunConfiguration:
+    __test__ = False  # so that PyTest doesn't try to run this as a class fixture
+
     def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
                  force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
                  force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
@@ -55,6 +57,8 @@ class TestRunConfiguration:
 
 
 class TestCaseCompleted:
+    __test__ = False  # so that PyTest doesn't try to run this as a class fixture
+
     def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, extra_message=""):
         self.run_directory = run_directory
         self.case_name = case_name
@@ -100,10 +104,10 @@ class SuiteRunner:
         self.build_tree_b = run_config.buildB.get_build_tree()
 
         # Settings/paths defined relative to this script
-        self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
+        # self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
         self.thresh_dict_file = os.path.join(script_dir, 'diffs', "math_diff.config")
-        self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
-        self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
+        # self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
+        # self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
 
         # Settings/paths defined relative to the buildA/buildB test directories
         # the tests directory will be different based on forceRunType

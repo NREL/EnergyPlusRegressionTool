@@ -61,8 +61,19 @@ class TestMathDifferences(unittest.TestCase):
 class TestTableDifferences(unittest.TestCase):
 
     def test_construct_from_list(self):
-        from_table_diff = ['msg', 'tbl_count', '2 big diffs', '3 small diffs', '2 equal', '2 strings', 'size_err', 1, 1]
-        TableDifferences(from_table_diff)  # should just pass, nothing to check really
+        from_table_diff = [
+            'msg',  # 'msg',
+            20,  # 'tbl_count',
+            2,  # '2 big diffs',
+            3,  # '3 small diffs',
+            2,  # '2 equal',
+            2,  # '2 strings',
+            '',  # 'size_err',
+            1,  # 1,
+            1,  # 1
+        ]
+        t = TableDifferences(from_table_diff)
+        self.assertEqual(2, t.big_diff_count)
 
     def test_instance_to_dict(self):
         from_table_diff = ['msg', 'tbl_count', '2 big diffs', '3 small diffs', '2 equal', '2 strings', 'size_err', 1, 1]
@@ -188,7 +199,8 @@ class TestCompletedStructure(unittest.TestCase):
         c.add_test_entry(t)
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
-        t.add_table_differences(TableDifferences([1, 1, 0, 1, 1, 1, 1, 1, 1]))  # override the table data
+        # override the table data, put 2 string diffs so one is caught
+        t.add_table_differences(TableDifferences([1, 1, 0, 1, 1, 2, 1, 1, 1]))
         c.add_test_entry(t)
 
     def test_to_csv(self):

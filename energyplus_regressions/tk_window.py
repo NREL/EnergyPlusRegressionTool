@@ -165,7 +165,7 @@ class MyApp(Frame):
         fixup_taskbar_icon_on_windows(energyplus_regressions.NAME)
 
         # high level GUI configuration
-        self.root.geometry('1000x600')
+        self.root.geometry('1000x630')
         self.root.resizable(width=True, height=True)
         self.root.option_add('*tearOff', False)  # keeps file menus from looking weird
 

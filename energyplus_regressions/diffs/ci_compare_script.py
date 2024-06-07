@@ -201,6 +201,9 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         elif entry.table_diffs.small_diff_count > 0:
             has_small_diffs = True
             print_message("Table small diffs.")
+        if entry.table_diffs.string_diff_count > 1:  # There's always one...the time stamp
+            has_diffs = True
+            print_message("Table string diffs.")
 
     if entry.idf_diffs and (entry.idf_diffs.diff_type != TextDifferences.EQUAL):
         has_small_diffs = True

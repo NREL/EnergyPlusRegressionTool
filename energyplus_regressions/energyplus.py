@@ -162,9 +162,10 @@ def execute_energyplus(e_args: ExecutionArguments):
             os.environ["DDONLY"] = ""
             os.environ["REVERSEDD"] = ""
             os.environ["FULLANNUALRUN"] = ""
-        else:
-            pass
-            # nothing
+        else:  # pragma: no cover
+            # it feel weird to try to test this path...have to set run_type to something invalid?
+            # should we just eliminate this else?
+            pass  # do nothing?
 
         # use the user-entered minimum reporting frequency
         #  (useful for limiting to daily outputs for annual simulation, etc.)

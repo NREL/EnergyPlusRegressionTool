@@ -187,11 +187,11 @@ class TestCICompareScriptFunctions(unittest.TestCase):
             os.path.join(self.temp_mod_dir, 'eplusssz.csv')
         )
         shutil.copy(
-            os.path.join(self.tbl_resource_dir, 'eplustbl.htm'),
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_big_numeric_diff_and_string_diff_base.htm'),
             os.path.join(self.temp_base_dir, 'eplustbl.htm')
         )
         shutil.copy(
-            os.path.join(self.tbl_resource_dir, 'eplustbl_has_big_numeric_diff.htm'),
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_big_numeric_diff_and_string_diff_mod.htm'),
             os.path.join(self.temp_mod_dir, 'eplustbl.htm')
         )
         self._write_files_to_both_folders('eplusout.audit', 'base audit output', 'mod audit output')
@@ -248,6 +248,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 'SSZ big diffs',
                 'ZSZ big diffs',
                 'Table big diffs',
+                'Table string diffs',
                 'ReadvarsAudit diffs',
                 'EDD diffs',
                 'WRL diffs',
