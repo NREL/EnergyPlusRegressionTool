@@ -1,7 +1,7 @@
 import codecs
 import os
 from platform import system
-from setuptools import setup, find_packages
+from setuptools import setup
 
 from energyplus_regressions import NAME, VERSION
 
@@ -17,16 +17,17 @@ if system() == 'Windows':
 setup(
     name=NAME,
     version=VERSION,
-    packages=find_packages(exclude=['test', 'tests', 'test.*']),
+    packages=['energyplus_regressions', 'energyplus_regressions.builds', 'energyplus_regressions.diffs'],
+    include_package_data=True,
+    package_data={
+        'energyplus_regressions': ['diffs/math_diff.config', 'icons/icon.png', 'icons/icon.ico', 'icons/icon.icns']
+    },
     url='https://github.com/NREL/EnergyPlusRegressionTool',
     license='ModifiedBSD',
     author='Edwin Lee, for NREL, for United States Department of Energy',
     description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    test_suite='nose.collector',
-    tests_require=['nose'],
-    include_package_data=True,  # use /MANIFEST.in file for declaring package data
     install_requires=install_requires,
     entry_points={
         'gui_scripts': [
@@ -36,7 +37,7 @@ setup(
             'energyplus_regression_configure=energyplus_regressions.configure:configure_cli',
         ],
     },
-    python_requires='>=3.5',
+    python_requires='>=3.9',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',

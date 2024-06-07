@@ -41,6 +41,8 @@ script_dir = os.path.abspath(path)
 
 
 class TestRunConfiguration:
+    __test__ = False  # so that PyTest doesn't try to run this as a class fixture
+
     def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
                  force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
                  force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
@@ -55,6 +57,8 @@ class TestRunConfiguration:
 
 
 class TestCaseCompleted:
+    __test__ = False  # so that PyTest doesn't try to run this as a class fixture
+
     def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, extra_message=""):
         self.run_directory = run_directory
         self.case_name = case_name

@@ -8,7 +8,7 @@ boto
 # for running tests
 coveralls
 flake8
-nose
+pytest
 
 # on windows, if you need to rebuild the unit test resource exes, just install pyinstaller and follow the directions in energyplus_regressions/tests/resources/README.md
 # pyinstaller; platform_system == "Windows"
