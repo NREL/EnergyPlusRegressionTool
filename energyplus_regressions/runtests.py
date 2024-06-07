@@ -104,10 +104,10 @@ class SuiteRunner:
         self.build_tree_b = run_config.buildB.get_build_tree()
 
         # Settings/paths defined relative to this script
-        self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
+        # self.path_to_file_list = os.path.join(script_dir, "files_to_run.txt")
         self.thresh_dict_file = os.path.join(script_dir, 'diffs', "math_diff.config")
-        self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
-        self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
+        # self.math_diff_executable = os.path.join(script_dir, "math_diff.py")
+        # self.table_diff_executable = os.path.join(script_dir, "table_diff.py")
 
         # Settings/paths defined relative to the buildA/buildB test directories
         # the tests directory will be different based on forceRunType
