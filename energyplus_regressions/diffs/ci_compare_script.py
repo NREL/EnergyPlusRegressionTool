@@ -238,36 +238,38 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
         s3 = boto3.client('s3')
         bucket_name = 'energyplus'
 
-        potential_files = get_diff_files(base_dir)
+        potential_local_diff_file_paths = get_diff_files(base_dir)
 
         date = datetime.now()
         date_str = "%d-%02d" % (date.year, date.month)
-        file_dir = "regressions/{0}/{1}-{2}/{3}/{4}".format(date_str, base_sha, mod_sha, file_name, device_id)
+        file_dir_once_uploaded = f"regressions/{date_str}/{base_sha}-{mod_sha}/{file_name}/{device_id}"
 
         found_files = []
-        for filename in potential_files:
-            file_path_to_send = filename
+        for local_file_path in potential_local_diff_file_paths:
+            file_path_to_send = local_file_path
+            # local_file_name = os.path.basename(file_path_to_send)
 
             # print("Processing output file: {0}".format(filepath_to_send))
             if not os.path.isfile(file_path_to_send):
                 continue
             if not os.stat(file_path_to_send).st_size > 0:
-                print("File is empty, not sending: {0}".format(file_path_to_send))
+                print(f"File is empty, not sending: {file_path_to_send}")
                 continue
 
             try:
-                n = os.path.basename(filename)
-                file_path = f"{file_dir}/{n}"
+                n = os.path.basename(local_file_path)
+                target_upload_file_path_no_extension = f"{file_dir_once_uploaded}/{n}"
                 # print("Processing output file: {0}, uploading to: {1}".format(filepath_to_send, filepath))
+                # TODO: In the previous code this would upload the raw original contents to s3 to the basename path with
+                # TODO: no extension, regardless of .htm or not.  I'm not sure if that's still needed.
                 if file_path_to_send.endswith('.htm'):
                     s3.upload_file(
-                        file_path, bucket_name, file_path + ".html",
+                        file_path_to_send, bucket_name, target_upload_file_path_no_extension + ".html",
                         ExtraArgs={'ACL': 'public-read', "ContentType": "text/html", "ContentDisposition": "inline"}
                     )
                 else:
                     # if it's not an HTML file, wrap it inside an HTML wrapper in a temp file and send it
                     with open(file_path_to_send, 'r') as file_to_send:
-
                         contents = file_to_send.read()
                         new_contents = f"""
 <!doctype html>
@@ -285,15 +287,15 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
   </body>
 </html>"""
                     temp_dir = mkdtemp()
-                    new_file = f"{temp_dir}/{n}.html"
-                    with open(new_file, 'w') as f:
+                    local_fixed_up_file_path = f"{temp_dir}/{n}.html"
+                    with open(local_fixed_up_file_path, 'w') as f:
                         f.write(new_contents)
                     s3.upload_file(
-                        new_file, bucket_name, file_path,
+                        local_fixed_up_file_path, bucket_name, target_upload_file_path_no_extension,
                         ExtraArgs={'ACL': 'public-read', "ContentType": "text/html"}
                     )
 
-                found_files.append(filename)
+                found_files.append(local_file_path)
             except Exception as e:
                 success = False
                 print("There was a problem processing file: %s" % e)
@@ -301,7 +303,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
         if len(found_files) > 0:
             try:
                 temp_dir = mkdtemp()
-                new_file = f"{temp_dir}/index.html"
+                local_fixed_up_file_path = f"{temp_dir}/index.html"
                 index = """
 <!doctype html>
 <html>
@@ -324,31 +326,31 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
       <tr><th>filename</th><th></th><th></th></tr>
                               """
 
-                for filename in found_files:
-                    n = os.path.basename(filename)
+                for local_file_path in found_files:
+                    n = os.path.basename(local_file_path)
                     index += f"""
                     <tr>
                       <td>{n}</td>
-                      <td><a href='/{file_dir}/{n}'>download</a></td>
-                      <td><a href='/{file_dir}/{n}.html'>view</a></td>
+                      <td><a href='/{file_dir_once_uploaded}/{n}'>download</a></td>
+                      <td><a href='/{file_dir_once_uploaded}/{n}.html'>view</a></td>
                     </tr>"""
                 index += """
     </table>
   </body>
 </html>"""
 
-                with open(new_file, 'w') as f:
+                with open(local_fixed_up_file_path, 'w') as f:
                     f.write(index)
 
                 s3.upload_file(
-                    new_file,
+                    local_fixed_up_file_path,
                     bucket_name,
-                    file_dir + "/index.html",
+                    file_dir_once_uploaded + "/index.html",
                     ExtraArgs={'ACL': 'public-read', "ContentType": "text/html"}
                 )
 
-                url = "http://{0}.s3-website-{1}.amazonaws.com/{2}".format(bucket_name, "us-east-1", file_dir)
-                print("<a href='{0}'>Regression Results</a>".format(url))
+                url = f"http://{bucket_name}.s3-website-us-east-1.amazonaws.com/{file_dir_once_uploaded}"
+                print(f"<a href='{url}'>Regression Results</a>")
             except Exception as e:
                 success = False
                 print("There was a problem generating results webpage: %s" % e)
