@@ -247,7 +247,6 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
         found_files = []
         for local_file_path in potential_local_diff_file_paths:
             file_path_to_send = local_file_path
-            # local_file_name = os.path.basename(file_path_to_send)
 
             # print("Processing output file: {0}".format(filepath_to_send))
             if not os.path.isfile(file_path_to_send):
@@ -257,14 +256,20 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
                 continue
 
             try:
-                n = os.path.basename(local_file_path)
-                target_upload_file_path_no_extension = f"{file_dir_once_uploaded}/{n}"
-                # print("Processing output file: {0}, uploading to: {1}".format(filepath_to_send, filepath))
-                # TODO: In the previous code this would upload the raw original contents to s3 to the basename path with
-                # TODO: no extension, regardless of .htm or not.  I'm not sure if that's still needed.
+                local_raw_file_name = os.path.basename(local_file_path)
+                target_upload_file_path = f"{file_dir_once_uploaded}/{local_raw_file_name}"
+                target_upload_file_path_with_html_added = target_upload_file_path + ".html"
+                # always upload the raw file for downloading:
+                #  like c:/ci/whatever/a.bnd.diff > /regressions/whatever/a.bnd.diff
+                s3.upload_file(
+                    local_file_path, bucket_name, target_upload_file_path,
+                    ExtraArgs={'ACL': 'public-read', "ContentType": "text/html", "ContentDisposition": "inline"}
+                )
+                # but we also need to upload the HTML "view" of the file as well
                 if file_path_to_send.endswith('.htm'):
+                    # if it's already an html file, then we can just upload the raw contents but renamed as ...htm.html
                     s3.upload_file(
-                        file_path_to_send, bucket_name, target_upload_file_path_no_extension + ".html",
+                        file_path_to_send, bucket_name, target_upload_file_path_with_html_added,
                         ExtraArgs={'ACL': 'public-read', "ContentType": "text/html", "ContentDisposition": "inline"}
                     )
                 else:
@@ -287,11 +292,11 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
   </body>
 </html>"""
                     temp_dir = mkdtemp()
-                    local_fixed_up_file_path = f"{temp_dir}/{n}.html"
+                    local_fixed_up_file_path = f"{temp_dir}/{local_raw_file_name}.html"
                     with open(local_fixed_up_file_path, 'w') as f:
                         f.write(new_contents)
                     s3.upload_file(
-                        local_fixed_up_file_path, bucket_name, target_upload_file_path_no_extension,
+                        local_fixed_up_file_path, bucket_name, target_upload_file_path_with_html_added,
                         ExtraArgs={'ACL': 'public-read', "ContentType": "text/html"}
                     )
 
@@ -327,12 +332,12 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
                               """
 
                 for local_file_path in found_files:
-                    n = os.path.basename(local_file_path)
+                    local_raw_file_name = os.path.basename(local_file_path)
                     index += f"""
                     <tr>
-                      <td>{n}</td>
-                      <td><a href='/{file_dir_once_uploaded}/{n}'>download</a></td>
-                      <td><a href='/{file_dir_once_uploaded}/{n}.html'>view</a></td>
+                      <td>{local_raw_file_name}</td>
+                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}'>download</a></td>
+                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}.html'>view</a></td>
                     </tr>"""
                 index += """
     </table>
