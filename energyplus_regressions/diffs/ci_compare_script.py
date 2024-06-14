@@ -336,7 +336,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public,
                     index += f"""
                     <tr>
                       <td>{local_raw_file_name}</td>
-                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}'>download</a></td>
+                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}' download>download</a></td>
                       <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}.html'>view</a></td>
                     </tr>"""
                 index += """
