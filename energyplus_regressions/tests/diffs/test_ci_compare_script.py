@@ -123,7 +123,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base123',
                 mod_sha='mod456',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=True
             )
@@ -148,7 +148,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base123',
                 mod_sha='mod456',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=True
             )
@@ -227,7 +227,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base124',
                 mod_sha='mod457',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=True
             )
@@ -279,7 +279,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base123',
                 mod_sha='mod456',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=True
             )
@@ -304,7 +304,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base123',
                 mod_sha='mod456',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=True
             )
@@ -369,7 +369,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 mod_dir=self.temp_mod_dir,
                 base_sha='base123',
                 mod_sha='mod456',
-                make_public=True,
+                _make_public=True,
                 device_id='some_device_id',
                 test_mode=False
             )

@@ -3,7 +3,7 @@ pypubsub
 beautifulsoup4
 
 # if running with CI, this is needed for talking to s3
-boto
+boto3
 
 # for running tests
 coveralls

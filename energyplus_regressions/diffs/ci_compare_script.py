@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from tempfile import mkdtemp
 
 # add the root of the repo to the python path so it can find things relative to it
 # like the energyplus_regressions package
@@ -45,7 +46,7 @@ def process_diffs(diff_name, diffs, this_has_diffs, this_has_small_diffs):
     return this_has_diffs, this_has_small_diffs
 
 
-def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, device_id, test_mode):
+def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, _make_public, device_id, test_mode):
     print("Device id: %s" % device_id)
 
     # build type really doesn't matter, so use the simplest one, the E+ install
@@ -223,7 +224,7 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
     if test_mode:
         print("Skipping Amazon upload in test_mode operation")
     elif has_small_diffs or has_diffs:  # pragma: no cover -- not testing the Amazon upload anytime soon
-        import boto
+        import boto3
 
         # so ... if you want to run tests of this script including the Amazon side, you need to pass in Amazon creds
         # to the boto connect_s3 method.  To run this test, put the amazon key and secret in a file, one per line.
@@ -233,50 +234,49 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
         # bucket, making them public, and reporting the URL in the output
 
         # file_data = open('/path/to/s3/creds.txt').read().split('\n')
-        # conn = boto.connect_s3(file_data[0], file_data[1])
-        conn = boto.connect_s3()
+        # s3 = boto3.client('s3', aws_access_key_id=file_data[0], aws_secret_access_key=file_data[1])
+        s3 = boto3.client('s3')
         bucket_name = 'energyplus'
-        bucket = conn.get_bucket(bucket_name)
 
-        potential_files = get_diff_files(base_dir)
+        potential_local_diff_file_paths = get_diff_files(base_dir)
 
         date = datetime.now()
         date_str = "%d-%02d" % (date.year, date.month)
-        file_dir = "regressions/{0}/{1}-{2}/{3}/{4}".format(date_str, base_sha, mod_sha, file_name, device_id)
+        file_dir_once_uploaded = f"regressions/{date_str}/{base_sha}-{mod_sha}/{file_name}/{device_id}"
 
         found_files = []
-        for filename in potential_files:
-            file_path_to_send = filename
+        for local_file_path in potential_local_diff_file_paths:
+            file_path_to_send = local_file_path
 
             # print("Processing output file: {0}".format(filepath_to_send))
             if not os.path.isfile(file_path_to_send):
                 continue
             if not os.stat(file_path_to_send).st_size > 0:
-                print("File is empty, not sending: {0}".format(file_path_to_send))
+                print(f"File is empty, not sending: {file_path_to_send}")
                 continue
 
             try:
-                file_path = "{0}/{1}".format(file_dir, os.path.basename(filename))
-                # print("Processing output file: {0}, uploading to: {1}".format(filepath_to_send, filepath))
-
-                key = boto.s3.key.Key(bucket, file_path)
-                with open(file_path_to_send, 'r') as file_to_send:
-                    contents = file_to_send.read()
-                    key.set_contents_from_string(contents)
-
-                    if make_public:
-                        key.make_public()
-
-                    htmlkey = boto.s3.key.Key(bucket, file_path + ".html")
-
-                    if file_path_to_send.endswith('.htm'):
-                        htmlkey.set_contents_from_string(
-                            contents,
-                            headers={"Content-Type": "text/html", "Content-Disposition": "inline"}
-                        )
-                    else:
-                        htmlkey.set_contents_from_string(
-                            """
+                local_raw_file_name = os.path.basename(local_file_path)
+                target_upload_file_path = f"{file_dir_once_uploaded}/{local_raw_file_name}"
+                target_upload_file_path_with_html_added = target_upload_file_path + ".html"
+                # always upload the raw file for downloading:
+                #  like c:/ci/whatever/a.bnd.diff > /regressions/whatever/a.bnd.diff
+                s3.upload_file(
+                    local_file_path, bucket_name, target_upload_file_path,
+                    ExtraArgs={'ACL': 'public-read', "ContentType": "text/html", "ContentDisposition": "inline"}
+                )
+                # but we also need to upload the HTML "view" of the file as well
+                if file_path_to_send.endswith('.htm'):
+                    # if it's already an html file, then we can just upload the raw contents but renamed as ...htm.html
+                    s3.upload_file(
+                        file_path_to_send, bucket_name, target_upload_file_path_with_html_added,
+                        ExtraArgs={'ACL': 'public-read', "ContentType": "text/html", "ContentDisposition": "inline"}
+                    )
+                else:
+                    # if it's not an HTML file, wrap it inside an HTML wrapper in a temp file and send it
+                    with open(file_path_to_send, 'r') as file_to_send:
+                        contents = file_to_send.read()
+                        new_contents = f"""
 <!doctype html>
 <html>
   <head>
@@ -286,26 +286,29 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
   </head>
   <body>
     <pre><code class="diff">
-""" + contents + """
+        {contents}
     </code></pre>
     <script>hljs.highlightAll();</script>
   </body>
-</html>
-                            """,
-                            headers={"Content-Type": "text/html"}
-                        )
+</html>"""
+                    temp_dir = mkdtemp()
+                    local_fixed_up_file_path = f"{temp_dir}/{local_raw_file_name}.html"
+                    with open(local_fixed_up_file_path, 'w') as f:
+                        f.write(new_contents)
+                    s3.upload_file(
+                        local_fixed_up_file_path, bucket_name, target_upload_file_path_with_html_added,
+                        ExtraArgs={'ACL': 'public-read', "ContentType": "text/html"}
+                    )
 
-                if make_public:
-                    htmlkey.make_public()
-
-                found_files.append(filename)
+                found_files.append(local_file_path)
             except Exception as e:
                 success = False
                 print("There was a problem processing file: %s" % e)
 
         if len(found_files) > 0:
             try:
-                htmlkey = boto.s3.key.Key(bucket, file_dir + "/index.html")
+                temp_dir = mkdtemp()
+                local_fixed_up_file_path = f"{temp_dir}/index.html"
                 index = """
 <!doctype html>
 <html>
@@ -328,29 +331,31 @@ def main_function(file_name, base_dir, mod_dir, base_sha, mod_sha, make_public, 
       <tr><th>filename</th><th></th><th></th></tr>
                               """
 
-                for filename in found_files:
-                    filepath = "{0}/{1}".format(file_dir, os.path.basename(filename))
-                    index += "<tr><td>"
-                    index += os.path.basename(filename)
-                    index += "</td><td><a href='/"
-                    index += filepath
-                    index += "'>download</a></td><td><a href='/"
-                    index += filepath
-                    index += ".html'>view</a></td></tr>"
-
+                for local_file_path in found_files:
+                    local_raw_file_name = os.path.basename(local_file_path)
+                    index += f"""
+                    <tr>
+                      <td>{local_raw_file_name}</td>
+                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}' download>download</a></td>
+                      <td><a href='/{file_dir_once_uploaded}/{local_raw_file_name}.html'>view</a></td>
+                    </tr>"""
                 index += """
     </table>
   </body>
-</html>
-                        """
+</html>"""
 
-                htmlkey.set_contents_from_string(index, headers={"Content-Type": "text/html"})
+                with open(local_fixed_up_file_path, 'w') as f:
+                    f.write(index)
 
-                if make_public:
-                    htmlkey.make_public()
+                s3.upload_file(
+                    local_fixed_up_file_path,
+                    bucket_name,
+                    file_dir_once_uploaded + "/index.html",
+                    ExtraArgs={'ACL': 'public-read', "ContentType": "text/html"}
+                )
 
-                url = "http://{0}.s3-website-{1}.amazonaws.com/{2}".format(bucket_name, "us-east-1", file_dir)
-                print("<a href='{0}'>Regression Results</a>".format(url))
+                url = f"http://{bucket_name}.s3-website-us-east-1.amazonaws.com/{file_dir_once_uploaded}"
+                print(f"<a href='{url}'>Regression Results</a>")
             except Exception as e:
                 success = False
                 print("There was a problem generating results webpage: %s" % e)
