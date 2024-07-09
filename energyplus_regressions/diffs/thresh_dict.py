@@ -89,7 +89,7 @@ class ThreshDict(object):
             else:
                 unit = '*'
             if hstr.find('{}') == -1 and hstr.find('{') > -1:
-                tokens = [x.strip() for x in re.split(r'[{\}]', hstr) if x.strip() != '']
+                tokens = [x.strip() for x in re.split(r'[{}]', hstr) if x.strip() != '']
                 agg = tokens[1] if len(tokens) > 1 else tokens[0]
             else:
                 agg = '*'

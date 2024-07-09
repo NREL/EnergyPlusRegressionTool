@@ -58,12 +58,13 @@ class BaseBuildDirectoryStructure(object):
         ]
 
         def should_keep(file_path):
-            should_ignore = False
             for i in known_ignore_list:
                 if i in str(file_path):
-                    should_ignore = True
-                    break
-            return not should_ignore
+                    return False
+                if 'API' in file_path.parts:
+                    # the testfiles/API directory is for Python API calls, we aren't doing that here, yet.
+                    return False
+            return True
 
         filtered_list = filter(should_keep, all_idfs_relative_path)
         return set(filtered_list)

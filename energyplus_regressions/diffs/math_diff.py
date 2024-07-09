@@ -22,7 +22,7 @@ usage:
     configuration file math_diff.config customizes absolute and relative difference thresholds
     for different unit/aggregation pairs, for instance:
                C,* = 0.1, 0.005
-    means that all in fields reported in C (degrees celsius) will be compared with an absolute
+    means that all in fields reported in C (degrees Celsius) will be compared with an absolute
     difference tolerance of 0.1 degree C and 0.005 (0.5%) relative difference tolerance.
 """
 
@@ -76,26 +76,26 @@ def fill_matrix_holes(mat):
     """matrix may have blanks. Sometimes the tail end of some rows will not have elements.
     Make sure all rows have the same length as the first row.
     Also remove cells if the row is longer than the first row"""
-    numcols = len(mat[0])
+    num_cols = len(mat[0])
     for i, row in enumerate(mat[1:]):
-        morecells = numcols - len(row)
-        if morecells >= 0:
-            mat[i + 1] = row + [''] * morecells
+        more_cells = num_cols - len(row)
+        if more_cells >= 0:
+            mat[i + 1] = row + [''] * more_cells
         else:
-            mat[i + 1] = mat[i + 1][:morecells]
+            mat[i + 1] = mat[i + 1][:more_cells]
     return mat
 
 
 def slicetime(mat):
-    """return two matrices, one with only time and the other with the rest of the matrice"""
+    """return two matrices, one with only time and the other with the rest of the matrix"""
     return [row[0:1] for row in mat], [row[1:] for row in mat]
 
 
 def matrix2hdict(mat):
-    """from a csv matrix make a dict with column headers as keys. This dict is called 'header dictionary' or hdct"""
+    """from a csv matrix make a dict with column headers as keys. This dict is called 'header dictionary' or hdict"""
     this_dict = {}
-    tmat = mycsv.transpose2d(mat)
-    for col in tmat:
+    t_mat = mycsv.transpose2d(mat)
+    for col in t_mat:
         if col[0] in this_dict:
             raise DuplicateHeaderException("There are two columns with the same header name " + str(col[0]))
             # TODO - DuplicateHeaderException - this has to go into the error file and mini file
@@ -105,7 +105,7 @@ def matrix2hdict(mat):
 
 
 def hdict2matrix(order, this_dict):
-    """convert the header dictionary (as created by matrix2hdct) to a csv matrix held in tmat.
+    """convert the header dictionary (as created by matrix2hdict) to a csv matrix held in mat.
     'order' is the order of the headers in the matrix. (order is needed because keys in a dict have no sort order)"""
     mat = []
     for key in order:
@@ -132,7 +132,7 @@ def make_summary_dict(tdict, hdict):
     for key in hdict.keys():
         sdict[key] = {}
     for key in hdict.keys():
-        columnerror = False
+        column_error = False
         column = hdict[key]
         for i, cell in enumerate(column):  # make all cells floats
             cell = str(cell)
@@ -142,9 +142,9 @@ def make_summary_dict(tdict, hdict):
                 try:
                     column[i] = float(cell)
                 except ValueError:  # pragma: no cover - I don't know how to get here
-                    columnerror = True  # Now we can't do any summary calcs for this column
+                    column_error = True  # Now we can't do any summary calcs for this column
                     break  # get out of this inner loop
-        if columnerror:  # pragma: no cover - I don't know how to get here
+        if column_error:  # pragma: no cover - I don't know how to get here
             continue  # go to next step in this outer loop
 
         sdict[key]['count'] = len(column)
@@ -218,30 +218,30 @@ def info(line, logfile=None):
     # print >> sys.stderr, line
 
 
-def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_csv):
+def math_diff(thresh_dict, input_file_1, input_file_2, abs_diff_file, rel_diff_file, err_file, summary_csv):
     # Test for existence of input files
-    if not os.path.exists(inputfile1):
-        info('unable to open file <%s>' % inputfile1, err_file)
-        return 'unable to open file <%s>' % inputfile1, 0, 0, 0
-    if not os.path.exists(inputfile2):
-        info('unable to open file <%s>' % inputfile2, err_file)
-        return 'unable to open file <%s>' % inputfile2, 0, 0, 0
+    if not os.path.exists(input_file_1):
+        info('unable to open file <%s>' % input_file_1, err_file)
+        return 'unable to open file <%s>' % input_file_1, 0, 0, 0
+    if not os.path.exists(input_file_2):
+        info('unable to open file <%s>' % input_file_2, err_file)
+        return 'unable to open file <%s>' % input_file_2, 0, 0, 0
 
     # read data out of files
     try:
-        mat1 = mycsv.getlist(inputfile1)
+        mat1 = mycsv.getlist(input_file_1)
     except IndexError:
-        return 'malformed or empty csv file: <%s>' % inputfile1, 0, 0, 0
+        return 'malformed or empty csv file: <%s>' % input_file_1, 0, 0, 0
     if len(mat1) < 2:
-        info('<%s> has no data' % inputfile1, err_file)
-        return '<%s> has no data' % inputfile1, 0, 0, 0
+        info('<%s> has no data' % input_file_1, err_file)
+        return '<%s> has no data' % input_file_1, 0, 0, 0
     try:
-        mat2 = mycsv.getlist(inputfile2)
+        mat2 = mycsv.getlist(input_file_2)
     except IndexError:
-        return 'malformed or empty csv file: <%s>' % inputfile2, 0, 0, 0
+        return 'malformed or empty csv file: <%s>' % input_file_2, 0, 0, 0
     if len(mat2) < 2:
-        info('<%s> has no data' % inputfile2, err_file)
-        return '<%s> has no data' % inputfile2, 0, 0, 0
+        info('<%s> has no data' % input_file_2, err_file)
+        return '<%s> has no data' % input_file_2, 0, 0, 0
 
     # clean up the files
     matrix1 = fill_matrix_holes(mat1)
@@ -252,29 +252,29 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     time2, mat2 = slicetime(matrix2)
     # Not going to compare two files with different time series
     if time1 != time2:
-        info('Time series in <%s> and <%s> do not match' % (inputfile1, inputfile2), err_file)
+        info('Time series in <%s> and <%s> do not match' % (input_file_1, input_file_2), err_file)
         return 'Time series do not match', 0, 0, 0
 
     # Only going to compare fields that are found in both files
-    hset1 = set(mat1[0])
-    hset2 = set(mat2[0])
-    hset = hset1.intersection(hset2)
-    if len(hset) == 0:
-        info('Input files <%s> and <%s> have no common fields' % (inputfile1, inputfile2), err_file)
+    h_set_1 = set(mat1[0])
+    h_set_2 = set(mat2[0])
+    h_set = h_set_1.intersection(h_set_2)
+    if len(h_set) == 0:
+        info('Input files <%s> and <%s> have no common fields' % (input_file_1, input_file_2), err_file)
         return 'No common fields', 0, 0, 0
 
     # Order will be order in which intersection fields appear in first file
-    horder = [h for h in mat1[0] if h in hset]
+    h_order = [h for h in mat1[0] if h in h_set]
 
     # Warn about fields that will not be compared
-    hset_sdiff = hset1.symmetric_difference(hset2)
-    for h in hset_sdiff:
-        if h in hset1:
+    h_set_s_diff = h_set_1.symmetric_difference(h_set_2)
+    for h in h_set_s_diff:
+        if h in h_set_1:
             mycsv.writecsv(
                 [
                     [
                         'Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
-                            h, inputfile1, inputfile2
+                            h, input_file_1, input_file_2
                         )
                     ]
                 ],
@@ -287,8 +287,8 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
                     [
                         'Not comparing field %s, which appears in input files <%s>, but not <%s>' % (
                             h,
-                            inputfile2,
-                            inputfile1
+                            input_file_2,
+                            input_file_1
                         )
                     ]
                 ],
@@ -297,8 +297,8 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
             )
 
     # convert time matrix to dictionary (both time matrices should be identical here)
-    tdict = matrix2hdict(time1)
-    tkey = list(tdict.keys())[0]
+    t_dict = matrix2hdict(time1)
+    t_key = list(t_dict.keys())[0]
 
     # convert data matrices to dictionaries
     hdict1 = matrix2hdict(mat1)
@@ -307,12 +307,12 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     # Dictionaries of absolute and relative differences
     abs_diffs = {}
     rel_diffs = {}
-    for key in horder:
+    for key in h_order:
         abs_diffs[key] = list(map(abs_diff, hdict1[key], hdict2[key]))
         rel_diffs[key] = list(map(rel_diff, hdict1[key], hdict2[key]))
 
     err_dict = {}
-    for key in horder:
+    for key in h_order:
         err_dict[key] = {}
 
         (abs_thresh, rel_thresh) = thresh_dict.lookup(key)
@@ -322,7 +322,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         err_dict[key]['abs_thresh'] = abs_thresh
         err_dict[key]['max_abs_diff'] = max_abs_diff
         err_dict[key]['rel_diff_of_max_abs_diff'] = rel_diffs[key][index_max_abs_diff]
-        err_dict[key]['time_of_max_abs_diff'] = tdict[tkey][index_max_abs_diff]
+        err_dict[key]['time_of_max_abs_diff'] = t_dict[t_key][index_max_abs_diff]
         err_dict[key]['count_of_small_abs_diff'] = sum(1 for x in abs_diffs[key] if 0.0 < x <= abs_thresh)
         err_dict[key]['count_of_big_abs_diff'] = sum(1 for x in abs_diffs[key] if x > abs_thresh)
 
@@ -332,7 +332,7 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         err_dict[key]['rel_thresh'] = rel_thresh
         err_dict[key]['max_rel_diff'] = max_rel_diff
         err_dict[key]['abs_diff_of_max_rel_diff'] = abs_diffs[key][index_max_rel_diff]
-        err_dict[key]['time_of_max_rel_diff'] = tdict[tkey][index_max_rel_diff]
+        err_dict[key]['time_of_max_rel_diff'] = t_dict[t_key][index_max_rel_diff]
         if rel_thresh > 0:
             err_dict[key]['count_of_small_rel_diff'] = sum(1 for x in rel_diffs[key] if 0.0 < x <= rel_thresh)
             err_dict[key]['count_of_big_rel_diff'] = sum(1 for x in rel_diffs[key] if x > rel_thresh)
@@ -351,8 +351,8 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
             err_dict[key]['count_of_small_abs_rel_diff'] = err_dict[key]['count_of_small_abs_diff']
             err_dict[key]['count_of_big_abs_rel_diff'] = err_dict[key]['count_of_big_abs_diff']
 
-    num_small = sum(err_dict[key]['count_of_small_abs_rel_diff'] for key in horder)
-    num_big = sum(err_dict[key]['count_of_big_abs_rel_diff'] for key in horder)
+    num_small = sum(err_dict[key]['count_of_small_abs_rel_diff'] for key in h_order)
+    num_big = sum(err_dict[key]['count_of_big_abs_rel_diff'] for key in h_order)
 
     diff_type = 'All Equal'
     if num_big > 0:
@@ -360,9 +360,9 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     elif num_small > 0:
         diff_type = 'Small Diffs'
 
-    num_records = len(tdict[tkey])
+    num_records = len(t_dict[t_key])
 
-    input_file_path_tokens = inputfile1.split(os.sep)
+    input_file_path_tokens = input_file_1.split(os.sep)
 
     # if it's the first pass, create the file with the header;
     # also the null-pointer-ish check allows skipping the summary_csv file if the filename is blank
@@ -382,53 +382,53 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
         return diff_type, num_records, num_big, num_small
 
     # Which columns had diffs?
-    dhorder = [h for h in horder if
-               err_dict[h]['count_of_small_abs_diff'] > 0 or err_dict[h]['count_of_big_abs_diff'] > 0 or err_dict[h][
-                   'count_of_small_rel_diff'] > 0 or err_dict[h]['count_of_big_rel_diff'] > 0]
+    dh_order = [h for h in h_order if
+                err_dict[h]['count_of_small_abs_diff'] > 0 or err_dict[h]['count_of_big_abs_diff'] > 0 or err_dict[h][
+                    'count_of_small_rel_diff'] > 0 or err_dict[h]['count_of_big_rel_diff'] > 0]
 
     # Find the largest overall absolute diff
-    max_max_abs_diff = max(err_dict[key]['max_abs_diff'] for key in dhorder)
-    key_of_max_max_abs_diff = [key for key in dhorder if err_dict[key]['max_abs_diff'] == max_max_abs_diff][0]
+    max_max_abs_diff = max(err_dict[key]['max_abs_diff'] for key in dh_order)
+    key_of_max_max_abs_diff = [key for key in dh_order if err_dict[key]['max_abs_diff'] == max_max_abs_diff][0]
     rel_diff_of_max_max_abs_diff = err_dict[key_of_max_max_abs_diff]['rel_diff_of_max_abs_diff']
     time_of_max_max_abs_diff = err_dict[key_of_max_max_abs_diff]['time_of_max_abs_diff']
 
     # Find the largest overall relative diff
-    max_max_rel_diff = max(err_dict[key]['max_rel_diff'] for key in dhorder)
-    key_of_max_max_rel_diff = [key for key in dhorder if err_dict[key]['max_rel_diff'] == max_max_rel_diff][0]
+    max_max_rel_diff = max(err_dict[key]['max_rel_diff'] for key in dh_order)
+    key_of_max_max_rel_diff = [key for key in dh_order if err_dict[key]['max_rel_diff'] == max_max_rel_diff][0]
     abs_diff_of_max_max_rel_diff = err_dict[key_of_max_max_rel_diff]['abs_diff_of_max_rel_diff']
     time_of_max_max_rel_diff = err_dict[key_of_max_max_rel_diff]['time_of_max_rel_diff']
 
     # put the time column back
-    abs_diffs[tkey] = tdict[tkey]
-    rel_diffs[tkey] = tdict[tkey]
+    abs_diffs[t_key] = t_dict[t_key]
+    rel_diffs[t_key] = t_dict[t_key]
 
     # Summarize the input files
-    summary_dict1 = make_summary_dict(tdict, hdict1)
-    summary_dict2 = make_summary_dict(tdict, hdict2)
+    summary_dict1 = make_summary_dict(t_dict, hdict1)
+    summary_dict2 = make_summary_dict(t_dict, hdict2)
 
     # Flatten summaries out to dictionaries of lists rather than dictionaries of dictionaries
-    summary_dict12 = dict_of_dicts2dict_of_lists(summary_dict1, horder, list(summary_labels))
-    summary_dict12[tkey] = [sl + ':' for sl in list(summary_labels)]
+    summary_dict12 = dict_of_dicts2dict_of_lists(summary_dict1, h_order, list(summary_labels))
+    summary_dict12[t_key] = [sl + ':' for sl in list(summary_labels)]
 
-    summary_dict22 = dict_of_dicts2dict_of_lists(summary_dict2, horder, list(summary_labels))
-    summary_dict22[tkey] = [sl + ':' for sl in list(summary_labels)]
+    summary_dict22 = dict_of_dicts2dict_of_lists(summary_dict2, h_order, list(summary_labels))
+    summary_dict22[t_key] = [sl + ':' for sl in list(summary_labels)]
 
-    # Diff the flattend summaries
+    # Diff the flattened summaries
     abs_diff_summary_dict = {}
     rel_diff_summary_dict = {}
-    for key in dhorder:
+    for key in dh_order:
         abs_diff_summary_dict[key] = map(abs_diff, summary_dict12[key], summary_dict22[key])
         rel_diff_summary_dict[key] = map(rel_diff, summary_dict12[key], summary_dict22[key])
 
     # Prepend time key to header order list
-    thorder = [tkey] + horder
-    tdhorder = [tkey] + dhorder
+    th_order = [t_key] + h_order
+    tdh_order = [t_key] + dh_order
 
     # Convert the absolute and relative diff dictionaries to matrices and write them to files
-    abs_diff_mat = hdict2matrix(tdhorder, abs_diffs)
+    abs_diff_mat = hdict2matrix(tdh_order, abs_diffs)
     # print("Trying to write to %s " % abs_diff_file)
     mycsv.writecsv(abs_diff_mat, abs_diff_file)
-    rel_diff_mat = hdict2matrix(tdhorder, rel_diffs)
+    rel_diff_mat = hdict2matrix(tdh_order, rel_diffs)
     mycsv.writecsv(rel_diff_mat, rel_diff_file)
 
     # Write the error file header
@@ -460,26 +460,26 @@ def math_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file,
     # Convert the error dictionary to a matrix and write to the error
     # file.  Need to convert it from a nested dictionary to a
     # dictionary of lists first.
-    err_dict2 = dict_of_dicts2dict_of_lists(err_dict, horder, list(error_labels))
-    err_dict2[tkey] = [el + ':' for el in list(error_labels)]
+    err_dict2 = dict_of_dicts2dict_of_lists(err_dict, h_order, list(error_labels))
+    err_dict2[t_key] = [el + ':' for el in list(error_labels)]
 
-    err_mat = hdict2matrix(tdhorder, err_dict2)
+    err_mat = hdict2matrix(tdh_order, err_dict2)
     mycsv.writecsv([[], []] + err_mat, err_file, 'a')
 
     # Convert the summaries to matrices and write them out to the error file
-    summary_mat1 = hdict2matrix(thorder, summary_dict12)
-    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile1,)], []] + summary_mat1, err_file, 'a')
-    summary_mat2 = hdict2matrix(thorder, summary_dict22)
-    mycsv.writecsv([[], [], ['Summary of %s' % (inputfile2,)], []] + summary_mat2, err_file, 'a')
+    summary_mat1 = hdict2matrix(th_order, summary_dict12)
+    mycsv.writecsv([[], [], ['Summary of %s' % (input_file_1,)], []] + summary_mat1, err_file, 'a')
+    summary_mat2 = hdict2matrix(th_order, summary_dict22)
+    mycsv.writecsv([[], [], ['Summary of %s' % (input_file_2,)], []] + summary_mat2, err_file, 'a')
 
     # Convert the absolute and relative differences of the summaries and write them to the error file
-    abs_diff_summary_dict[tkey] = [sl + ':' for sl in list(summary_labels)]
-    abs_diff_summary_mat = hdict2matrix(tdhorder, abs_diff_summary_dict)
-    mycsv.writecsv([[], [], ['Absolute difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
+    abs_diff_summary_dict[t_key] = [sl + ':' for sl in list(summary_labels)]
+    abs_diff_summary_mat = hdict2matrix(tdh_order, abs_diff_summary_dict)
+    mycsv.writecsv([[], [], ['Absolute difference in Summary of %s and Summary of %s' % (input_file_1, input_file_2)],
                     []] + abs_diff_summary_mat, err_file, 'a')
-    rel_diff_summary_dict[tkey] = [sl + ':' for sl in list(summary_labels)]
-    rel_diff_summary_mat = hdict2matrix(tdhorder, rel_diff_summary_dict)
-    mycsv.writecsv([[], [], ['Relative difference in Summary of %s and Summary of %s' % (inputfile1, inputfile2)],
+    rel_diff_summary_dict[t_key] = [sl + ':' for sl in list(summary_labels)]
+    rel_diff_summary_mat = hdict2matrix(tdh_order, rel_diff_summary_dict)
+    mycsv.writecsv([[], [], ['Relative difference in Summary of %s and Summary of %s' % (input_file_1, input_file_2)],
                     []] + rel_diff_summary_mat, err_file, 'a')
 
     return diff_type, num_records, num_big, num_small
@@ -497,7 +497,7 @@ def main(argv=None):  # pragma: no cover
     # Test for correct number of arguments
     prog_name = os.path.basename(sys.argv[0])
     if len(args) == 6:
-        [csv1, csv2, abs_diff_file, rel_diff_file, err_file, csvsummary] = args
+        [csv1, csv2, abs_diff_file, rel_diff_file, err_file, csv_summary] = args
     else:
         info('%s: incorrect operands: Try %s -h for more info' % (prog_name, prog_name))
         return -1
@@ -513,7 +513,7 @@ def main(argv=None):  # pragma: no cover
     # Load diffing threshold dictionary
     thresh_dict = ThreshDict(os.path.join(script_dir, 'math_diff.config'))
 
-    math_diff(thresh_dict, csv1, csv2, abs_diff_file, rel_diff_file, err_file, csvsummary)
+    math_diff(thresh_dict, csv1, csv2, abs_diff_file, rel_diff_file, err_file, csv_summary)
     return 0
 
 
@@ -537,7 +537,7 @@ if __name__ == "__main__":  # pragma: no cover
 # When we compare two files, it is assumed that the headers of the two files will match.
 # In case the headers do not match mathdiff.py still has to respond in an intelligent way.
 #
-# We have the following four possiblities:
+# We have the following four possibilities:
 # 1. identical headers
 #     file1 = "h2", "h3", "h4"
 #     file2 = "h2", "h3", "h4"
@@ -547,13 +547,13 @@ if __name__ == "__main__":  # pragma: no cover
 # 2. shuffled headers
 #     file1 = "h2", "h3", "h4"
 #     file2 = "h3", "h4", "h2"
-#     the program will unshuffle the columns of file2 to match that of file1
+#     the program will un-shuffle the columns of file2 to match that of file1
 #     output = "h2", "h3", "h4"
 #     output warning = None
 # 3. renamed headers
 #     file1 = "h2",  "h3",  "h4"
 #     file2 = "hh3", "hh4", "hh2"
-#     if both the files have the same number of columns and they don't happen to be shuffled,
+#     if both the files have the same number of columns, and they don't happen to be shuffled,
 #     the program will assume that the headers in file2 have been renamed
 #     output = "h2", "h3", "h4"
 #     output warning = warning printed to terminal and to error.csv file
@@ -600,7 +600,7 @@ if __name__ == "__main__":  # pragma: no cover
 #      ['  111', '  222', '  444']]
 #
 # mat1 is then converted into a dictionary:
-# hdict1 = matrix2hdct(mat1)
+# hdict1 = matrix2hdict(mat1)
 #
 # hdict1 = {' "h2"': ['  1  ', '  11 ', '  111'],
 #      ' "h3"': ['  2  ', '  22 ', '  222'],
@@ -610,7 +610,7 @@ if __name__ == "__main__":  # pragma: no cover
 # - the headers of the columns in the csv file become keys of the dictionary.
 # - the values of the dictionary are the columns under the header
 #
-# All calculations are done are done using "header dict" data structure
+# All calculations are done using "header dict" data structure
 # the results of the calculations are returned as a "header dict"
 # the "header dict" is converted to a matrix which is then converted a csv text file
 #

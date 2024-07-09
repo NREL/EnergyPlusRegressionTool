@@ -74,5 +74,8 @@ class TestBaseBuildMethods(unittest.TestCase):
             f.write('ha')  # ext interface as FMU
         with open(os.path.join(temp_idf_dir, 'HVAC3ZoneGeometry.imf'), 'w') as f:
             f.write('ha')  # macro resource file
+        os.makedirs(os.path.join(temp_idf_dir, 'API'))
+        with open(os.path.join(temp_idf_dir, 'API', 'API_TestFile.idf'), 'w') as f:
+            f.write('ha')  # API called input file that we skip
         # TODO: Modify the test to expect relevant IMF files as well and fix the function
         self.assertEqual(3, len(self.base_build.get_idfs_in_dir(temp_idf_dir)))
