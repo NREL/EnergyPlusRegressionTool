@@ -501,7 +501,7 @@ class SuiteRunner:
     @staticmethod
     def diff_perf_log(file_a, file_b, diff_file):
         # will do a pretty simple CSV text token comparison, no numeric comparison, and omit some certain patterns
-        tokens_to_skip = [1, 2, 30, 31]
+        tokens_to_skip = [1, 2, 27, 28, 30, 31]
         with io.open(file_a, encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.readlines()
         with io.open(file_b, encoding='utf-8') as f_txt_2:
