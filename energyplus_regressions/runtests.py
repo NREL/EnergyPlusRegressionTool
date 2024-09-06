@@ -1052,7 +1052,7 @@ class SuiteRunner:
                 join(out_dir, 'eplusout.glhe.diff'))), TextDifferences.GLHE)
 
         # return the updated entry
-        return this_entry, "Processed (Diffs) : %s" % this_entry.basename
+        return this_entry, "Processed Diffs : %s" % this_entry.basename
 
     @staticmethod
     def process_end_file(end_path):
