@@ -474,3 +474,26 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(1, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_heading_column_offset_and_diff(self):
+        # The eplustbl output has a single table with an empty heading and offset data in both
+        # base and mod files.  The second file *also* has a diff in the values so that table diff
+        # will attempt to process it
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_blank_column_heading_diff_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_blank_column_heading_diff_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(2, response[1])  # count_of_tables  # TODO: Should we count it as 2?
+        self.assertEqual(5, response[2])  # big diffs  WHY
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(12, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs  # TODO: What should this be?
+        self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
