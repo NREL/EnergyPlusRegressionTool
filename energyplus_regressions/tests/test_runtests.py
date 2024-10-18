@@ -939,6 +939,58 @@ class TestTestSuiteRunner(unittest.TestCase):
         self.assertEqual(TextDifferences.DIFFS, results_for_file.shd_diffs.diff_type)
         self.assertEqual(TextDifferences.DIFFS, results_for_file.idf_diffs.diff_type)
 
+    def test_tiny_numeric_text_diffs(self):
+        base = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_base_build_dir,
+            self.temp_base_source_dir,
+            {
+                "config": {
+                    "run_time_string": "01hr 20min  0.17sec",
+                    "num_warnings": 1,
+                    "num_severe": 0,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "base",
+                }
+            }
+        )
+        base.set_build_directory(self.temp_base_build_dir)
+
+        mod = CMakeCacheMakeFileBuildDirectory()
+        self.establish_build_folder(
+            self.temp_mod_build_dir,
+            self.temp_mod_source_dir,
+            {
+                "config": {
+                    "run_time_string": "00hr 10min  0.17sec",
+                    "num_warnings": 2,
+                    "num_severe": 1,
+                    "end_state": "success",
+                    "eso_results": "base",
+                    "txt_results": "small_numeric_text"
+                }
+            }
+        )
+        mod.set_build_directory(self.temp_mod_build_dir)
+
+        entries = [TestEntry('my_file.idf', 'my_weather')]
+        config = TestRunConfiguration(
+            force_run_type=ForceRunType.NONE,
+            single_test_run=False,
+            num_threads=1,
+            report_freq=ReportingFreq.HOURLY,
+            build_a=base,
+            build_b=mod
+        )
+        r = SuiteRunner(config, entries, mute=True)
+        diff_results = r.run_test_suite()
+        # there should be 1 file result
+        self.assertEqual(1, len(diff_results.entries_by_file))
+        results_for_file = diff_results.entries_by_file[0]
+        # check the diffs
+        self.assertEqual(TextDifferences.EQUAL, results_for_file.eio_diffs.diff_type)
+
     def test_base_case_but_multi_process(self):
         base = CMakeCacheMakeFileBuildDirectory()
         self.establish_build_folder(

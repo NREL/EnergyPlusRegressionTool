@@ -532,6 +532,14 @@ class SuiteRunner:
         return TextDifferences.DIFFS
 
     @staticmethod
+    def is_float_ish(string: str) -> bool:
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
     def diff_text_files(file_a, file_b, diff_file):
         # read the contents of the two files into a list, could read it into text first
         with io.open(file_a, encoding='utf-8') as f_txt_1:
@@ -564,20 +572,62 @@ class SuiteRunner:
         ]
         for line in txt1:
             if any([x in line for x in skip_strings]):
-                pass
+                txt1_cleaned.append('-line skipped-')
             else:
                 txt1_cleaned.append(line)
         txt2_cleaned = []
         for line in txt2:
             if any([x in line for x in skip_strings]):
-                pass
+                txt2_cleaned.append('-line skipped-')
             else:
                 txt2_cleaned.append(line)
-        # compare for equality, if it is faster to compare strings then lists, may want to refactor
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
+
+        # CSV-style files, try parsing each line by token, comparing numerics, and if the lines are *effectively* the
+        # same, don't include it in the diff.  This will help avoid something like 0.001 to 1.0E-03 causing diffs
+        if '.eio' in file_a:
+            txt1_numeric_checked = []
+            txt2_numeric_checked = []
+            for c1, c2 in zip(txt1_cleaned, txt2_cleaned):
+                tokens_1 = [x.strip() for x in c1.split(',')]
+                tokens_2 = [x.strip() for x in c2.split(',')]
+                if len(tokens_1) != len(tokens_2):  # if we have a different length, then immediately something is diff
+                    txt1_numeric_checked.append(c1)
+                    txt2_numeric_checked.append(c2)
+                else:  # otherwise let's check things by token and see what happens
+                    # initially these flags are false, and will remain that way if we only find alphas and no diffs
+                    numeric_tokens_found = False
+                    actual_diffs_found = False
+                    for t1, t2 in zip(tokens_1, tokens_2):
+                        if SuiteRunner.is_float_ish(t1) and SuiteRunner.is_float_ish(t2):
+                            numeric_tokens_found = True
+                            if abs(float(t1) - float(t2)) > 0.000000000001:
+                                actual_diffs_found = True  # we found numeric diffs that were meaningful!
+                                break
+                        elif t1 != t2:
+                            actual_diffs_found = True  # we found non-numeric diffs, which are of course, meaningful
+                            break
+                    if numeric_tokens_found:
+                        if actual_diffs_found:  # if the line had numeric diffs that were meaningful, write the lines
+                            txt1_numeric_checked.append(c1)
+                            txt2_numeric_checked.append(c2)
+                        else:  # but if the line had numeric tokens that were not meaningful, and no other diffs, ignore
+                            txt1_numeric_checked.append('-different, but equivalent numeric tokens found in line-\n')
+                            txt2_numeric_checked.append('-different, but equivalent numeric tokens found in line-\n')
+                    else:
+                        # if there were no numeric tokens, just write the line regardless of whether it has diffs or
+                        # not, so that we can see as much context as possible in the diff report
+                        txt1_numeric_checked.append(c1)
+                        txt2_numeric_checked.append(c2)
+        else:
+            txt1_numeric_checked = txt1_cleaned
+            txt2_numeric_checked = txt2_cleaned
+        if all([x == y for x, y in zip(txt1_numeric_checked, txt2_numeric_checked)]):
+            return TextDifferences.EQUAL
+
         # if we aren't equal, compute the comparison and write to the output file, return that diffs occurred
-        comparison = unified_diff(txt1_cleaned, txt2_cleaned)
+        comparison = unified_diff(txt1_numeric_checked, txt2_numeric_checked)
         out_file = io.open(diff_file, 'w', encoding='utf-8')
         out_lines = list(comparison)
         for out_line in out_lines:

@@ -14,7 +14,7 @@ So we are going to replicate just a few of the core functions of E+ in this bina
     "num_severe": 0,
     "end_state": "fatal" / "success" / "crash" / "unknown",
     "eso_results": "base" / "smalldiffs" / "bigdiffs",
-    "txt_results": "base" / "diffs",
+    "txt_results": "base" / "diffs" / "small_numeric_text",
     "extra_data": "<freeform>" -- this is something like a flag for auxiliary tools to pick up
   }
 }
@@ -54,7 +54,19 @@ if 'txt_results' in config:
         f_audit.write('Line 1\nLine 2\n(idf)=hello')
         f_bnd.write('Line 1\nLine 2')
         f_dxf.write('Line 1\nLine 2')
-        f_eio.write('Line 1\nLine 2')
+        f_eio.write('Line 1\nLine 2\n3.0\nHi,Hi,Hi')
+        f_mdd.write('Line 1\nLine 2')
+        f_mtd.write('Line 1\nLine 2')
+        f_rdd.write('Line 1\nLine 2')
+        f_shd.write('Line 1\nLine 2')
+        f_err.write('Line 1\nLine 2')
+        f_delightin.write('Line 1\nLine 2')
+        f_delightout.write('Line 1\nLine 2')
+    elif config['txt_results'] == 'small_numeric_text':
+        f_audit.write('Line 1\nLine 2\n(idf)=hello')
+        f_bnd.write('Line 1\nLine 2')
+        f_dxf.write('Line 1\nLine 2')
+        f_eio.write('Line 1\nLine 2\n3\nHi,Hi,Hi')
         f_mdd.write('Line 1\nLine 2')
         f_mtd.write('Line 1\nLine 2')
         f_rdd.write('Line 1\nLine 2')
@@ -66,7 +78,7 @@ if 'txt_results' in config:
         f_audit.write('Line 1\nLine 3\n(idf)=world')  # note this will always be different but should not cause diffs
         f_bnd.write('Line 1\nLine 3')
         f_dxf.write('Line 1\nLine 3')
-        f_eio.write('Line 1\nLine 3')
+        f_eio.write('Line 1\nLine 3\n3\nHi,Hi')
         f_mdd.write('Line 1\nLine 3')
         f_mtd.write('Line 1\nLine 3')
         f_rdd.write('Line 1\nLine 3')
