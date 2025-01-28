@@ -963,8 +963,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             {
                 "config": {
                     "run_time_string": "00hr 10min  0.17sec",
-                    "num_warnings": 2,
-                    "num_severe": 1,
+                    "num_warnings": 1,
+                    "num_severe": 0,
                     "end_state": "success",
                     "eso_results": "base",
                     "txt_results": "small_numeric_text"
