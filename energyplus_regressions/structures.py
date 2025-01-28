@@ -2,6 +2,8 @@ import csv
 from datetime import datetime
 import json
 import os
+from pathlib import Path
+from typing import Optional
 from enum import Enum
 
 
@@ -198,7 +200,7 @@ class EndErrSummary:
 class TestEntry:
     __test__ = False  # so that PyTest doesn't try to run this as a class fixture
 
-    def __init__(self, name_relative_to_testfiles_dir, epw: str):
+    def __init__(self, name_relative_to_testfiles_dir: str, epw: str):
         self.name_relative_to_testfiles_dir = name_relative_to_testfiles_dir
         self.basename: str = os.path.splitext(name_relative_to_testfiles_dir.replace(os.path.sep, '__'))[0]
         if epw and epw.endswith('.epw'):
@@ -389,8 +391,12 @@ class ExtraInfo:
 
 
 class CompletedStructure:
-    def __init__(self, case_a_source_dir, case_a_build_dir, case_b_source_dir,
-                 case_b_build_dir, results_dir_a, results_dir_b, original_start_time):
+    def __init__(
+            self,
+            case_a_source_dir: Path, case_a_build_dir: Path,
+            case_b_source_dir: Path, case_b_build_dir: Path,
+            results_dir_a: Path, results_dir_b: Path,
+            original_start_time: datetime):
         self.case_a_source_dir = case_a_source_dir
         self.case_a_build_dir = case_a_build_dir
         self.case_b_source_dir = case_b_source_dir
@@ -489,7 +495,7 @@ class CompletedStructure:
                 if diff.diff_type != TextDifferences.EQUAL:
                     self.text_diffs.add_to_data(this_entry.basename, file_type)
 
-    def to_runtime_summary(self, csv_file_path):
+    def to_runtime_summary(self, csv_file_path: Path):
         try:
             with open(csv_file_path, "w") as csv_file:
                 writer = csv.writer(csv_file)
@@ -507,13 +513,13 @@ class CompletedStructure:
             print(this_exception)
             raise this_exception
 
-    def to_json_summary(self, json_file_path=None):
+    def to_json_summary(self, json_file_path: Optional[Path] = None):
         output_data = {
             'directories': {
-                'case_a_source': self.case_a_source_dir,
-                'case_a_build': self.case_a_build_dir,
-                'case_b_source': self.case_b_source_dir,
-                'case_b_build': self.case_b_build_dir
+                'case_a_source': str(self.case_a_source_dir),
+                'case_a_build': str(self.case_a_build_dir),
+                'case_b_source': str(self.case_b_source_dir),
+                'case_b_build': str(self.case_b_build_dir)
             },
             'runs': {
                 'all_files': [x for x in self.all_files.descriptions.keys()],

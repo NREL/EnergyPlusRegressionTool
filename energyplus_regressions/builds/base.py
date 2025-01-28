@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from typing import Set
+from typing import Optional, Set
 
 
 class KnownBuildTypes:
@@ -10,13 +9,13 @@ class KnownBuildTypes:
     Unknown = "unknown"  # could be used to ask user to manually specify type
 
 
-def autodetect_build_dir_type(build_dir: str) -> str:
+def autodetect_build_dir_type(build_dir: Path) -> str:
     # detect the cmake cache file first
-    cmake_cache_file = os.path.join(build_dir, 'CMakeCache.txt')
-    if not os.path.exists(cmake_cache_file):
+    cmake_cache_file = build_dir / 'CMakeCache.txt'
+    if not cmake_cache_file.exists():
         # leaning toward install folder
-        example_files_dir = os.path.join(build_dir, 'ExampleFiles')
-        if os.path.exists(example_files_dir):
+        example_files_dir = build_dir / 'ExampleFiles'
+        if example_files_dir.exists():
             return KnownBuildTypes.Installation
     else:  # we have a cache file, read it to find the generator
         with open(cmake_cache_file, 'r') as f_cache:
@@ -35,27 +34,27 @@ def autodetect_build_dir_type(build_dir: str) -> str:
 
 class BuildTree:
     def __init__(self) -> None:
-        self.build_dir: str = ""
-        self.source_dir: str = ""
-        self.energyplus: str = ""
-        self.basement: str = ""
-        self.idd_path: str = ""
-        self.slab: str = ""
-        self.basementidd: str = ""
-        self.slabidd: str = ""
-        self.expandobjects: str = ""
-        self.epmacro: str = ""
-        self.readvars: str = ""
-        self.parametric: str = ""
-        self.test_files_dir: str = ""
-        self.weather_dir: str = ""
-        self.data_sets_dir: str = ""
+        self.build_dir: Path = Path()
+        self.source_dir: Path = Path()
+        self.energyplus: Path = Path()
+        self.basement: Path = Path()
+        self.idd_path: Path = Path()
+        self.slab: Path = Path()
+        self.basementidd: Path = Path()
+        self.slabidd: Path = Path()
+        self.expandobjects: Path = Path()
+        self.epmacro: Path = Path()
+        self.readvars: Path = Path()
+        self.parametric: Path = Path()
+        self.test_files_dir: Path = Path()
+        self.weather_dir: Path = Path()
+        self.data_sets_dir: Path = Path()
 
 
 class BaseBuildDirectoryStructure(object):
     def __init__(self):
-        self.build_directory = None
-        self.source_directory = None
+        self.build_directory: Optional[Path] = None
+        self.source_directory: Optional[Path] = None
 
     @staticmethod
     def get_idfs_in_dir(idf_dir: Path) -> Set[Path]:
@@ -76,7 +75,7 @@ class BaseBuildDirectoryStructure(object):
             'HVAC3Zone-IntGains-Def.imf',
         ]
 
-        def should_keep(file_path):
+        def should_keep(file_path: Path):
             for i in known_ignore_list:
                 if i in str(file_path):
                     return False
@@ -88,63 +87,53 @@ class BaseBuildDirectoryStructure(object):
         filtered_list = filter(should_keep, all_idfs_relative_path)
         return set(filtered_list)
 
-    def set_build_directory(self, build_directory):
+    def set_build_directory(self, build_directory: Path):
         raise NotImplementedError('Must implement set_build_directory(str) in derived classes')
 
     def verify(self):
-        results = []
+        results: list[tuple[str, Path, bool]] = []
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
         build_dir = self.build_directory
-        exists = os.path.exists(build_dir)
         results.append(
-            ["Case %s Build Directory Exists? ", build_dir, exists]
+            ("Case %s Build Directory Exists? ", build_dir, build_dir.exists())
         )
-        exists = os.path.exists(self.source_directory)
         results.append(
-            ["Case %s Source Directory Exists? ", self.source_directory, exists]
+            ("Case %s Source Directory Exists? ", self.source_directory, self.source_directory.exists())
         )
         # get everything else off the build tree
         tree: BuildTree = self.get_build_tree()
         test_files_dir = tree.test_files_dir
-        exists = os.path.exists(test_files_dir)
         results.append(
-            ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
+            ("Case %s Test Files Directory Exists? ", test_files_dir, test_files_dir.exists())
         )
         data_sets_dir = tree.data_sets_dir
-        exists = os.path.exists(data_sets_dir)
         results.append(
-            ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
+            ("Case %s Data Sets Directory Exists? ", data_sets_dir, data_sets_dir.exists())
         )
         energy_plus_exe = tree.energyplus
-        exists = os.path.exists(energy_plus_exe)
         results.append(
-            ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
+            ("Case %s EnergyPlus Binary Exists? ", energy_plus_exe, energy_plus_exe.exists())
         )
         basement_exe = tree.basement
-        exists = os.path.exists(basement_exe)
         results.append(
-            ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
+            ("Case %s Basement (Fortran) Binary Exists? ", basement_exe, basement_exe.exists())
         )
         slab_exe = tree.slab
-        exists = os.path.exists(slab_exe)
         results.append(
-            ["Case %s Slab (Fortran) Binary Exists? ", slab_exe, exists]
+            ("Case %s Slab (Fortran) Binary Exists? ", slab_exe, slab_exe.exists())
         )
         expand_objects_exe = tree.expandobjects
-        exists = os.path.exists(expand_objects_exe)
         results.append(
-            ["Case %s ExpandObjects (Fortran) Binary Exists? ", expand_objects_exe, exists]
+            ("Case %s ExpandObjects (Fortran) Binary Exists? ", expand_objects_exe, expand_objects_exe.exists())
         )
         read_vars_exe = tree.readvars
-        exists = os.path.exists(read_vars_exe)
         results.append(
-            ["Case %s ReadVarsESO (Fortran) Binary Exists? ", read_vars_exe, exists]
+            ("Case %s ReadVarsESO (Fortran) Binary Exists? ", read_vars_exe, read_vars_exe.exists())
         )
         parametric_exe = tree.parametric
-        exists = os.path.exists(parametric_exe)
         results.append(
-            ["Case %s Parametric Preprocessor (Fortran) Binary Exists? ", parametric_exe, exists]
+            ("Case %s Parametric Preprocessor (Fortran) Binary Exists? ", parametric_exe, parametric_exe.exists())
         )
         return results
 

@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+from datetime import datetime
 import tempfile
 import unittest
 
@@ -189,7 +191,10 @@ class TestCompletedStructure(unittest.TestCase):
 
     def test_workflow(self):
         c = CompletedStructure(
-            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
         )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
@@ -205,24 +210,30 @@ class TestCompletedStructure(unittest.TestCase):
 
     def test_to_csv(self):
         c = CompletedStructure(
-            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
         )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
-        valid_temp_csv_file = tempfile.mkstemp(suffix='.csv')[1]
+        valid_temp_csv_file = Path(tempfile.mkstemp(suffix='.csv')[1])
         c.to_runtime_summary(valid_temp_csv_file)  # not asserting anything, it should just pass
         with self.assertRaises(Exception):
-            c.to_runtime_summary('/invalid/path')
+            c.to_runtime_summary(Path('/invalid/path'))
 
     def test_to_json(self):
         c = CompletedStructure(
-            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
         )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)
         c.add_test_entry(t)
-        valid_temp_json_file = tempfile.mkstemp(suffix='.json')[1]
+        valid_temp_json_file = Path(tempfile.mkstemp(suffix='.json')[1])
         c.to_json_summary(valid_temp_json_file)
         with open(valid_temp_json_file) as f:
             json_body = f.read()
@@ -234,7 +245,10 @@ class TestCompletedStructure(unittest.TestCase):
 
     def test_to_json_object_response(self):
         c = CompletedStructure(
-            '/a/source/dir', '/a/build/dir', '/b/source/dir', '/b/build/dir', '/r/dir1', '/r/dir2', 'dummy_start_time'
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
         )
         t = TestEntry('filename', 'weather')
         t = TestTestEntry.fully_populated_entry_successful(t)

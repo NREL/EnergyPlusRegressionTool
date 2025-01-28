@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import sys
 import tempfile
 import unittest
@@ -11,24 +11,24 @@ from energyplus_regressions.structures import ReportingFreq, ForceRunType
 class TestEnergyPlus(unittest.TestCase):
 
     def setUp(self):
-        cur_dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.resource_dir = os.path.join(cur_dir_path, 'resources')
+        cur_dir_path = Path(__file__).resolve().parent
+        self.resource_dir = cur_dir_path / 'resources'
         self.build_tree = BuildTree()
-        self.build_tree.energyplus = os.path.join(self.resource_dir, 'dummy.energyplus.py')
-        self.build_tree.basement = os.path.join(self.resource_dir, 'dummy.basement.py')
-        self.build_tree.idd_path = os.path.join(self.resource_dir, 'dummy.Energy+.idd')
-        self.build_tree.slab = os.path.join(self.resource_dir, 'dummy.slab.py')
-        self.build_tree.basementidd = os.path.join(self.resource_dir, 'dummy.basement.idd')
-        self.build_tree.slabidd = os.path.join(self.resource_dir, 'dummy.slab.py')
-        self.build_tree.expandobjects = os.path.join(self.resource_dir, 'dummy.expandobjects.py')
-        self.build_tree.epmacro = os.path.join(self.resource_dir, 'dummy.epmacro.py')
-        self.build_tree.readvars = os.path.join(self.resource_dir, 'dummy.readvars.py')
-        self.build_tree.parametric = os.path.join(self.resource_dir, 'dummy.parametric.py')
-        self.build_tree.build_dir = '/dummy/'
-        self.run_dir = tempfile.mkdtemp()
+        self.build_tree.energyplus = self.resource_dir / 'dummy.energyplus.py'
+        self.build_tree.basement = self.resource_dir / 'dummy.basement.py'
+        self.build_tree.idd_path = self.resource_dir / 'dummy.Energy+.idd'
+        self.build_tree.slab = self.resource_dir / 'dummy.slab.py'
+        self.build_tree.basementidd = self.resource_dir / 'dummy.basement.idd'
+        self.build_tree.slabidd = self.resource_dir / 'dummy.slab.py'
+        self.build_tree.expandobjects = self.resource_dir / 'dummy.expandobjects.py'
+        self.build_tree.epmacro = self.resource_dir / 'dummy.epmacro.py'
+        self.build_tree.readvars = self.resource_dir / 'dummy.readvars.py'
+        self.build_tree.parametric = self.resource_dir / 'dummy.parametric.py'
+        self.build_tree.build_dir = Path('/dummy/')
+        self.run_dir = Path(tempfile.mkdtemp())
 
     def test_eplus_passed_simple_dd_only(self):
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -39,17 +39,17 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_simple_dd_only_with_rvi_mvi(self):
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
-        with open(os.path.join(self.run_dir, 'in.rvi'), 'w') as f:
+        with (self.run_dir / 'in.rvi').open('w') as f:
             f.write('HI')
-        with open(os.path.join(self.run_dir, 'in.mvi'), 'w') as f:
+        with (self.run_dir / 'in.mvi').open('w') as f:
             f.write('HI')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -60,14 +60,14 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_simple_annual(self):
-        weather_file = os.path.join(self.resource_dir, 'dummy.in.epw')
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        weather_file = self.resource_dir / 'dummy.in.epw'
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -78,14 +78,14 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=weather_file
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_simple_no_force(self):
-        weather_file = os.path.join(self.resource_dir, 'dummy.in.epw')
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        weather_file = self.resource_dir / 'dummy.in.epw'
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -96,13 +96,13 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=weather_file
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_passed_hvac_template(self):
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('HVACTEMPLATE')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -113,14 +113,14 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.epmacro")
     def test_eplus_passed_macro(self):
-        with open(os.path.join(self.run_dir, 'in.imf'), 'w') as f:
+        with (self.run_dir / 'in.imf').open('w') as f:
             f.write('##fileprefix line\n')
             f.write('line2\n')
             f.write('##fileprefix line3\n')
@@ -133,14 +133,14 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.parametric")
     def test_eplus_passed_parametric(self):
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('PARAMETRIC:')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -151,13 +151,13 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=True,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_failed_parametric(self):
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -168,14 +168,14 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=True,
             weather_file_name=''
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertFalse(return_val[2])
         self.assertFalse(return_val[3])
 
     def test_eplus_failed_invalid_epw(self):
-        weather_file = os.path.join(self.resource_dir, 'DOES.NOT.EXIST.in.epw')
-        with open(os.path.join(self.run_dir, 'in.idf'), 'w') as f:
+        weather_file = self.resource_dir, 'DOES.NOT.EXIST.in.epw'
+        with (self.run_dir / 'in.idf').open('w') as f:
             f.write('')
         return_val = execute_energyplus(ExecutionArguments(
             build_tree=self.build_tree,
@@ -186,7 +186,7 @@ class TestEnergyPlus(unittest.TestCase):
             this_parametric_file=False,
             weather_file_name=weather_file
         ))
-        self.assertEqual('/dummy/', return_val[0])
+        self.assertEqual(Path('/dummy/'), return_val[0])
         self.assertEqual('entry_name', return_val[1])
         self.assertFalse(return_val[2])  # Fail
         self.assertFalse(return_val[3])

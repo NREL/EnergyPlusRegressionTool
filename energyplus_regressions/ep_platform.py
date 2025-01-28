@@ -1,13 +1,15 @@
+from enum import auto, Enum
 import sys
+from typing import Optional
 
 
-class Platforms:
-    Linux = 1
-    Mac = 2
-    Windows = 3
+class Platforms(Enum):
+    Linux = auto()
+    Mac = auto()
+    Windows = auto()
 
 
-def platform(force_test_string=None):
+def platform(force_test_string: Optional[str] = None) -> Platforms:
     if force_test_string:
         platform_string = force_test_string
     else:
@@ -23,7 +25,7 @@ def platform(force_test_string=None):
         raise Exception('Unsupported OS!, Platform string = \"%s\"' % platform_string)
 
 
-def exe_extension(force_test_platform=None):
+def exe_extension(force_test_platform: Optional[Platforms] = None):
     if force_test_platform:
         this_platform = force_test_platform
     else:

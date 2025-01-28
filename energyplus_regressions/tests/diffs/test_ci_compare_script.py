@@ -1,5 +1,6 @@
 import glob
 import os
+from pathlib import Path
 import shutil
 import sys
 import tempfile
@@ -32,12 +33,12 @@ def captured_output():
 class TestCICompareScriptFunctions(unittest.TestCase):
 
     def setUp(self):
-        self.cur_dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.csv_resource_dir = os.path.join(self.cur_dir_path, 'csv_resources')
-        self.tbl_resource_dir = os.path.join(self.cur_dir_path, 'tbl_resources')
-        self.temp_dir = tempfile.mkdtemp()
-        self.temp_base_dir = tempfile.mkdtemp()
-        self.temp_mod_dir = tempfile.mkdtemp()
+        self.cur_dir_path = Path(__file__).resolve().parent
+        self.csv_resource_dir = self.cur_dir_path / 'csv_resources'
+        self.tbl_resource_dir = self.cur_dir_path / 'tbl_resources'
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.temp_base_dir = Path(tempfile.mkdtemp())
+        self.temp_mod_dir = Path(tempfile.mkdtemp())
 
     def test_get_diff_files(self):
         file_names = [
@@ -60,7 +61,7 @@ class TestCICompareScriptFunctions(unittest.TestCase):
             'eplusout.csv.absdiffs.csv'
         ]
         for file_name in file_names:
-            full_path = os.path.join(self.temp_dir, file_name)
+            full_path = self.temp_dir / file_name
             with open(full_path, 'w'):
                 pass  # just let it close the file
         files_found = glob.glob(os.path.join(self.temp_dir, "*"))
@@ -119,8 +120,8 @@ class TestCICompareScriptFunctions(unittest.TestCase):
         with captured_output() as (out, err):
             main_function(
                 file_name='HVACTemplate-5ZoneFanCoil',
-                base_dir=self.temp_base_dir,
-                mod_dir=self.temp_mod_dir,
+                base_dir=Path(self.temp_base_dir),
+                mod_dir=Path(self.temp_mod_dir),
                 base_sha='base123',
                 mod_sha='mod456',
                 _make_public=True,

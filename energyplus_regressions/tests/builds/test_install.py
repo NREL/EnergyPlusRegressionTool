@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import tempfile
 import unittest
 
@@ -10,11 +10,11 @@ class TestEPInstallBuildMethods(unittest.TestCase):
 
     def setUp(self):
         self.build = EPlusInstallDirectory()
-        self.run_dir = tempfile.mkdtemp()
+        self.run_dir = Path(tempfile.mkdtemp())
 
     def test_set_build_directory_does_not_exist(self):
-        self.build.set_build_directory('hello')
-        self.assertIn('unknown', self.build.source_directory)
+        self.build.set_build_directory(Path('z'))
+        self.assertIn('unknown', str(self.build.source_directory))
 
     def test_set_build_directory_does_exist(self):
         self.build.set_build_directory(self.run_dir)
@@ -46,4 +46,4 @@ class TestEPInstallBuildMethods(unittest.TestCase):
     def test_get_idf_dir(self):
         self.build.set_build_directory(self.run_dir)
         idf_dir = self.build.get_idf_directory()
-        self.assertEqual(os.path.join(self.run_dir, 'ExampleFiles'), idf_dir)
+        self.assertEqual(self.run_dir / 'ExampleFiles', idf_dir)

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import Union
 
 # In most runs, the EPW assignment will be guessed from the CMakeLists file in the testfiles/ directory.
@@ -736,7 +736,7 @@ epw_map = {
 
 
 # TODO: This should not be a hanging function that re-parses the file over and over...
-def get_epw_for_idf(repo_source_dir: str, idf: str) -> Union[None, str]:
+def get_epw_for_idf(repo_source_dir: Path, idf: str) -> Union[None, str]:
     """
     Tries to get the correct EPW for an IDF.
 
@@ -751,15 +751,15 @@ def get_epw_for_idf(repo_source_dir: str, idf: str) -> Union[None, str]:
     :param idf:
     :return:
     """
-    if not os.path.exists(repo_source_dir):
+    if not repo_source_dir.exists():
         return None
-    test_files_dir = os.path.join(repo_source_dir, 'testfiles')
-    if os.path.exists(test_files_dir):
+    test_files_dir = repo_source_dir / 'testfiles'
+    if test_files_dir.exists():
         # it appears we have a build folder
-        cmake_lists = os.path.join(test_files_dir, 'CMakeLists.txt')
-        if os.path.exists(cmake_lists):
+        cmake_lists = test_files_dir / 'CMakeLists.txt'
+        if cmake_lists.exists():
             # it appears we can look up the IDF in this file
-            with open(cmake_lists) as f_cmake:
+            with cmake_lists.open() as f_cmake:
                 lines = f_cmake.readlines()
             for line in lines:
                 cleaned = line.strip()
