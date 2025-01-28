@@ -484,10 +484,10 @@ class MyApp(Frame):
             self.force_output_sql.set(data['force_output_sql'])
             self.force_output_sql_unitconv.set(data['force_output_sql_unitconv'])
 
-            status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
+            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']))
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-            status = self.try_to_set_build_2_to_dir(data['build_2_build_dir'])
+            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']))
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
             self.build_idf_listing(False, data['idfs'])
@@ -531,8 +531,8 @@ class MyApp(Frame):
                 'force_output_sql_unitconv': self.force_output_sql_unitconv.get(),
                 'threads': num_threads,
                 'idfs': idfs,
-                'build_1_build_dir': self.build_1.build_directory,
-                'build_2_build_dir': self.build_2.build_directory,
+                'build_1_build_dir': str(self.build_1.build_directory),
+                'build_2_build_dir': str(self.build_2.build_directory),
                 'last_results': these_results,
             }
         except Exception as e:
@@ -644,7 +644,7 @@ class MyApp(Frame):
     def about_dialog():
         messagebox.showinfo("About", f"EnergyPlus Regression Tool\nVersion: {VERSION}")
 
-    def build_idf_listing(self, initialize=False, desired_selected_idfs: List[str] = None):
+    def build_idf_listing(self, initialize=False, desired_selected_idfs: list[str] = None):
         # if we don't have a specific list, then try to save any already selected ones first
 
         if desired_selected_idfs:
@@ -664,14 +664,16 @@ class MyApp(Frame):
         path_2 = Path(self.build_dir_2_var.get())
         if path_1.exists() and path_2.exists():
             if not self.build_1:
-                status = self.try_to_set_build_1_to_dir(self.build_dir_1_var.get())
+                bd1 = Path(self.build_dir_1_var.get())
+                status = self.try_to_set_build_1_to_dir(bd1)
                 if not status:
                     self.full_idf_listbox.insert(END, "Cannot update master list master list")
                     self.full_idf_listbox.insert(END, "Build folder path #1 is invalid")
                     self.full_idf_listbox.insert(END, "Select build folders to fill listing")
                     return
             if not self.build_2:
-                status = self.try_to_set_build_2_to_dir(self.build_dir_2_var.get())
+                bd2 = Path(self.build_dir_2_var.get())
+                status = self.try_to_set_build_2_to_dir(bd2)
                 if not status:
                     self.full_idf_listbox.insert(END, "Cannot update master list master list")
                     self.full_idf_listbox.insert(END, "Build folder path #2 is invalid")
@@ -949,7 +951,7 @@ class MyApp(Frame):
         self.stop_button.configure(state=stop_button_state)
         self.main_notebook.tab(3, text=results_tab_title)
 
-    def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
+    def try_to_set_build_1_to_dir(self, selected_dir: Path) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 1 type")
@@ -969,7 +971,7 @@ class MyApp(Frame):
         return True
 
     def client_build_dir_1(self):
-        selected_dir = filedialog.askdirectory()
+        selected_dir = Path(filedialog.askdirectory())
         if not selected_dir:
             return
         if not os.path.exists(selected_dir):
@@ -980,10 +982,10 @@ class MyApp(Frame):
                 "Build folder problem", f"Could not determine build type for build 1: {selected_dir}!"
             )
             return
-        self.build_dir_1_var.set(selected_dir)
+        self.build_dir_1_var.set(str(selected_dir))
         self.build_idf_listing()
 
-    def try_to_set_build_2_to_dir(self, selected_dir) -> bool:
+    def try_to_set_build_2_to_dir(self, selected_dir: Path) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 2 type")
