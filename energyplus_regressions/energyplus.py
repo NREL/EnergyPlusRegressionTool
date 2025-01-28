@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.structures import ForceRunType
 
 path = os.path.dirname(__file__)
@@ -11,7 +12,7 @@ script_dir = os.path.abspath(path)
 
 
 class ExecutionArguments:
-    def __init__(self, build_tree, entry_name, test_run_directory,
+    def __init__(self, build_tree: BuildTree, entry_name, test_run_directory,
                  run_type, min_reporting_freq, this_parametric_file, weather_file_name):
         self.build_tree = build_tree
         self.entry_name = entry_name
@@ -25,16 +26,16 @@ class ExecutionArguments:
 # noinspection PyBroadException
 def execute_energyplus(e_args: ExecutionArguments):
     # set up a few paths
-    energyplus = e_args.build_tree['energyplus']
-    basement = e_args.build_tree['basement']
-    idd_path = e_args.build_tree['idd_path']
-    slab = e_args.build_tree['slab']
-    basementidd = e_args.build_tree['basementidd']
-    slabidd = e_args.build_tree['slabidd']
-    expandobjects = e_args.build_tree['expandobjects']
-    epmacro = e_args.build_tree['epmacro']
-    readvars = e_args.build_tree['readvars']
-    parametric = e_args.build_tree['parametric']
+    energyplus = e_args.build_tree.energyplus
+    basement = e_args.build_tree.basement
+    idd_path = e_args.build_tree.idd_path
+    slab = e_args.build_tree.slab
+    basementidd = e_args.build_tree.basementidd
+    slabidd = e_args.build_tree.slabidd
+    expandobjects = e_args.build_tree.expandobjects
+    epmacro = e_args.build_tree.epmacro
+    readvars = e_args.build_tree.readvars
+    parametric = e_args.build_tree.parametric
 
     # Save the current path so we can go back here
     start_path = os.getcwd()
@@ -92,7 +93,7 @@ def execute_energyplus(e_args: ExecutionArguments):
                     os.remove('in.idf')
                 os.rename(file_to_run_here, 'in.idf')
             else:
-                return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, "Issue with Parametrics"]
+                return [e_args.build_tree.build_dir, e_args.entry_name, False, False, "Issue with Parametrics"]
 
         # Run ExpandObjects and process as necessary, but not for epJSON files!
         if os.path.exists('in.idf'):
@@ -183,7 +184,7 @@ def execute_energyplus(e_args: ExecutionArguments):
             ...
             # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
             #  here alone, it shows as missing on the coverage...wonky
-            return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
+            return [e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)]
 
         # Execute readvars
         if os.path.exists('in.rvi'):
@@ -222,11 +223,11 @@ def execute_energyplus(e_args: ExecutionArguments):
                 f.write(std_err.decode('utf-8'))
 
         os.remove(new_idd_path)
-        return [e_args.build_tree['build_dir'], e_args.entry_name, True, False]
+        return [e_args.build_tree.build_dir, e_args.entry_name, True, False]
 
     except Exception as e:
         print("**" + str(e))
-        return [e_args.build_tree['build_dir'], e_args.entry_name, False, False, str(e)]
+        return [e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)]
 
     finally:
         os.chdir(start_path)

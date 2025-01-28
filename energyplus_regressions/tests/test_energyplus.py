@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.energyplus import ExecutionArguments, execute_energyplus
 from energyplus_regressions.structures import ReportingFreq, ForceRunType
 
@@ -12,19 +13,18 @@ class TestEnergyPlus(unittest.TestCase):
     def setUp(self):
         cur_dir_path = os.path.dirname(os.path.realpath(__file__))
         self.resource_dir = os.path.join(cur_dir_path, 'resources')
-        self.build_tree = {
-            'energyplus': os.path.join(self.resource_dir, 'dummy.energyplus.py'),
-            'basement': os.path.join(self.resource_dir, 'dummy.basement.py'),
-            'idd_path': os.path.join(self.resource_dir, 'dummy.Energy+.idd'),
-            'slab': os.path.join(self.resource_dir, 'dummy.slab.py'),
-            'basementidd': os.path.join(self.resource_dir, 'dummy.basement.idd'),
-            'slabidd': os.path.join(self.resource_dir, 'dummy.slab.py'),
-            'expandobjects': os.path.join(self.resource_dir, 'dummy.expandobjects.py'),
-            'epmacro': os.path.join(self.resource_dir, 'dummy.epmacro.py'),
-            'readvars': os.path.join(self.resource_dir, 'dummy.readvars.py'),
-            'parametric': os.path.join(self.resource_dir, 'dummy.parametric.py'),
-            'build_dir': '/dummy/'
-        }
+        self.build_tree = BuildTree()
+        self.build_tree.energyplus = os.path.join(self.resource_dir, 'dummy.energyplus.py')
+        self.build_tree.basement = os.path.join(self.resource_dir, 'dummy.basement.py')
+        self.build_tree.idd_path = os.path.join(self.resource_dir, 'dummy.Energy+.idd')
+        self.build_tree.slab = os.path.join(self.resource_dir, 'dummy.slab.py')
+        self.build_tree.basementidd = os.path.join(self.resource_dir, 'dummy.basement.idd')
+        self.build_tree.slabidd = os.path.join(self.resource_dir, 'dummy.slab.py')
+        self.build_tree.expandobjects = os.path.join(self.resource_dir, 'dummy.expandobjects.py')
+        self.build_tree.epmacro = os.path.join(self.resource_dir, 'dummy.epmacro.py')
+        self.build_tree.readvars = os.path.join(self.resource_dir, 'dummy.readvars.py')
+        self.build_tree.parametric = os.path.join(self.resource_dir, 'dummy.parametric.py')
+        self.build_tree.build_dir = '/dummy/'
         self.run_dir = tempfile.mkdtemp()
 
     def test_eplus_passed_simple_dd_only(self):

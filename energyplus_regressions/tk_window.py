@@ -243,8 +243,10 @@ class MyApp(Frame):
         self.main_notebook = None
         self.init_window()
 
-        # try to auto-load the last settings, and kick off the auto-save feature
+        # try to autoload the last settings, and kick off the auto-save feature
         self.client_open(auto_open=True)
+        # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
+        # noinspection PyTypeChecker
         self.root.after(self.save_interval, self.auto_save)
 
         # wire up the background thread
@@ -499,12 +501,14 @@ class MyApp(Frame):
         if self.manually_saving or self.auto_saving:
             return  # just try again later
         self.client_save(auto_save=True)
+        # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
+        # noinspection PyTypeChecker
         self.root.after(self.save_interval, self.auto_save)
 
     def client_save(self, auto_save=False):
         # we shouldn't come into this function from the auto_save if any other saving is going on already
         if self.auto_saving:
-            # if we get in here from the save menu and we are already trying to auto-save, give it a sec and retry
+            # if we get in here from the save menu, and we are already trying to auto-save, give it a sec and retry
             sleep(0.5)
             if self.auto_saving:
                 # if we are still auto-saving, then just go ahead and warn
@@ -1046,8 +1050,8 @@ class MyApp(Frame):
             force_run_type=self.run_period_option.get(),
             num_threads=num_threads,
             report_freq=self.reporting_frequency.get(),
-            force_output_sql=self.force_output_sql.get(),
-            force_output_sql_unitconv=self.force_output_sql_unitconv.get(),
+            force_output_sql=ForceOutputSQL(self.force_output_sql.get()),
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion(self.force_output_sql_unitconv.get()),
             build_a=self.build_1,
             build_b=self.build_2
         )
@@ -1071,7 +1075,7 @@ class MyApp(Frame):
                                                cancel_callback=MyApp.cancelled_listener)
         self.set_gui_status_for_run(True)
         self.long_thread = Thread(target=self.background_operator.run_test_suite)
-        self.long_thread.setDaemon(True)
+        self.long_thread.daemon = True
         self.add_to_log("Starting a new set of tests")
         self.long_thread.start()
 

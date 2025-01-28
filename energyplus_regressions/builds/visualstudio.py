@@ -1,6 +1,6 @@
 import os
 
-from energyplus_regressions.builds.base import BaseBuildDirectoryStructure
+from energyplus_regressions.builds.base import BaseBuildDirectoryStructure, BuildTree
 
 
 class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
@@ -11,13 +11,13 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
 
     def __init__(self):
         super(CMakeCacheVisualStudioBuildDirectory, self).__init__()
-        self.source_directory = None
-        self.build_mode = 'Release'
+        self.source_directory: str = ""
+        self.build_mode: str = 'Release'
 
     def set_build_mode(self, debug):
         self.build_mode = 'Debug' if debug else 'Release'
 
-    def set_build_directory(self, build_directory):
+    def set_build_directory(self, build_directory: str):
         """
         This method takes a build directory, and updates any dependent member variables, in this case the source dir.
         This method *does* allow an invalid build_directory, as could happen during program initialization
@@ -25,7 +25,7 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         :param build_directory:
         :return:
         """
-        self.build_directory = build_directory
+        self.build_directory: str = build_directory
         if not os.path.exists(self.build_directory):
             self.source_directory = 'unknown - invalid build directory?'
             return
@@ -51,23 +51,23 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
             raise Exception('Build directory has not been set with set_build_directory()')
         return os.path.join(self.source_directory, 'testfiles')
 
-    def get_build_tree(self):
+    def get_build_tree(self) -> BuildTree:
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
-        return {
-            'build_dir': self.build_directory,
-            'source_dir': self.source_directory,
-            'energyplus': os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe'),
-            'basement': os.path.join(self.build_directory, 'Products', 'Basement.exe'),
-            'idd_path': os.path.join(self.build_directory, 'Products', 'Energy+.idd'),
-            'slab': os.path.join(self.build_directory, 'Products', 'Slab.exe'),
-            'basementidd': os.path.join(self.build_directory, 'Products', 'BasementGHT.idd'),
-            'slabidd': os.path.join(self.build_directory, 'Products', 'SlabGHT.idd'),
-            'expandobjects': os.path.join(self.build_directory, 'Products', 'ExpandObjects.exe'),
-            'epmacro': os.path.join(self.source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro.exe'),
-            'readvars': os.path.join(self.build_directory, 'Products', 'ReadVarsESO.exe'),
-            'parametric': os.path.join(self.build_directory, 'Products', 'ParametricPreprocessor.exe'),
-            'test_files_dir': os.path.join(self.source_directory, 'testfiles'),
-            'weather_dir': os.path.join(self.source_directory, 'weather'),
-            'data_sets_dir': os.path.join(self.source_directory, 'datasets')
-        }
+        b = BuildTree()
+        b.build_dir = self.build_directory
+        b.source_dir = self.source_directory
+        b.energyplus = os.path.join(self.build_directory, 'Products', self.build_mode, 'energyplus.exe')
+        b.basement = os.path.join(self.build_directory, 'Products', 'Basement.exe')
+        b.idd_path = os.path.join(self.build_directory, 'Products', 'Energy+.idd')
+        b.slab = os.path.join(self.build_directory, 'Products', 'Slab.exe')
+        b.basementidd = os.path.join(self.build_directory, 'Products', 'BasementGHT.idd')
+        b.slabidd = os.path.join(self.build_directory, 'Products', 'SlabGHT.idd')
+        b.expandobjects = os.path.join(self.build_directory, 'Products', 'ExpandObjects.exe')
+        b.epmacro = os.path.join(self.source_directory, 'bin', 'EPMacro', 'Linux', 'EPMacro.exe')
+        b.readvars = os.path.join(self.build_directory, 'Products', 'ReadVarsESO.exe')
+        b.parametric = os.path.join(self.build_directory, 'Products', 'ParametricPreprocessor.exe')
+        b.test_files_dir = os.path.join(self.source_directory, 'testfiles')
+        b.weather_dir = os.path.join(self.source_directory, 'weather')
+        b.data_sets_dir = os.path.join(self.source_directory, 'datasets')
+        return b

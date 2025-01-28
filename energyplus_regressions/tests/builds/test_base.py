@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import tempfile
 import unittest
 
@@ -60,7 +61,7 @@ class TestBaseBuildMethods(unittest.TestCase):
             self.base_build.verify()
 
     def test_get_idfs(self):
-        temp_idf_dir = tempfile.mkdtemp()
+        temp_idf_dir = Path(tempfile.mkdtemp())
         self.assertSetEqual(set(), self.base_build.get_idfs_in_dir(temp_idf_dir))
         with open(os.path.join(temp_idf_dir, 'file1.idf'), 'w') as f:
             f.write('hi')

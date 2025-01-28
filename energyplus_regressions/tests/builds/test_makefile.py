@@ -2,6 +2,7 @@ import os
 import tempfile
 import unittest
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 
 
@@ -56,7 +57,7 @@ class TestMakefileBuildMethods(unittest.TestCase):
         self.set_cache_file()
         self.build.set_build_directory(self.run_dir)
         tree = self.build.get_build_tree()
-        self.assertIsInstance(tree, dict)
+        self.assertIsInstance(tree, BuildTree)
 
     def test_get_idf_dir_before_setting_build_directory(self):
         with self.assertRaises(Exception):

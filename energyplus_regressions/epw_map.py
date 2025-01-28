@@ -735,6 +735,7 @@ epw_map = {
 }
 
 
+# TODO: This should not be a hanging function that re-parses the file over and over...
 def get_epw_for_idf(repo_source_dir: str, idf: str) -> Union[None, str]:
     """
     Tries to get the correct EPW for an IDF.

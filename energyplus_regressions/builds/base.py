@@ -33,6 +33,25 @@ def autodetect_build_dir_type(build_dir: str) -> str:
     return KnownBuildTypes.Unknown
 
 
+class BuildTree:
+    def __init__(self) -> None:
+        self.build_dir: str = ""
+        self.source_dir: str = ""
+        self.energyplus: str = ""
+        self.basement: str = ""
+        self.idd_path: str = ""
+        self.slab: str = ""
+        self.basementidd: str = ""
+        self.slabidd: str = ""
+        self.expandobjects: str = ""
+        self.epmacro: str = ""
+        self.readvars: str = ""
+        self.parametric: str = ""
+        self.test_files_dir: str = ""
+        self.weather_dir: str = ""
+        self.data_sets_dir: str = ""
+
+
 class BaseBuildDirectoryStructure(object):
     def __init__(self):
         self.build_directory = None
@@ -86,50 +105,50 @@ class BaseBuildDirectoryStructure(object):
             ["Case %s Source Directory Exists? ", self.source_directory, exists]
         )
         # get everything else off the build tree
-        tree = self.get_build_tree()
-        test_files_dir = tree['test_files_dir']
+        tree: BuildTree = self.get_build_tree()
+        test_files_dir = tree.test_files_dir
         exists = os.path.exists(test_files_dir)
         results.append(
             ["Case %s Test Files Directory Exists? ", test_files_dir, exists]
         )
-        data_sets_dir = tree['data_sets_dir']
+        data_sets_dir = tree.data_sets_dir
         exists = os.path.exists(data_sets_dir)
         results.append(
             ["Case %s Data Sets Directory Exists? ", data_sets_dir, exists]
         )
-        energy_plus_exe = tree['energyplus']
+        energy_plus_exe = tree.energyplus
         exists = os.path.exists(energy_plus_exe)
         results.append(
             ["Case %s EnergyPlus Binary Exists? ", energy_plus_exe, exists]
         )
-        basement_exe = tree['basement']
+        basement_exe = tree.basement
         exists = os.path.exists(basement_exe)
         results.append(
             ["Case %s Basement (Fortran) Binary Exists? ", basement_exe, exists]
         )
-        slab_exe = tree['slab']
+        slab_exe = tree.slab
         exists = os.path.exists(slab_exe)
         results.append(
             ["Case %s Slab (Fortran) Binary Exists? ", slab_exe, exists]
         )
-        expand_objects_exe = tree['expandobjects']
+        expand_objects_exe = tree.expandobjects
         exists = os.path.exists(expand_objects_exe)
         results.append(
             ["Case %s ExpandObjects (Fortran) Binary Exists? ", expand_objects_exe, exists]
         )
-        read_vars_exe = tree['readvars']
+        read_vars_exe = tree.readvars
         exists = os.path.exists(read_vars_exe)
         results.append(
             ["Case %s ReadVarsESO (Fortran) Binary Exists? ", read_vars_exe, exists]
         )
-        parametric_exe = tree['parametric']
+        parametric_exe = tree.parametric
         exists = os.path.exists(parametric_exe)
         results.append(
             ["Case %s Parametric Preprocessor (Fortran) Binary Exists? ", parametric_exe, exists]
         )
         return results
 
-    def get_build_tree(self):
+    def get_build_tree(self) -> BuildTree:
         raise NotImplementedError('Must implement get_build_tree() in derived classes')
 
     def get_idf_directory(self):
