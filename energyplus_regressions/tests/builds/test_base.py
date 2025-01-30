@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import tempfile
 import unittest
 
@@ -8,11 +9,11 @@ from energyplus_regressions.builds.base import BaseBuildDirectoryStructure, auto
 class TestAutoDetectBuildType(unittest.TestCase):
 
     def setUp(self):
-        self.build_dir = tempfile.mkdtemp()
+        self.build_dir = Path(tempfile.mkdtemp())
 
     def add_cache_file(self, content):
-        cache_file = os.path.join(self.build_dir, 'CMakeCache.txt')
-        with open(cache_file, 'w') as f:
+        cache_file = self.build_dir / 'CMakeCache.txt'
+        with cache_file.open('w') as f:
             f.write(content)
 
     def add_subdirectory(self, dir_name):
@@ -45,7 +46,7 @@ class TestBaseBuildMethods(unittest.TestCase):
 
     def test_set_build_directory_abstract(self):
         with self.assertRaises(NotImplementedError):
-            self.base_build.set_build_directory('hello')
+            self.base_build.set_build_directory(Path())
 
     def test_get_build_tree_abstract(self):
         with self.assertRaises(NotImplementedError):
@@ -60,7 +61,7 @@ class TestBaseBuildMethods(unittest.TestCase):
             self.base_build.verify()
 
     def test_get_idfs(self):
-        temp_idf_dir = tempfile.mkdtemp()
+        temp_idf_dir = Path(tempfile.mkdtemp())
         self.assertSetEqual(set(), self.base_build.get_idfs_in_dir(temp_idf_dir))
         with open(os.path.join(temp_idf_dir, 'file1.idf'), 'w') as f:
             f.write('hi')

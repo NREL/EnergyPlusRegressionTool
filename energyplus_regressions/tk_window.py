@@ -243,8 +243,10 @@ class MyApp(Frame):
         self.main_notebook = None
         self.init_window()
 
-        # try to auto-load the last settings, and kick off the auto-save feature
+        # try to autoload the last settings, and kick off the auto-save feature
         self.client_open(auto_open=True)
+        # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
+        # noinspection PyTypeChecker
         self.root.after(self.save_interval, self.auto_save)
 
         # wire up the background thread
@@ -482,10 +484,10 @@ class MyApp(Frame):
             self.force_output_sql.set(data['force_output_sql'])
             self.force_output_sql_unitconv.set(data['force_output_sql_unitconv'])
 
-            status = self.try_to_set_build_1_to_dir(data['build_1_build_dir'])
+            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']))
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-            status = self.try_to_set_build_2_to_dir(data['build_2_build_dir'])
+            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']))
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
             self.build_idf_listing(False, data['idfs'])
@@ -499,12 +501,14 @@ class MyApp(Frame):
         if self.manually_saving or self.auto_saving:
             return  # just try again later
         self.client_save(auto_save=True)
+        # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
+        # noinspection PyTypeChecker
         self.root.after(self.save_interval, self.auto_save)
 
     def client_save(self, auto_save=False):
         # we shouldn't come into this function from the auto_save if any other saving is going on already
         if self.auto_saving:
-            # if we get in here from the save menu and we are already trying to auto-save, give it a sec and retry
+            # if we get in here from the save menu, and we are already trying to auto-save, give it a sec and retry
             sleep(0.5)
             if self.auto_saving:
                 # if we are still auto-saving, then just go ahead and warn
@@ -527,8 +531,8 @@ class MyApp(Frame):
                 'force_output_sql_unitconv': self.force_output_sql_unitconv.get(),
                 'threads': num_threads,
                 'idfs': idfs,
-                'build_1_build_dir': self.build_1.build_directory,
-                'build_2_build_dir': self.build_2.build_directory,
+                'build_1_build_dir': str(self.build_1.build_directory),
+                'build_2_build_dir': str(self.build_2.build_directory),
                 'last_results': these_results,
             }
         except Exception as e:
@@ -640,7 +644,7 @@ class MyApp(Frame):
     def about_dialog():
         messagebox.showinfo("About", f"EnergyPlus Regression Tool\nVersion: {VERSION}")
 
-    def build_idf_listing(self, initialize=False, desired_selected_idfs: List[str] = None):
+    def build_idf_listing(self, initialize=False, desired_selected_idfs: list[str] = None):
         # if we don't have a specific list, then try to save any already selected ones first
 
         if desired_selected_idfs:
@@ -660,14 +664,16 @@ class MyApp(Frame):
         path_2 = Path(self.build_dir_2_var.get())
         if path_1.exists() and path_2.exists():
             if not self.build_1:
-                status = self.try_to_set_build_1_to_dir(self.build_dir_1_var.get())
+                bd1 = Path(self.build_dir_1_var.get())
+                status = self.try_to_set_build_1_to_dir(bd1)
                 if not status:
                     self.full_idf_listbox.insert(END, "Cannot update master list master list")
                     self.full_idf_listbox.insert(END, "Build folder path #1 is invalid")
                     self.full_idf_listbox.insert(END, "Select build folders to fill listing")
                     return
             if not self.build_2:
-                status = self.try_to_set_build_2_to_dir(self.build_dir_2_var.get())
+                bd2 = Path(self.build_dir_2_var.get())
+                status = self.try_to_set_build_2_to_dir(bd2)
                 if not status:
                     self.full_idf_listbox.insert(END, "Cannot update master list master list")
                     self.full_idf_listbox.insert(END, "Build folder path #2 is invalid")
@@ -945,7 +951,7 @@ class MyApp(Frame):
         self.stop_button.configure(state=stop_button_state)
         self.main_notebook.tab(3, text=results_tab_title)
 
-    def try_to_set_build_1_to_dir(self, selected_dir) -> bool:
+    def try_to_set_build_1_to_dir(self, selected_dir: Path) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 1 type")
@@ -965,7 +971,7 @@ class MyApp(Frame):
         return True
 
     def client_build_dir_1(self):
-        selected_dir = filedialog.askdirectory()
+        selected_dir = Path(filedialog.askdirectory())
         if not selected_dir:
             return
         if not os.path.exists(selected_dir):
@@ -976,10 +982,10 @@ class MyApp(Frame):
                 "Build folder problem", f"Could not determine build type for build 1: {selected_dir}!"
             )
             return
-        self.build_dir_1_var.set(selected_dir)
+        self.build_dir_1_var.set(str(selected_dir))
         self.build_idf_listing()
 
-    def try_to_set_build_2_to_dir(self, selected_dir) -> bool:
+    def try_to_set_build_2_to_dir(self, selected_dir: Path) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 2 type")
@@ -1046,8 +1052,8 @@ class MyApp(Frame):
             force_run_type=self.run_period_option.get(),
             num_threads=num_threads,
             report_freq=self.reporting_frequency.get(),
-            force_output_sql=self.force_output_sql.get(),
-            force_output_sql_unitconv=self.force_output_sql_unitconv.get(),
+            force_output_sql=ForceOutputSQL(self.force_output_sql.get()),
+            force_output_sql_unitconv=ForceOutputSQLUnitConversion(self.force_output_sql_unitconv.get()),
             build_a=self.build_1,
             build_b=self.build_2
         )
@@ -1071,7 +1077,7 @@ class MyApp(Frame):
                                                cancel_callback=MyApp.cancelled_listener)
         self.set_gui_status_for_run(True)
         self.long_thread = Thread(target=self.background_operator.run_test_suite)
-        self.long_thread.setDaemon(True)
+        self.long_thread.daemon = True
         self.add_to_log("Starting a new set of tests")
         self.long_thread.start()
 

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import tempfile
 import unittest
 
@@ -8,18 +8,18 @@ from energyplus_regressions.epw_map import get_epw_for_idf
 class TestGetEPW(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.repo_source_dir = tempfile.mkdtemp()
+        self.repo_source_dir = Path(tempfile.mkdtemp())
 
     def add_test_files_dir(self, content_to_add_to_cmake_lists=None):
-        test_files_dir = os.path.join(self.repo_source_dir, 'testfiles')
-        os.makedirs(test_files_dir)
+        test_files_dir = self.repo_source_dir / 'testfiles'
+        test_files_dir.mkdir(parents=True)
         if content_to_add_to_cmake_lists:
-            cmake_lists = os.path.join(test_files_dir, 'CMakeLists.txt')
-            with open(cmake_lists, 'w') as f:
+            cmake_lists = test_files_dir / 'CMakeLists.txt'
+            with cmake_lists.open('w') as f:
                 f.write(content_to_add_to_cmake_lists)
 
     def test_repo_dir_does_not_exist(self):
-        fake_dir = os.path.join(self.repo_source_dir, 'not_there')
+        fake_dir = self.repo_source_dir / 'not_there'
         epw = get_epw_for_idf(fake_dir, "DoesntMatter.idf")
         self.assertIsNone(epw)
 

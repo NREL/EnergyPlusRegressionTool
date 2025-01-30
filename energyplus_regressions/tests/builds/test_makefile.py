@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 import tempfile
 import unittest
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 
 
@@ -9,8 +11,8 @@ class TestMakefileBuildMethods(unittest.TestCase):
 
     def setUp(self):
         self.build = CMakeCacheMakeFileBuildDirectory()
-        self.run_dir = tempfile.mkdtemp()
-        self.dummy_source_dir = '/dummy/source/dir'
+        self.run_dir = Path(tempfile.mkdtemp())
+        self.dummy_source_dir = Path('/dummy/source/dir')
 
     def set_cache_file(self):
         with open(os.path.join(self.run_dir, 'CMakeCache.txt'), 'w') as f:
@@ -19,8 +21,8 @@ class TestMakefileBuildMethods(unittest.TestCase):
             f.write('HEY AGAIN\n')
 
     def test_set_build_directory_does_not_exist(self):
-        self.build.set_build_directory('hello')
-        self.assertIn('unknown', self.build.source_directory)
+        self.build.set_build_directory(Path('z'))
+        self.assertIn('unknown', str(self.build.source_directory))
 
     def test_set_build_directory_does_exist_but_no_cache(self):
         with self.assertRaises(Exception):
@@ -56,7 +58,7 @@ class TestMakefileBuildMethods(unittest.TestCase):
         self.set_cache_file()
         self.build.set_build_directory(self.run_dir)
         tree = self.build.get_build_tree()
-        self.assertIsInstance(tree, dict)
+        self.assertIsInstance(tree, BuildTree)
 
     def test_get_idf_dir_before_setting_build_directory(self):
         with self.assertRaises(Exception):
@@ -66,4 +68,4 @@ class TestMakefileBuildMethods(unittest.TestCase):
         self.set_cache_file()
         self.build.set_build_directory(self.run_dir)
         idf_dir = self.build.get_idf_directory()
-        self.assertEqual(os.path.join(self.dummy_source_dir, 'testfiles'), idf_dir)
+        self.assertEqual(self.dummy_source_dir / 'testfiles', idf_dir)
