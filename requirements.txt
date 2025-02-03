@@ -1,6 +1,6 @@
 # the core dependencies actually needed
 pypubsub
-beautifulsoup4
+beautifulsoup4==4.12.3
 
 # for running tests
 coveralls
