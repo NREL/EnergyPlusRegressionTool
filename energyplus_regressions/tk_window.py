@@ -971,12 +971,13 @@ class MyApp(Frame):
         return True
 
     def client_build_dir_1(self):
-        selected_dir = Path(filedialog.askdirectory())
+        selected_dir = filedialog.askdirectory()
         if not selected_dir:
             return
-        if not os.path.exists(selected_dir):
+        p = Path(selected_dir)
+        if not p.exists():
             return
-        status = self.try_to_set_build_1_to_dir(selected_dir)
+        status = self.try_to_set_build_1_to_dir(p)
         if not status:
             messagebox.showerror(
                 "Build folder problem", f"Could not determine build type for build 1: {selected_dir}!"
@@ -1008,9 +1009,10 @@ class MyApp(Frame):
         selected_dir = filedialog.askdirectory()
         if not selected_dir:
             return
-        if not os.path.exists(selected_dir):
+        p = Path(selected_dir)
+        if not p.exists():
             return
-        status = self.try_to_set_build_2_to_dir(selected_dir)
+        status = self.try_to_set_build_2_to_dir(p)
         if not status:
             messagebox.showerror("Could not determine build type for build 2!")
             return

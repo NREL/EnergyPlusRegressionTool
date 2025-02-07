@@ -280,11 +280,13 @@ def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_f
     trtag.append(tdtag_rel_link)
 
     if small_diff > 0 or big_diff > 0 or string_diff > 0:
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (abs_diff_file, count_of_tables))])
+        file_name = os.path.basename(abs_diff_file)
+        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
         atag.append('abs file')
         tdtag_abs_link.append(atag)
 
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (rel_diff_file, count_of_tables))])
+        file_name = os.path.basename(rel_diff_file)
+        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
         atag.append('rel file')
         tdtag_rel_link.append(atag)
 
