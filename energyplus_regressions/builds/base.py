@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Optional, Set
 
-from energyplus_regressions.structures import ConfigType
-
 
 class KnownBuildTypes:
     Makefile = "makefile"

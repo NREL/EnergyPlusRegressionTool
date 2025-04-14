@@ -2,7 +2,6 @@ from pathlib import Path
 
 from energyplus_regressions.builds.base import BaseBuildDirectoryStructure, BuildTree
 from energyplus_regressions.ep_platform import exe_extension
-from energyplus_regressions.structures import ConfigType
 
 
 class EPlusInstallDirectory(BaseBuildDirectoryStructure):

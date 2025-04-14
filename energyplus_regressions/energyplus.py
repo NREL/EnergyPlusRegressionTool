@@ -104,7 +104,8 @@ def execute_energyplus(e_args: ExecutionArguments) -> tuple[Path, str, bool, boo
         # Run ExpandObjects and process as necessary, but not for epJSON files!
         if idf_file.exists():
             expand_objects_run = subprocess.Popen(
-                str(expand_objects), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                str(expand_objects), shell=True, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             o, e = expand_objects_run.communicate()
             std_out += o

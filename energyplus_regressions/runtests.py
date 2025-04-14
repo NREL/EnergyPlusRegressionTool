@@ -43,7 +43,7 @@ class TestRunConfiguration:
 
     def __init__(self, force_run_type: str, num_threads: int, report_freq: str,
                  build_a: BaseBuildDirectoryStructure, build_b: BaseBuildDirectoryStructure,
-                 single_test_run: bool=False, force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
+                 single_test_run: bool = False, force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
                  force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
