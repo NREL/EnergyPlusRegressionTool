@@ -499,14 +499,14 @@ class MyApp(Frame):
             status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']), init_mode=True)
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-                if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
-                    self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()))
+                # if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
+                #     self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()))
             # try to set build 2 object, where it will try to use the preferred build type
             status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']), init_mode=True)
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
-                if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
-                    self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()))
+                # if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
+                #     self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()))
             # at this point we should have build dirs, but it's OK if they are invalid
             self.build_idf_listing(False, data['idfs'])
             self.add_to_log("Project settings loaded")
