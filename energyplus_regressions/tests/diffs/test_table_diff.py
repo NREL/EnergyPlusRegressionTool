@@ -194,6 +194,27 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
+    def test_string_diff_case_change_only(self):
+        # should be no diffs for case-insensitive comparison
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_case_only.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(3, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(17, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
     def test_malformed_table_heading_in_file_1(self):
         response = table_diff(
             self.thresh_dict,
