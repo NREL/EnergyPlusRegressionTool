@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import glob
 from os import chdir, getcwd, rename, environ
 from pathlib import Path
@@ -7,8 +6,6 @@ import subprocess
 
 from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.structures import ForceRunType
-
-script_dir = Path(__file__).resolve().parent
 
 
 class ExecutionArguments:
@@ -24,17 +21,17 @@ class ExecutionArguments:
 
 
 # noinspection PyBroadException
-def execute_energyplus(e_args: ExecutionArguments):
+def execute_energyplus(e_args: ExecutionArguments) -> tuple[Path, str, bool, bool, str]:
     # set up a few paths
     energyplus = e_args.build_tree.energyplus
     basement = e_args.build_tree.basement
     idd_path = e_args.build_tree.idd_path
     slab = e_args.build_tree.slab
-    basementidd = e_args.build_tree.basementidd
-    slabidd = e_args.build_tree.slabidd
-    expandobjects = e_args.build_tree.expandobjects
-    epmacro = e_args.build_tree.epmacro
-    readvars = e_args.build_tree.readvars
+    basement_idd = e_args.build_tree.basementidd
+    slab_idd = e_args.build_tree.slabidd
+    expand_objects = e_args.build_tree.expandobjects
+    ep_macro = e_args.build_tree.epmacro
+    read_vars = e_args.build_tree.readvars
     parametric = e_args.build_tree.parametric
 
     # Save the current path so we can go back here
@@ -61,7 +58,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         imf_path = e_args.test_run_directory / 'in.imf'
         ght_file = e_args.test_run_directory / 'GHTIn.idf'
         basement_file = e_args.test_run_directory / 'BasementGHTIn.idf'
-        epjson_file = e_args.test_run_directory / 'in.epJSON'
+        ep_json_file = e_args.test_run_directory / 'in.epJSON'
         rvi_file = e_args.test_run_directory / 'in.rvi'
         mvi_file = e_args.test_run_directory / 'in.mvi'
 
@@ -79,7 +76,7 @@ def execute_energyplus(e_args: ExecutionArguments):
                 for line in newlines:
                     f.write(line)
             macro_run = subprocess.Popen(
-                str(epmacro), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                str(ep_macro), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             o, e = macro_run.communicate()
             std_out += o
@@ -102,12 +99,12 @@ def execute_energyplus(e_args: ExecutionArguments):
                     idf_file.unlink()
                 rename(file_to_run_here, idf_file)
             else:
-                return [e_args.build_tree.build_dir, e_args.entry_name, False, False, "Issue with Parametrics"]
+                return e_args.build_tree.build_dir, e_args.entry_name, False, False, "Issue with Parametric"
 
         # Run ExpandObjects and process as necessary, but not for epJSON files!
         if idf_file.exists():
             expand_objects_run = subprocess.Popen(
-                str(expandobjects), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                str(expand_objects), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             o, e = expand_objects_run.communicate()
             std_out += o
@@ -118,7 +115,7 @@ def execute_energyplus(e_args: ExecutionArguments):
                 rename(expanded_file, idf_file)
 
                 if basement_file.exists():
-                    shutil.copy(basementidd, e_args.test_run_directory)
+                    shutil.copy(basement_idd, e_args.test_run_directory)
                     basement_environment = environ.copy()
                     basement_environment['CI_BASEMENT_NUMYEARS'] = '2'
                     basement_run = subprocess.Popen(
@@ -140,7 +137,7 @@ def execute_energyplus(e_args: ExecutionArguments):
                     (e_args.test_run_directory / 'BasementGHT.idd').unlink()
 
                 if ght_file.exists():
-                    shutil.copy(slabidd, e_args.test_run_directory)
+                    shutil.copy(slab_idd, e_args.test_run_directory)
                     slab_run = subprocess.Popen(
                         str(slab), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                     )
@@ -184,7 +181,7 @@ def execute_energyplus(e_args: ExecutionArguments):
         # Execute EnergyPlus
         try:
             command_line = str(energyplus)
-            if epjson_file.exists():
+            if ep_json_file.exists():
                 command_line += ' in.epJSON'
             std_out += subprocess.check_output(
                 command_line, shell=True, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE
@@ -193,23 +190,23 @@ def execute_energyplus(e_args: ExecutionArguments):
             ...
             # so I can verify that I hit this during the test_case_b_crash test, but if I just have the return in
             #  here alone, it shows as missing on the coverage...wonky
-            return [e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)]
+            return e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)
 
-        # Execute readvars
+        # Execute read-vars
         if rvi_file.exists():
             csv_run = subprocess.Popen(
-                str(readvars) + ' in.rvi', shell=True, stdin=subprocess.DEVNULL,
+                str(read_vars) + ' in.rvi', shell=True, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         else:
             csv_run = subprocess.Popen(
-                str(readvars), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                str(read_vars), shell=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         o, e = csv_run.communicate()
         std_out += o
         std_err += e
         if mvi_file.exists():
             mtr_run = subprocess.Popen(
-                str(readvars) + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                str(read_vars) + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         else:
@@ -217,7 +214,7 @@ def execute_energyplus(e_args: ExecutionArguments):
                 f.write("eplusout.mtr\n")
                 f.write("eplusmtr.csv\n")
             mtr_run = subprocess.Popen(
-                str(readvars) + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
+                str(read_vars) + ' in.mvi', shell=True, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         o, e = mtr_run.communicate()
@@ -232,11 +229,10 @@ def execute_energyplus(e_args: ExecutionArguments):
                 f.write(std_err.decode('utf-8'))
 
         new_idd_path.unlink()
-        return [e_args.build_tree.build_dir, e_args.entry_name, True, False]
+        chdir(start_path)
+        return e_args.build_tree.build_dir, e_args.entry_name, True, False, ""
 
     except Exception as e:
         print("**" + str(e))
-        return [e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)]
-
-    finally:
         chdir(start_path)
+        return e_args.build_tree.build_dir, e_args.entry_name, False, False, str(e)

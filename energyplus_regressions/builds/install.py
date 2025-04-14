@@ -2,6 +2,7 @@ from pathlib import Path
 
 from energyplus_regressions.builds.base import BaseBuildDirectoryStructure, BuildTree
 from energyplus_regressions.ep_platform import exe_extension
+from energyplus_regressions.structures import ConfigType
 
 
 class EPlusInstallDirectory(BaseBuildDirectoryStructure):
@@ -21,7 +22,7 @@ class EPlusInstallDirectory(BaseBuildDirectoryStructure):
         # For an E+ install, the source directory is kinda just the root repo
         self.source_directory = build_directory
 
-    def get_idf_directory(self):
+    def get_idf_directory(self) -> Path:
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
         return self.source_directory / 'ExampleFiles'

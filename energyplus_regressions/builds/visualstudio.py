@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import Callable
 
 from energyplus_regressions.builds.base import BaseBuildDirectoryStructure, BuildTree
+from energyplus_regressions.structures import ConfigType
 
 
 class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
@@ -11,12 +13,27 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
 
     def __init__(self):
         super(CMakeCacheVisualStudioBuildDirectory, self).__init__()
-        self.build_mode: str = 'Release'
+        self.build_mode: str = ConfigType.RELEASE.value
 
-    def set_build_mode(self, debug):
-        self.build_mode = 'Debug' if debug else 'Release'
+    def set_build_mode(self, config: ConfigType, error_callback: Callable[[str], None] | None = None) -> None:
+        build_mode_folder = config.value
+        desired_build_directory = self.build_directory / 'Products' / build_mode_folder
+        if desired_build_directory.exists():
+            self.build_mode = config.value
+        else:
+            if error_callback:
+                error_callback(
+                    f"Attempted to set build mode as {config.value} but did not detect build dir, use caution! :)"
+                )
+            build_mode_folder = 'Release'
+            release_folder = self.build_directory / 'Products' / build_mode_folder
+            release_folder_exists = release_folder.exists()
+            if release_folder_exists:
+                self.build_mode = ConfigType.RELEASE.value
+            else:  # Finally, if we can't find release either, just set it to debug and let the user deal with it
+                self.build_mode = ConfigType.DEBUG.value
 
-    def set_build_directory(self, build_directory: Path):
+    def set_build_directory(self, build_directory: Path) -> None:
         """
         This method takes a build directory, and updates any dependent member variables, in this case the source dir.
         This method *does* allow an invalid build_directory, as could happen during program initialization
@@ -37,15 +54,8 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
                     break
             else:
                 raise Exception('Could not find source directory spec in the CMakeCache file')
-        build_mode_folder = 'Release'
-        release_folder = self.build_directory / 'Products' / build_mode_folder
-        release_folder_exists = release_folder.exists()
-        if release_folder_exists:
-            self.set_build_mode(debug=False)
-        else:
-            self.set_build_mode(debug=True)
 
-    def get_idf_directory(self):
+    def get_idf_directory(self) -> Path:
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
         return self.source_directory / 'testfiles'

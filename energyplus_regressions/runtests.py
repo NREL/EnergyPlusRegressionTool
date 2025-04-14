@@ -17,7 +17,7 @@ else:
 
 from difflib import unified_diff  # python's own diff library
 
-from energyplus_regressions.builds.base import BuildTree
+from energyplus_regressions.builds.base import BuildTree, BaseBuildDirectoryStructure
 from energyplus_regressions.diffs import math_diff, table_diff, thresh_dict as td
 from energyplus_regressions.energyplus import ExecutionArguments, execute_energyplus
 from energyplus_regressions.structures import (
@@ -41,8 +41,9 @@ script_dir = Path(__file__).resolve().parent
 class TestRunConfiguration:
     __test__ = False  # so that PyTest doesn't try to run this as a class fixture
 
-    def __init__(self, force_run_type, num_threads, report_freq, build_a, build_b, single_test_run=False,
-                 force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
+    def __init__(self, force_run_type: str, num_threads: int, report_freq: str,
+                 build_a: BaseBuildDirectoryStructure, build_b: BaseBuildDirectoryStructure,
+                 single_test_run: bool=False, force_output_sql: ForceOutputSQL = ForceOutputSQL.NOFORCE,
                  force_output_sql_unitconv: ForceOutputSQLUnitConversion = ForceOutputSQLUnitConversion.NOFORCE):
         self.force_run_type = force_run_type
         self.TestOneFile = single_test_run
@@ -57,7 +58,7 @@ class TestRunConfiguration:
 class TestCaseCompleted:
     __test__ = False  # so that PyTest doesn't try to run this as a class fixture
 
-    def __init__(self, run_directory, case_name, run_status, error_msg_reported_already, extra_message=""):
+    def __init__(self, run_directory: str, case_name: str, run_status, error_msg_reported_already, extra_message=""):
         self.run_directory = run_directory
         self.case_name = case_name
         self.run_success = run_status
@@ -68,7 +69,7 @@ class TestCaseCompleted:
 # the actual main test suite run class
 class SuiteRunner:
 
-    def __init__(self, run_config, these_entries, mute=False):
+    def __init__(self, run_config: TestRunConfiguration, these_entries, mute=False):
 
         # initialize the master mute button -- this is overridden by registering callbacks
         self.mute = mute
@@ -446,7 +447,7 @@ class SuiteRunner:
                     local_run_type,
                     self.min_reporting_freq,
                     parametric_file,
-                    epw_path
+                    str(epw_path)
                 )
             )
 

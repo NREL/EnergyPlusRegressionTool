@@ -52,6 +52,11 @@ class ForceOutputSQLUnitConversion(Enum):
     InchPound = 'InchPound'
 
 
+class ConfigType(Enum):
+    RELEASE = "Release"
+    DEBUG = "Debug"
+
+
 class Results:
     def __init__(self):
         self.descriptions = {}

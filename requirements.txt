@@ -3,6 +3,7 @@ pypubsub
 beautifulsoup4==4.12.3
 
 # for running tests
+coverage
 coveralls
 flake8
 pytest

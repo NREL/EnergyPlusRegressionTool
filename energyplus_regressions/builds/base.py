@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional, Set
 
+from energyplus_regressions.structures import ConfigType
+
 
 class KnownBuildTypes:
     Makefile = "makefile"
@@ -87,10 +89,10 @@ class BaseBuildDirectoryStructure(object):
         filtered_list = filter(should_keep, all_idfs_relative_path)
         return set(filtered_list)
 
-    def set_build_directory(self, build_directory: Path):
+    def set_build_directory(self, build_directory: Path) -> None:
         raise NotImplementedError('Must implement set_build_directory(str) in derived classes')
 
-    def verify(self):
+    def verify(self) -> list[tuple[str, Path, bool]]:
         results: list[tuple[str, Path, bool]] = []
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
@@ -140,5 +142,5 @@ class BaseBuildDirectoryStructure(object):
     def get_build_tree(self) -> BuildTree:
         raise NotImplementedError('Must implement get_build_tree() in derived classes')
 
-    def get_idf_directory(self):
+    def get_idf_directory(self) -> Path:
         raise NotImplementedError()

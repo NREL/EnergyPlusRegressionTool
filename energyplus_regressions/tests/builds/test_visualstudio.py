@@ -5,6 +5,7 @@ import unittest
 
 from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.builds.visualstudio import CMakeCacheVisualStudioBuildDirectory
+from energyplus_regressions.structures import ConfigType
 
 
 class TestVisualStudioBuildMethods(unittest.TestCase):
@@ -13,6 +14,7 @@ class TestVisualStudioBuildMethods(unittest.TestCase):
         self.build = CMakeCacheVisualStudioBuildDirectory()
         self.run_dir = Path(tempfile.mkdtemp())
         self.dummy_source_dir = Path('/dummy/source/dir')
+        self.output_message: str = ""
 
     def set_cache_file(self):
         with open(os.path.join(self.run_dir, 'CMakeCache.txt'), 'w') as f:
@@ -77,3 +79,31 @@ class TestVisualStudioBuildMethods(unittest.TestCase):
         self.build.set_build_directory(self.run_dir)
         idf_dir = self.build.get_idf_directory()
         self.assertEqual(self.dummy_source_dir / 'testfiles', idf_dir)
+
+    def test_set_build_mode_folder_exists(self):
+        self.set_cache_file()
+        self.build.set_build_directory(self.run_dir)
+        os.makedirs(os.path.join(self.run_dir, 'Products', 'Release'))
+        self.build.set_build_mode(ConfigType.RELEASE)
+        self.assertEqual(ConfigType.RELEASE.value, self.build.build_mode)
+        os.makedirs(os.path.join(self.run_dir, 'Products', 'Debug'))
+        self.build.set_build_mode(ConfigType.DEBUG)
+        self.assertEqual(ConfigType.DEBUG.value, self.build.build_mode)
+
+    def _message_capture(self, s: str):
+        self.output_message = s
+
+    def test_set_build_debug_does_not_exist(self):
+        self.set_cache_file()
+        self.build.set_build_directory(self.run_dir)
+        self.build.set_build_mode(ConfigType.DEBUG, self._message_capture)
+        self.assertIn("caution", self.output_message.lower())
+        self.assertEqual(ConfigType.DEBUG.value, self.build.build_mode)  # should fall to debug type
+
+    def test_set_build_debug_does_not_exist_release_does(self):
+        self.set_cache_file()
+        self.build.set_build_directory(self.run_dir)
+        os.makedirs(os.path.join(self.run_dir, 'Products', 'Release'))
+        self.build.set_build_mode(ConfigType.DEBUG, self._message_capture)
+        self.assertIn("caution", self.output_message.lower())
+        self.assertEqual(ConfigType.RELEASE.value, self.build.build_mode)  # should fall to release type
