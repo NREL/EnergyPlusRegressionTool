@@ -195,23 +195,17 @@ class MyApp(Frame):
         self.build_dir_2_button = None
         self.run_button = None
         self.stop_button = None
-        self.build_dir_1_label = None
         if system() == 'Windows':
-            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64')  # "<Select build dir 1>")
+            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64')
+            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64')
         elif system() == 'Mac':
-            self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+            self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')
+            self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')
         elif system() == 'Linux':
-            self.build_dir_1_var.set('/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+            self.build_dir_1_var.set('/eplus/repos/1eplus/builds/r')
+            self.build_dir_2_var.set('/eplus/repos/2eplus/builds/r')
         else:
             self.build_dir_1_var.set("<Select build dir 1>")
-        self.build_dir_2_label = None
-        if system() == 'Windows':
-            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64')  # "<Select build dir 1>")
-        elif system() == 'Mac':
-            self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
-        elif system() == 'Linux':
-            self.build_dir_2_var.set('/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
-        else:
             self.build_dir_2_var.set("<Select build dir 1>")
         self.progress = None
         self.log_message_listbox = None
@@ -236,12 +230,12 @@ class MyApp(Frame):
         # some data holders
         self.tree_folders = dict()
         self.valid_idfs_in_listing = False
-        self.build_1 = None
-        self.build_2 = None
+        self.build_1: BaseBuildDirectoryStructure | None = None
+        self.build_2: BaseBuildDirectoryStructure | None = None
         self.last_results = None
         self.auto_saving = False
         self.manually_saving = False
-        self.save_interval = 10000  # ms, so 1 minute
+        self.save_interval_ms = 60_000  # ms, so 1 minute
 
         # initialize the GUI
         self.main_notebook = None
@@ -251,7 +245,7 @@ class MyApp(Frame):
         self.client_open(auto_open=True)
         # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
         # noinspection PyTypeChecker
-        self.root.after(self.save_interval, self.auto_save)
+        self.root.after(self.save_interval_ms, self.auto_save)
 
         # set up any Var traces here after the init is all done
         self.preferred_build_type.trace_add("write", self.refresh_builds_for_build_type_change)
@@ -306,15 +300,15 @@ class MyApp(Frame):
         self.build_dir_1_button = ttk.Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1,
                                              style="C.TButton")
         self.build_dir_1_button.grid(row=1, column=1, sticky=W)
-        self.build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
-        self.build_dir_1_label.grid(row=1, column=2, sticky=E)
+        build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
+        build_dir_1_label.grid(row=1, column=2, sticky=E)
         group_build_dir_2 = LabelFrame(pane_run, text="Build Directory 2")
         group_build_dir_2.pack(fill=X, padx=5)
         self.build_dir_2_button = ttk.Button(group_build_dir_2, text="Change...", command=self.client_build_dir_2,
                                              style="C.TButton")
         self.build_dir_2_button.grid(row=1, column=1, sticky=W)
-        self.build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
-        self.build_dir_2_label.grid(row=1, column=2, sticky=E)
+        build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
+        build_dir_2_label.grid(row=1, column=2, sticky=E)
         group_run_options = LabelFrame(pane_run, text="Run Options")
         group_run_options.pack(fill=X, padx=5)
         # row 1
@@ -499,18 +493,21 @@ class MyApp(Frame):
             self.reporting_frequency.set(data['report_freq'])
             self.force_output_sql.set(data['force_output_sql'])
             self.force_output_sql_unitconv.set(data['force_output_sql_unitconv'])
-            if 'preferred_build_type' in data:  # it's initialized to RELEASE in the window __init__
+            if 'preferred_build_type' in data:  # it's initialized to RELEASE in the window __init__, override if found
                 self.preferred_build_type.set(data['preferred_build_type'])
-            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']))
+            # try to set build 1 object, where it will try to use the preferred build type
+            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']), init_mode=True)
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
                 if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
                     self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()))
-            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']))
+            # try to set build 2 object, where it will try to use the preferred build type
+            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']), init_mode=True)
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
                 if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
                     self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()))
+            # at this point we should have build dirs, but it's OK if they are invalid
             self.build_idf_listing(False, data['idfs'])
             self.add_to_log("Project settings loaded")
         except Exception:
@@ -524,7 +521,7 @@ class MyApp(Frame):
         self.client_save(auto_save=True)
         # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
         # noinspection PyTypeChecker
-        self.root.after(self.save_interval, self.auto_save)
+        self.root.after(self.save_interval_ms, self.auto_save)
 
     def client_save(self, auto_save=False):
         # we shouldn't come into this function from the auto_save if any other saving is going on already
@@ -605,7 +602,7 @@ class MyApp(Frame):
             if title.startswith('Case '):
                 if title.endswith('(0)'):
                     context_menu = Menu(self, tearoff=0)
-                    context_menu.add_command(label="Selected Node Has No Children", command=self.dummy)
+                    context_menu.add_command(label="Selected Node Has No Children", command=lambda: None)
                     context_menu.post(event.x_root, event.y_root)
                 else:
                     tags = self.results_tree.item(iid, "tags")
@@ -619,9 +616,6 @@ class MyApp(Frame):
         else:
             # ignoring anything but the tree root nodes
             pass
-
-    def dummy(self):
-        pass
 
     def copy_selected_node(self, tags):
         string = ';'.join(tags)
@@ -979,7 +973,11 @@ class MyApp(Frame):
         self.try_to_set_build_1_to_dir(self.build_1.build_directory)
         self.try_to_set_build_2_to_dir(self.build_2.build_directory)
 
-    def try_to_set_build_1_to_dir(self, selected_dir: Path) -> bool:
+    def add_to_log_and_alert(self, message: str):
+        self.add_to_log(message)
+        messagebox.showerror("Error", message)
+
+    def try_to_set_build_1_to_dir(self, selected_dir: Path, init_mode: bool = False) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 1 type")
@@ -992,7 +990,10 @@ class MyApp(Frame):
             self.add_to_log("Build 1 type detected as a Visual Studio build")
             self.build_1 = CMakeCacheVisualStudioBuildDirectory()
             self.build_1.set_build_directory(selected_dir)
-            self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            if init_mode:
+                self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            else:
+                self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.add_to_log("Build 1 type detected as a Makefile-style build")
             self.build_1 = CMakeCacheMakeFileBuildDirectory()
@@ -1015,7 +1016,7 @@ class MyApp(Frame):
         self.build_dir_1_var.set(str(selected_dir))
         self.build_idf_listing()
 
-    def try_to_set_build_2_to_dir(self, selected_dir: Path) -> bool:
+    def try_to_set_build_2_to_dir(self, selected_dir: Path, init_mode: bool = False) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 2 type")
@@ -1028,7 +1029,10 @@ class MyApp(Frame):
             self.add_to_log("Build 2 type detected as a Visual Studio build")
             self.build_2 = CMakeCacheVisualStudioBuildDirectory()
             self.build_2.set_build_directory(selected_dir)
-            self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            if init_mode:
+                self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            else:
+                self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.add_to_log("Build 2 type detected as a Makefile-style build")
             self.build_2 = CMakeCacheMakeFileBuildDirectory()
@@ -1064,7 +1068,7 @@ class MyApp(Frame):
             return
         ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
-        build_1_problem_files = [b[1] for b in build_1_valid if not b[2]]
+        build_1_problem_files = [str(b[1]) for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
             r = messagebox.askokcancel("Build folder 1 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
@@ -1074,7 +1078,7 @@ class MyApp(Frame):
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
         build_2_valid = self.build_2.verify()
-        build_2_problem_files = [b[1] for b in build_2_valid if not b[2]]
+        build_2_problem_files = [str(b[1]) for b in build_2_valid if not b[2]]
         if len(build_2_problem_files):
             missing_files = '\n'.join(build_2_problem_files)
             r = messagebox.askokcancel("Build folder 2 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
