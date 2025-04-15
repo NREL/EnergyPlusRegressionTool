@@ -121,8 +121,12 @@ def thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y):
         # else:
         #     diff = 'equal'
         return abs_diff, rel_diff, diff
-    except:
-        return '%s vs %s' % (x, y), '%s vs %s' % (x, y), 'stringdiff'
+    except ValueError:
+        # if we couldn't get a float out of it, we are doing string comparison, check case-insensitively before leaving
+        if x.lower().strip() == y.lower().strip():
+            return 0, 0, 'equal'
+        else:
+            return '%s vs %s' % (x, y), '%s vs %s' % (x, y), 'stringdiff'
 
 
 def prev_sib(entity):

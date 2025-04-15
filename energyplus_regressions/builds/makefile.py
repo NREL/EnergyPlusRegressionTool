@@ -30,7 +30,7 @@ class CMakeCacheMakeFileBuildDirectory(BaseBuildDirectoryStructure):
             else:
                 raise Exception('Could not find source directory spec in the CMakeCache file')
 
-    def get_idf_directory(self):
+    def get_idf_directory(self) -> Path:
         if not self.build_directory:
             raise Exception('Build directory has not been set with set_build_directory()')
         return self.source_directory / 'testfiles'

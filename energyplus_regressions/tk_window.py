@@ -35,6 +35,7 @@ from energyplus_regressions.epw_map import get_epw_for_idf
 from energyplus_regressions.runtests import TestRunConfiguration, SuiteRunner
 from energyplus_regressions.structures import (
     CompletedStructure,
+    ConfigType,
     ForceOutputSQL,
     ForceOutputSQLUnitConversion,
     ForceRunType,
@@ -185,6 +186,8 @@ class MyApp(Frame):
         self.force_output_sql.set(ForceOutputSQL.NOFORCE.value)
         self.force_output_sql_unitconv = StringVar()
         self.force_output_sql_unitconv.set(ForceOutputSQLUnitConversion.NOFORCE.value)
+        self.preferred_build_type = StringVar()
+        self.preferred_build_type.set(ConfigType.RELEASE.value)
         self.num_threads_var = StringVar()
 
         # widgets that we might want to access later
@@ -192,23 +195,17 @@ class MyApp(Frame):
         self.build_dir_2_button = None
         self.run_button = None
         self.stop_button = None
-        self.build_dir_1_label = None
         if system() == 'Windows':
-            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64')  # "<Select build dir 1>")
+            self.build_dir_1_var.set(r'C:\EnergyPlus\repos\1eplus\builds\VS64')
+            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64')
         elif system() == 'Mac':
-            self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+            self.build_dir_1_var.set('/Users/elee/eplus/repos/1eplus/builds/r')
+            self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')
         elif system() == 'Linux':
-            self.build_dir_1_var.set('/eplus/repos/1eplus/builds/r')  # "<Select build dir 1>")
+            self.build_dir_1_var.set('/eplus/repos/1eplus/builds/r')
+            self.build_dir_2_var.set('/eplus/repos/2eplus/builds/r')
         else:
             self.build_dir_1_var.set("<Select build dir 1>")
-        self.build_dir_2_label = None
-        if system() == 'Windows':
-            self.build_dir_2_var.set(r'C:\EnergyPlus\repos\2eplus\builds\VS64')  # "<Select build dir 1>")
-        elif system() == 'Mac':
-            self.build_dir_2_var.set('/Users/elee/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
-        elif system() == 'Linux':
-            self.build_dir_2_var.set('/eplus/repos/2eplus/builds/r')  # "<Select build dir 1>")
-        else:
             self.build_dir_2_var.set("<Select build dir 1>")
         self.progress = None
         self.log_message_listbox = None
@@ -227,17 +224,18 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu = None
         self.force_output_sql_option_menu = None
         self.force_output_sql_unitconv_option_menu = None
+        self.set_preferred_build_type = None
         self.idf_select_from_containing_button = None
 
         # some data holders
         self.tree_folders = dict()
         self.valid_idfs_in_listing = False
-        self.build_1 = None
-        self.build_2 = None
+        self.build_1: BaseBuildDirectoryStructure | None = None
+        self.build_2: BaseBuildDirectoryStructure | None = None
         self.last_results = None
         self.auto_saving = False
         self.manually_saving = False
-        self.save_interval = 10000  # ms, so 1 minute
+        self.save_interval_ms = 60_000  # ms, so 1 minute
 
         # initialize the GUI
         self.main_notebook = None
@@ -247,7 +245,10 @@ class MyApp(Frame):
         self.client_open(auto_open=True)
         # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
         # noinspection PyTypeChecker
-        self.root.after(self.save_interval, self.auto_save)
+        self.root.after(self.save_interval_ms, self.auto_save)
+
+        # set up any Var traces here after the init is all done
+        self.preferred_build_type.trace_add("write", self.refresh_builds_for_build_type_change)
 
         # wire up the background thread
         pub.subscribe(self.print_handler, PubSubMessageTypes.PRINT)
@@ -259,7 +260,7 @@ class MyApp(Frame):
         pub.subscribe(self.cancelled_handler, PubSubMessageTypes.CANCELLED)
 
         # on Linux, initialize the notification class instance
-        self.notification = None
+        self.notification: Notification | None = None
         if system() == 'Linux':
             self.notification_icon = Path(self.icon_path)
             self.notification = Notification('energyplus_regression_runner')
@@ -267,7 +268,7 @@ class MyApp(Frame):
     def init_window(self):
         # changing the title of our master widget
         self.root.title("EnergyPlus Regression Tool")
-        self.root.protocol("WM_DELETE_WINDOW", self.client_exit)
+        self.root.protocol("WM_DELETE_WINDOW", self.app_exit)
 
         # create the menu
         menu = Menu(self.root)
@@ -275,7 +276,7 @@ class MyApp(Frame):
         file_menu = Menu(menu)
         file_menu.add_command(label="Open Project...", command=self.client_open)
         file_menu.add_command(label="Save Project...", command=self.client_save)
-        file_menu.add_command(label="Exit", command=self.client_exit)
+        file_menu.add_command(label="Exit", command=self.app_exit)
         menu.add_cascade(label="File", menu=file_menu)
         help_menu = Menu(menu)
         help_menu.add_command(label="Open Documentation...", command=self.open_documentation)
@@ -299,40 +300,49 @@ class MyApp(Frame):
         self.build_dir_1_button = ttk.Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1,
                                              style="C.TButton")
         self.build_dir_1_button.grid(row=1, column=1, sticky=W)
-        self.build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
-        self.build_dir_1_label.grid(row=1, column=2, sticky=E)
+        build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
+        build_dir_1_label.grid(row=1, column=2, sticky=E)
         group_build_dir_2 = LabelFrame(pane_run, text="Build Directory 2")
         group_build_dir_2.pack(fill=X, padx=5)
         self.build_dir_2_button = ttk.Button(group_build_dir_2, text="Change...", command=self.client_build_dir_2,
                                              style="C.TButton")
         self.build_dir_2_button.grid(row=1, column=1, sticky=W)
-        self.build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
-        self.build_dir_2_label.grid(row=1, column=2, sticky=E)
+        build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
+        build_dir_2_label.grid(row=1, column=2, sticky=E)
         group_run_options = LabelFrame(pane_run, text="Run Options")
         group_run_options.pack(fill=X, padx=5)
+        # row 1
         Label(group_run_options, text="Number of threads for suite: ").grid(row=1, column=1, sticky=E)
         self.num_threads_spinner = Spinbox(group_run_options, from_=1, to=48, textvariable=self.num_threads_var)
         self.num_threads_spinner.grid(row=1, column=2, sticky=W)
+        # row 2
         Label(group_run_options, text="Test suite run configuration: ").grid(row=2, column=1, sticky=E)
         self.run_period_option_menu = OptionMenu(group_run_options, self.run_period_option, *ForceRunType.get_all())
         self.run_period_option_menu.grid(row=2, column=2, sticky=W)
+        # row 3
         Label(group_run_options, text="Minimum reporting frequency: ").grid(row=3, column=1, sticky=E)
         self.reporting_frequency_option_menu = OptionMenu(
             group_run_options, self.reporting_frequency, *ReportingFreq.get_all()
         )
         self.reporting_frequency_option_menu.grid(row=3, column=2, sticky=W)
-
+        # row 4
         Label(group_run_options, text="Force Output SQL: ").grid(row=4, column=1, sticky=E)
         self.force_output_sql_option_menu = OptionMenu(
             group_run_options, self.force_output_sql, *[x.value for x in ForceOutputSQL]
         )
         self.force_output_sql_option_menu.grid(row=4, column=2, sticky=W)
-
+        # row 5
         Label(group_run_options, text="Force Output SQL UnitConv: ").grid(row=5, column=1, sticky=E)
         self.force_output_sql_unitconv_option_menu = OptionMenu(
             group_run_options, self.force_output_sql_unitconv, *[x.value for x in ForceOutputSQLUnitConversion]
         )
         self.force_output_sql_unitconv_option_menu.grid(row=5, column=2, sticky=W)
+        # row 6
+        Label(group_run_options, text="Multi-configuration Build Preference: ").grid(row=6, column=1, sticky=E)
+        self.set_preferred_build_type = OptionMenu(
+            group_run_options, self.preferred_build_type, *[x.value for x in ConfigType]
+        )
+        self.set_preferred_build_type.grid(row=6, column=2, sticky=W)
 
         self.main_notebook.add(pane_run, text='Configuration')
 
@@ -483,13 +493,17 @@ class MyApp(Frame):
             self.reporting_frequency.set(data['report_freq'])
             self.force_output_sql.set(data['force_output_sql'])
             self.force_output_sql_unitconv.set(data['force_output_sql_unitconv'])
-
-            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']))
+            if 'preferred_build_type' in data:  # it's initialized to RELEASE in the window __init__, override if found
+                self.preferred_build_type.set(data['preferred_build_type'])
+            # try to set build 1 object, where it will try to use the preferred build type
+            status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']), init_mode=True)
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']))
+            # try to set build 2 object, where it will try to use the preferred build type
+            status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']), init_mode=True)
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
+            # at this point we should have build dirs, but it's OK if they are invalid
             self.build_idf_listing(False, data['idfs'])
             self.add_to_log("Project settings loaded")
         except Exception:
@@ -503,7 +517,7 @@ class MyApp(Frame):
         self.client_save(auto_save=True)
         # PyCharm is relentlessly complaining the unused *args parameter to root.after, when it's not needed
         # noinspection PyTypeChecker
-        self.root.after(self.save_interval, self.auto_save)
+        self.root.after(self.save_interval_ms, self.auto_save)
 
     def client_save(self, auto_save=False):
         # we shouldn't come into this function from the auto_save if any other saving is going on already
@@ -534,6 +548,7 @@ class MyApp(Frame):
                 'build_1_build_dir': str(self.build_1.build_directory),
                 'build_2_build_dir': str(self.build_2.build_directory),
                 'last_results': these_results,
+                'preferred_build_type': self.preferred_build_type.get(),
             }
         except Exception as e:
             # if we hit an exception, our action depends on whether we are manually saving or auto-saving
@@ -583,7 +598,7 @@ class MyApp(Frame):
             if title.startswith('Case '):
                 if title.endswith('(0)'):
                     context_menu = Menu(self, tearoff=0)
-                    context_menu.add_command(label="Selected Node Has No Children", command=self.dummy)
+                    context_menu.add_command(label="Selected Node Has No Children", command=lambda: None)
                     context_menu.post(event.x_root, event.y_root)
                 else:
                     tags = self.results_tree.item(iid, "tags")
@@ -597,9 +612,6 @@ class MyApp(Frame):
         else:
             # ignoring anything but the tree root nodes
             pass
-
-    def dummy(self):
-        pass
 
     def copy_selected_node(self, tags):
         string = ';'.join(tags)
@@ -762,7 +774,7 @@ class MyApp(Frame):
                         )
         self.last_results = results
 
-    def add_to_log(self, message):
+    def add_to_log(self, message: str):
         if self.log_message_listbox:
             self.log_message_listbox.insert(END, f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {message}")
             self.log_message_listbox.yview(END)
@@ -947,11 +959,21 @@ class MyApp(Frame):
         self.reporting_frequency_option_menu.configure(state=run_button_state)
         self.force_output_sql_option_menu.configure(state=run_button_state)
         self.force_output_sql_unitconv_option_menu.configure(state=run_button_state)
+        self.set_preferred_build_type.configure(state=run_button_state)
         self.num_threads_spinner.configure(state=run_button_state)
         self.stop_button.configure(state=stop_button_state)
         self.main_notebook.tab(3, text=results_tab_title)
 
-    def try_to_set_build_1_to_dir(self, selected_dir: Path) -> bool:
+    def refresh_builds_for_build_type_change(self, *_):
+        # just try to refresh both build directories, it will warn if the debug/release folders aren't there
+        self.try_to_set_build_1_to_dir(self.build_1.build_directory)
+        self.try_to_set_build_2_to_dir(self.build_2.build_directory)
+
+    def add_to_log_and_alert(self, message: str):
+        self.add_to_log(message)
+        messagebox.showerror("Error", message)
+
+    def try_to_set_build_1_to_dir(self, selected_dir: Path, init_mode: bool = False) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 1 type")
@@ -964,6 +986,10 @@ class MyApp(Frame):
             self.add_to_log("Build 1 type detected as a Visual Studio build")
             self.build_1 = CMakeCacheVisualStudioBuildDirectory()
             self.build_1.set_build_directory(selected_dir)
+            if init_mode:
+                self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            else:
+                self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.add_to_log("Build 1 type detected as a Makefile-style build")
             self.build_1 = CMakeCacheMakeFileBuildDirectory()
@@ -986,7 +1012,7 @@ class MyApp(Frame):
         self.build_dir_1_var.set(str(selected_dir))
         self.build_idf_listing()
 
-    def try_to_set_build_2_to_dir(self, selected_dir: Path) -> bool:
+    def try_to_set_build_2_to_dir(self, selected_dir: Path, init_mode: bool = False) -> bool:
         probable_build_dir_type = autodetect_build_dir_type(selected_dir)
         if probable_build_dir_type == KnownBuildTypes.Unknown:
             self.add_to_log("Could not detect build 2 type")
@@ -999,6 +1025,10 @@ class MyApp(Frame):
             self.add_to_log("Build 2 type detected as a Visual Studio build")
             self.build_2 = CMakeCacheVisualStudioBuildDirectory()
             self.build_2.set_build_directory(selected_dir)
+            if init_mode:
+                self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log)
+            else:
+                self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         elif probable_build_dir_type == KnownBuildTypes.Makefile:
             self.add_to_log("Build 2 type detected as a Makefile-style build")
             self.build_2 = CMakeCacheMakeFileBuildDirectory()
@@ -1034,7 +1064,9 @@ class MyApp(Frame):
             return
         ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
-        build_1_problem_files = [b[1] for b in build_1_valid if not b[2]]
+        if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
+            self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
+        build_1_problem_files = [str(b[1]) for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
             r = messagebox.askokcancel("Build folder 1 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
@@ -1044,7 +1076,9 @@ class MyApp(Frame):
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
         build_2_valid = self.build_2.verify()
-        build_2_problem_files = [b[1] for b in build_2_valid if not b[2]]
+        if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
+            self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
+        build_2_problem_files = [str(b[1]) for b in build_2_valid if not b[2]]
         if len(build_2_problem_files):
             missing_files = '\n'.join(build_2_problem_files)
             r = messagebox.askokcancel("Build folder 2 problem", f"Missing files:\n{missing_files}\n{ok_or_cancel_msg}")
@@ -1175,10 +1209,11 @@ class MyApp(Frame):
         self.label_string.set("Attempting to cancel...")
         self.background_operator.interrupt_please()
 
-    def client_exit(self):
+    def app_exit(self):
         if self.long_thread:
             messagebox.showerror("Uh oh!", "Cannot exit program while operations are running; abort them then exit")
             return
+        self.client_save(auto_save=True)
         sys.exit()
 
     def client_done(self):
