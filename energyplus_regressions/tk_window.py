@@ -503,7 +503,6 @@ class MyApp(Frame):
                 #     self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()))
             # try to set build 2 object, where it will try to use the preferred build type
             status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']), init_mode=True)
-            print("B")
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
                 # if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
@@ -690,7 +689,6 @@ class MyApp(Frame):
                     return
             if not self.build_2:
                 bd2 = Path(self.build_dir_2_var.get())
-                print("C")
                 status = self.try_to_set_build_2_to_dir(bd2)
                 if not status:
                     self.full_idf_listbox.insert(END, "Cannot update master list master list")
@@ -972,7 +970,6 @@ class MyApp(Frame):
 
     def refresh_builds_for_build_type_change(self, *_):
         # just try to refresh both build directories, it will warn if the debug/release folders aren't there
-        print("A")
         self.try_to_set_build_1_to_dir(self.build_1.build_directory)
         self.try_to_set_build_2_to_dir(self.build_2.build_directory)
 
@@ -1049,7 +1046,6 @@ class MyApp(Frame):
         p = Path(selected_dir)
         if not p.exists():
             return
-        print("D")
         status = self.try_to_set_build_2_to_dir(p)
         if not status:
             messagebox.showerror("Could not determine build type for build 2!")
