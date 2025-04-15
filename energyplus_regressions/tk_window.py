@@ -499,14 +499,10 @@ class MyApp(Frame):
             status = self.try_to_set_build_1_to_dir(Path(data['build_1_build_dir']), init_mode=True)
             if status:
                 self.build_dir_1_var.set(data['build_1_build_dir'])
-                # if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
-                #     self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()))
             # try to set build 2 object, where it will try to use the preferred build type
             status = self.try_to_set_build_2_to_dir(Path(data['build_2_build_dir']), init_mode=True)
             if status:
                 self.build_dir_2_var.set(data['build_2_build_dir'])
-                # if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
-                #     self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()))
             # at this point we should have build dirs, but it's OK if they are invalid
             self.build_idf_listing(False, data['idfs'])
             self.add_to_log("Project settings loaded")
@@ -1068,7 +1064,8 @@ class MyApp(Frame):
             return
         ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
-        print(build_1_valid)
+        if isinstance(self.build_1, CMakeCacheVisualStudioBuildDirectory):
+            self.build_1.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         build_1_problem_files = [str(b[1]) for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
@@ -1079,6 +1076,8 @@ class MyApp(Frame):
             messagebox.showerror("Build folder 2 problem", "Select a valid build folder 2 prior to running")
             return
         build_2_valid = self.build_2.verify()
+        if isinstance(self.build_2, CMakeCacheVisualStudioBuildDirectory):
+            self.build_2.set_build_mode(ConfigType(self.preferred_build_type.get()), self.add_to_log_and_alert)
         build_2_problem_files = [str(b[1]) for b in build_2_valid if not b[2]]
         if len(build_2_problem_files):
             missing_files = '\n'.join(build_2_problem_files)

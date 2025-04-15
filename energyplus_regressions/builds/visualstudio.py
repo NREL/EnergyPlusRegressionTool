@@ -80,12 +80,3 @@ class CMakeCacheVisualStudioBuildDirectory(BaseBuildDirectoryStructure):
         b.weather_dir = self.source_directory / 'weather'
         b.data_sets_dir = self.source_directory / 'datasets'
         return b
-
-    def verify(self) -> list[tuple[str, Path, bool]]:
-        desired_build_directory = self.build_directory / 'Products' / self.build_mode
-        full_results = list()
-        full_results.append(
-            ("Case %s Build Mode Directory Exists? ", desired_build_directory, desired_build_directory.exists())
-        )
-        base_results = super().verify()
-        return full_results + base_results
