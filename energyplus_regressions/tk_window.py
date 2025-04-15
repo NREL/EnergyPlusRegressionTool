@@ -1068,6 +1068,7 @@ class MyApp(Frame):
             return
         ok_or_cancel_msg = "Press OK to continue anyway (risky!), or press Cancel to abort"
         build_1_valid = self.build_1.verify()
+        print(build_1_valid)
         build_1_problem_files = [str(b[1]) for b in build_1_valid if not b[2]]
         if len(build_1_problem_files):
             missing_files = '\n'.join(build_1_problem_files)
