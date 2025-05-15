@@ -222,7 +222,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
 
 
 # Convert html table to heading dictionary (and header list) in single step
-def table2hdict_horder(table, table_a_hdict=None):
+def table2hdict_horder(table, table_a=None):
     # If table_a_hdict is passed in, we can try to match the row order to avoid diffs just due to row order
     hdict = {}
     horder = []
@@ -238,25 +238,53 @@ def table2hdict_horder(table, table_a_hdict=None):
         hdict[hcontents] = []
         horder.append(hcontents)
 
+    # Assume we are going to just loop over the rows and compare the data
     search_rows = trows[1:]
 
-    # Handle it specially if we passed in table_a's hdict and it's just a valid reorder
-    if table_a_hdict:
-        if 'DummyPlaceholder' in table_a_hdict:
-            table_a_row_order = table_a_hdict['DummyPlaceholder']
-            found_table_b_row_order = []
-            for trow in trows[1:]:
-                found_table_b_row_order.append(trow('td')[0].contents[0])
-            if sorted(table_a_row_order) == sorted(found_table_b_row_order):  # we have the same values, maybe reordered
-                # now just build the list of trows to search by index based on table a order
-                search_rows = []
-                for to_find_val in table_a_row_order:
-                    for trow in trows[1:]:
-                        for td in trow('td'):
-                            this_val = td.contents[0]
-                            if this_val == to_find_val:
-                                search_rows.append(trow)
+    # But we can handle it specially if we passed in table_a and it's just a valid reorder
+    # There are some weird things to consider here though.  For example, some tables have multiple entirely blank
+    #  rows, just there for visual spacing.  Also there are tables where the far left entry is not unique.
+    # Consider the End Uses by Subcategory table.  One row starts with "Heating" and then "General".
+    # The next row then has nothing in the first column, but the second column is "Boiler".
+    # This implies that "Heating" was a grouping, and "General" or "Boiler" is the actual subcategory.
+    # I think the only way to handle this robustly would be to use the entire
+    #  row as the key, which is annoying, but should work well.
+    if table_a:
+        # process the rows of the "base" table_a that was provided into a list of search keys
+        trows_a = table_a('tr')
+        table_a_row_order = []
+        for trow in trows_a[1:]:
+            search_key = []
+            for tcol in trow('td'):
+                if tcol.contents:
+                    search_key.append(tcol.contents[0])
+                else:
+                    search_key.append("")
+            table_a_row_order.append(search_key)
+        # process the rows of the "mod" table that was provided into a list of search keys
+        found_table_b_row_order = []
+        for trow in trows[1:]:
+            search_key = []
+            for tcol in trow('td'):
+                if tcol.contents:
+                    search_key.append(tcol.contents[0])
+                else:
+                    search_key.append("")
+            found_table_b_row_order.append(search_key)
+        # it's the same order exactly, skip any searching and just run with search_rows as-is
+        if table_a_row_order == found_table_b_row_order:
+            pass
+        # if not exactly the same but overall the same stuff, it's reordered and we can match things up
+        elif sorted(table_a_row_order) == sorted(found_table_b_row_order):
+            # now just build the list of trows to search by index based on table a order
+            search_rows = []
+            for to_find_val in table_a_row_order:
+                for search_row_index, trow in enumerate(trows[1:]):
+                    if found_table_b_row_order[search_row_index] == to_find_val:
+                        search_rows.append(trow)
+                        break
 
+    # whether it was reordered or just using the literal order, build out the hdict instance to pass back
     for trow in search_rows:
         for htd, td in zip(trows[0]('td'), trow('td')):
             try:
@@ -347,8 +375,10 @@ def table_diff(
     if not file_2.exists():
         return 'unable to open file <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
 
-    txt1 = file_1.read_text()
-    txt2 = file_2.read_text()
+    with open(file_1, 'rb') as f_1:
+        txt1 = f_1.read().decode('utf-8', errors='ignore')
+    with open(file_2, 'rb') as f_2:
+        txt2 = f_2.read().decode('utf-8', errors='ignore')
 
     page_title = f'{file_1.name} vs {file_2.name}'
 
@@ -445,7 +475,8 @@ def table_diff(
             continue
 
         hdict1, horder1 = table2hdict_horder(table1)
-        hdict2, horder2 = table2hdict_horder(table2, hdict1)
+
+        hdict2, horder2 = table2hdict_horder(table2, table1)
 
         # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
         # up close investigation.  As such, we are going to trigger the following things:
