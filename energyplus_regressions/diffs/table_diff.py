@@ -258,7 +258,8 @@ def table2hdict_horder(table, table_a=None):
             for tcol in trow('td'):
                 if tcol.contents:
                     search_key.append(tcol.contents[0])
-                else:
+                else:  # pragma: no cover
+                    # I really don't think we can make it here while searching, but I don't want to accidentally crash
                     search_key.append("")
             table_a_row_order.append(search_key)
         # process the rows of the "mod" table that was provided into a list of search keys
@@ -268,7 +269,8 @@ def table2hdict_horder(table, table_a=None):
             for tcol in trow('td'):
                 if tcol.contents:
                     search_key.append(tcol.contents[0])
-                else:
+                else:  # pragma: no cover
+                    # I really don't think we can make it here while searching, but I don't want to accidentally crash
                     search_key.append("")
             found_table_b_row_order.append(search_key)
         # it's the same order exactly, skip any searching and just run with search_rows as-is
