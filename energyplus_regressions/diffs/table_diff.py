@@ -474,16 +474,15 @@ def table_diff(
                                table_not_in_1, table_not_in_2)
             continue
 
-        # create a list of order-dependent table uhedaings, these will not use the special row order independence code
-        row_order_dependent_tables = [
-            ' FullName:Climatic Data Summary_Entire Facility_Monthly Precipitation Summary'
-        ]
+        # create a list of order-dependent table uheading keys, tables that include these keys in the name
+        # these will use strict row order enforcement
+        row_order_dependent_table_keys = ['Monthly', 'Topology']
 
         # always process the first table into a base hdict
         hdict1, horder1 = table2hdict_horder(table1)
 
         # if we are in a row order dependent table, don't pass table1 as a baseline, just use the literal in-place order
-        if uheading1 in row_order_dependent_tables:
+        if any(k in uheading1 for k in row_order_dependent_table_keys):
             hdict2, horder2 = table2hdict_horder(table2)
         # but for all other tables, we can use the first table as a baseline to carefully match up the rows
         else:
