@@ -508,10 +508,10 @@ class TestTableDiff(unittest.TestCase):
             os.path.join(self.temp_output_dir, 'summary.htm'),
         )
         self.assertEqual('', response[0])  # diff status
-        self.assertEqual(1, response[1])  # count_of_tables
-        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(2, response[1])  # count_of_tables
+        self.assertEqual(2, response[2])  # big diffs  # Only because of the time-based table reordered
         self.assertEqual(0, response[3])  # small diffs
-        self.assertEqual(35, response[4])  # equals
+        self.assertEqual(93, response[4])  # equals
         self.assertEqual(0, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
