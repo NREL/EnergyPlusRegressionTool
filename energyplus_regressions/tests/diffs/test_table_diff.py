@@ -496,6 +496,27 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
+    def test_reordering_is_ok_sometimes(self):
+        # This table has a table with the rows reordered
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(35, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
     # it seems like this is something that table_diff just cannot handle.  The duplicate empty column heading is causing
     # major problems.  I'm going to skip this test for now, but leave the two table diff resource files in place
     # so that we could try to investigate later if we ever wanted.
