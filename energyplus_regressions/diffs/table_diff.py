@@ -453,6 +453,14 @@ def table_diff(
 
         uheading1 = uheadings1[i1]
 
+        # There are some (for now one) tables that we will want to skip entirely because they are not useful for
+        # throwing regressions, add search keys to this list to skip them
+        completely_skippable_table_keys = [
+            'Object Count Summary_Entire Facility_Input Fields'
+        ]
+        if any([x in uheading1 for x in completely_skippable_table_keys]):
+            continue
+
         # Table missing in second input file
         if uheading1 not in uhset_match:
             table_not_in_2 = 1
