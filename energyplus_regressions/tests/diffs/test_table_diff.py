@@ -34,6 +34,26 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
+    def test_skips_some_tables(self):
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_skips_some_tables_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_skips_some_tables_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(4, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(17, response[4])  # equals  # only includes the tables that were compared, not skipped
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
     def test_invalid_file_1(self):
         response = table_diff(
             self.thresh_dict,
@@ -292,7 +312,7 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(155, response[1])  # count_of_tables
         self.assertEqual(334, response[2])  # big diffs
         self.assertEqual(67, response[3])  # small diffs
-        self.assertEqual(3763, response[4])  # equals
+        self.assertEqual(3756, response[4])  # equals
         self.assertEqual(21, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
@@ -313,7 +333,7 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(155, response[1])  # count_of_tables
         self.assertEqual(334, response[2])  # big diffs
         self.assertEqual(67, response[3])  # small diffs
-        self.assertEqual(3763, response[4])  # equals
+        self.assertEqual(3756, response[4])  # equals
         self.assertEqual(21, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
@@ -493,6 +513,27 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(12, response[4])  # equals
         self.assertEqual(1, response[5])  # string diffs  # TODO: What should this be?
         self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_reordering_is_ok_sometimes(self):
+        # This table has a table with the rows reordered
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(2, response[1])  # count_of_tables
+        self.assertEqual(2, response[2])  # big diffs  # Only because of the time-based table reordered
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(93, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 

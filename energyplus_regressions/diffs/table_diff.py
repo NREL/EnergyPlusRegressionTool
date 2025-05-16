@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 """Takes two E+ html output files and compares them
 usage:
@@ -36,6 +34,7 @@ __version__ = "1.4"
 __copyright__ = "Copyright (c) 2009 Santosh Philip and Amir Roth 2013"
 __license__ = "GNU General Public License Version 3"
 
+from pathlib import Path
 import sys
 import getopt
 import os.path
@@ -45,8 +44,8 @@ from energyplus_regressions.diffs.thresh_dict import ThreshDict
 
 help_message = __doc__
 
-path = os.path.dirname(__file__)
-script_dir = os.path.abspath(path)
+this_file = Path(__file__).resolve()
+script_dir = this_file.parent
 
 title_css = """<!DOCTYPE html PUBLIC "-
 //W3C//DTD XHTML 1.0 Strict//EN"
@@ -95,38 +94,26 @@ td.table_size_error {
 """
 
 
-def thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y):
+def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) -> tuple[float | str, float | str, str]:
     if x == y:
         return 0, 0, 'equal'
-    # noinspection PyBroadException
     try:
-        diff = 'equal'
-
         fx = float(x)
         fy = float(y)
-
         abs_diff = abs(fx - fy)
-
-        # the following two lines were here, but I don't see how they could be hit, I'm commenting for now
-        # if abs_diff == 0.0:
-        #     return 0, 0, 'equal'
-
         rel_diff = abs((fx - fy) / fx) if abs(fx) > abs(fy) else abs((fy - fx) / fy)
-
+        diff = 'equal'
         if abs_diff > abs_thresh and rel_diff > rel_thresh:
             diff = 'big'
         elif (0 < abs_diff <= abs_thresh) or (0 < rel_diff <= rel_thresh):
             diff = 'small'
-        # the following else clause was here, but again, I don't see how it could be hit, commenting
-        # else:
-        #     diff = 'equal'
         return abs_diff, rel_diff, diff
     except ValueError:
         # if we couldn't get a float out of it, we are doing string comparison, check case-insensitively before leaving
         if x.lower().strip() == y.lower().strip():
             return 0, 0, 'equal'
         else:
-            return '%s vs %s' % (x, y), '%s vs %s' % (x, y), 'stringdiff'
+            return f'{x} vs {y}', f'{x} vs {y}', 'stringdiff'
 
 
 def prev_sib(entity):
@@ -235,7 +222,8 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
 
 
 # Convert html table to heading dictionary (and header list) in single step
-def table2hdict_horder(table):
+def table2hdict_horder(table, table_a=None):
+    # If table_a_hdict is passed in, we can try to match the row order to avoid diffs just due to row order
     hdict = {}
     horder = []
     trows = table('tr')
@@ -250,7 +238,56 @@ def table2hdict_horder(table):
         hdict[hcontents] = []
         horder.append(hcontents)
 
-    for trow in trows[1:]:
+    # Assume we are going to just loop over the rows and compare the data
+    search_rows = trows[1:]
+
+    # But we can handle it specially if we passed in table_a and it's just a valid reorder
+    # There are some weird things to consider here though.  For example, some tables have multiple entirely blank
+    #  rows, just there for visual spacing.  Also there are tables where the far left entry is not unique.
+    # Consider the End Uses by Subcategory table.  One row starts with "Heating" and then "General".
+    # The next row then has nothing in the first column, but the second column is "Boiler".
+    # This implies that "Heating" was a grouping, and "General" or "Boiler" is the actual subcategory.
+    # I think the only way to handle this robustly would be to use the entire
+    #  row as the key, which is annoying, but should work well.
+    if table_a:
+        # process the rows of the "base" table_a that was provided into a list of search keys
+        trows_a = table_a('tr')
+        table_a_row_order = []
+        for trow in trows_a[1:]:
+            search_key = []
+            for tcol in trow('td'):
+                if tcol.contents:
+                    search_key.append(tcol.contents[0])
+                else:  # pragma: no cover
+                    # I really don't think we can make it here while searching, but I don't want to accidentally crash
+                    search_key.append("")
+            table_a_row_order.append(search_key)
+        # process the rows of the "mod" table that was provided into a list of search keys
+        found_table_b_row_order = []
+        for trow in trows[1:]:
+            search_key = []
+            for tcol in trow('td'):
+                if tcol.contents:
+                    search_key.append(tcol.contents[0])
+                else:  # pragma: no cover
+                    # I really don't think we can make it here while searching, but I don't want to accidentally crash
+                    search_key.append("")
+            found_table_b_row_order.append(search_key)
+        # it's the same order exactly, skip any searching and just run with search_rows as-is
+        if table_a_row_order == found_table_b_row_order:
+            pass
+        # if not exactly the same but overall the same stuff, it's reordered and we can match things up
+        elif sorted(table_a_row_order) == sorted(found_table_b_row_order):
+            # now just build the list of trows to search by index based on table a order
+            search_rows = []
+            for to_find_val in table_a_row_order:
+                for search_row_index, trow in enumerate(trows[1:]):
+                    if found_table_b_row_order[search_row_index] == to_find_val:
+                        search_rows.append(trow)
+                        break
+
+    # whether it was reordered or just using the literal order, build out the hdict instance to pass back
+    for trow in search_rows:
         for htd, td in zip(trows[0]('td'), trow('td')):
             try:
                 hcontents = htd.contents[0]
@@ -317,7 +354,10 @@ def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_f
         'size mismatch' if size_error > 0 else 'not in 1' if not_in_1 > 0 else 'not in 2' if not_in_2 > 0 else '')
 
 
-def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_file):
+def table_diff(
+        thresh_dict: ThreshDict, input_file_1: str, input_file_2: str, abs_diff_file: str,
+        rel_diff_file: str, err_file: str, summary_file: str
+):
     """
     Compares two xxxTable.html files returning
     (
@@ -326,32 +366,33 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         <#size_diff>, <#not_in_file1>, <#not_in_file2>
     )
     """
+    file_1 = Path(input_file_1)
+    file_2 = Path(input_file_2)
 
-    case_name = inputfile1.split(os.sep)[-2]
+    case_name = file_1.parent.name
 
     # Test for existence of input files
-    if not os.path.exists(inputfile1):
-        return 'unable to open file <%s>' % inputfile1, 0, 0, 0, 0, 0, 0, 0, 0
-    if not os.path.exists(inputfile2):
-        return 'unable to open file <%s>' % inputfile2, 0, 0, 0, 0, 0, 0, 0, 0
+    if not file_1.exists():
+        return 'unable to open file <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0
+    if not file_2.exists():
+        return 'unable to open file <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
 
-    with open(inputfile1, 'rb') as f_1:
+    with open(file_1, 'rb') as f_1:
         txt1 = f_1.read().decode('utf-8', errors='ignore')
-    with open(inputfile2, 'rb') as f_2:
+    with open(file_2, 'rb') as f_2:
         txt2 = f_2.read().decode('utf-8', errors='ignore')
 
-    pagetitle = '%s vs %s' % (os.path.basename(inputfile1), os.path.basename(inputfile2))
+    page_title = f'{file_1.name} vs {file_2.name}'
 
     # Error soup
-    err_soup = BeautifulSoup(title_css % (pagetitle + ' -- summary', the_css,),
-                             features='html.parser')
+    err_soup = BeautifulSoup(title_css % (page_title + ' -- summary', the_css,), features='html.parser')
 
     # Abs diff soup
-    abs_diff_soup = BeautifulSoup(title_css % (pagetitle + ' -- absolute differences', the_css,),
+    abs_diff_soup = BeautifulSoup(title_css % (page_title + ' -- absolute differences', the_css,),
                                   features='html.parser')
 
     # Rel diff soup
-    rel_diff_soup = BeautifulSoup(title_css % (pagetitle + ' -- relative differences', the_css,),
+    rel_diff_soup = BeautifulSoup(title_css % (page_title + ' -- relative differences', the_css,),
                                   features='html.parser')
 
     # Make error table
@@ -381,9 +422,9 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
         uheadings2.append(get_table_unique_heading(table))
 
     if any([x is None for x in uheadings1]):
-        return 'malformed comment/table structure in <%s>' % inputfile1, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'malformed comment/table structure in <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0
     if any([x is None for x in uheadings2]):
-        return 'malformed comment/table structure in <%s>' % inputfile2, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'malformed comment/table structure in <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
 
     uhset1 = set(uheadings1)
     uhset2 = set(uheadings2)
@@ -414,6 +455,14 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
 
         uheading1 = uheadings1[i1]
 
+        # There are some (for now one) tables that we will want to skip entirely because they are not useful for
+        # throwing regressions, add search keys to this list to skip them
+        completely_skippable_table_keys = [
+            'Object Count Summary_Entire Facility_Input Fields'
+        ]
+        if any([x in uheading1 for x in completely_skippable_table_keys]):
+            continue
+
         # Table missing in second input file
         if uheading1 not in uhset_match:
             table_not_in_2 = 1
@@ -435,8 +484,19 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
                                table_not_in_1, table_not_in_2)
             continue
 
+        # create a list of order-dependent table uheading keys, tables that include these keys in the name
+        # these will use strict row order enforcement
+        row_order_dependent_table_keys = ['Monthly', 'Topology']
+
+        # always process the first table into a base hdict
         hdict1, horder1 = table2hdict_horder(table1)
-        hdict2, horder2 = table2hdict_horder(table2)
+
+        # if we are in a row order dependent table, don't pass table1 as a baseline, just use the literal in-place order
+        if any(k in uheading1 for k in row_order_dependent_table_keys):
+            hdict2, horder2 = table2hdict_horder(table2)
+        # but for all other tables, we can use the first table as a baseline to carefully match up the rows
+        else:
+            hdict2, horder2 = table2hdict_horder(table2, table1)
 
         # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
         # up close investigation.  As such, we are going to trigger the following things:
@@ -556,7 +616,7 @@ def table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file
             count_of_size_error, count_of_not_in_1, count_of_not_in_2)
 
 
-def main(argv=None):  # pragma: no cover
+def main(argv=None) -> int:  # pragma: no cover
     if argv is None:
         argv = sys.argv
     try:
@@ -565,19 +625,9 @@ def main(argv=None):  # pragma: no cover
         print(sys.argv[0].split("/")[-1] + ": " + str(msg) + "\n\t for help use --help")
         return -1
 
-    # Test for correct number of arguments
-    # prog_name = os.path.basename(sys.argv[0])
-    # if len(args) == 5:
-    [inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_file] = args
-    # else:
-    #    info('%s: incorrect operands: Try %s -h for more info' % (prog_name, prog_name))
-    #    return -1
-
-    # Load diffing threshold dictionary
+    [input_file_1, input_file_2, abs_diff_file, rel_diff_file, err_file, summary_file] = args
     thresh_dict = ThreshDict(os.path.join(script_dir, 'math_diff.config'))
-
-    # run the main program.
-    table_diff(thresh_dict, inputfile1, inputfile2, abs_diff_file, rel_diff_file, err_file, summary_file)
+    table_diff(thresh_dict, input_file_1, input_file_2, abs_diff_file, rel_diff_file, err_file, summary_file)
     return 0
 
 
