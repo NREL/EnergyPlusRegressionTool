@@ -467,6 +467,8 @@ def table_diff(
         if uheading1 not in uhset_match:
             table_not_in_2 = 1
             count_of_not_in_2 += table_not_in_2
+            table_big_diff = 1
+            count_of_big_diff += table_big_diff
             make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
                                table_not_in_1, table_not_in_2)
@@ -479,6 +481,8 @@ def table_diff(
         if len(table1('tr')) != len(table2('tr')) or len(table1('td')) != len(table2('td')):
             table_size_error = 1
             count_of_size_error += table_size_error
+            table_big_diff = 1
+            count_of_big_diff += table_big_diff
             make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
                                table_not_in_1, table_not_in_2)

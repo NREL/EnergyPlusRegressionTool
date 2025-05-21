@@ -54,6 +54,26 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
+    def test_mod_file_has_empty_table(self):
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_empty_table_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_empty_table_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(3, response[1])  # count_of_tables
+        self.assertEqual(1, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(14, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
     def test_invalid_file_1(self):
         response = table_diff(
             self.thresh_dict,
@@ -106,7 +126,7 @@ class TestTableDiff(unittest.TestCase):
         )
         self.assertEqual('', response[0])  # diff status
         self.assertEqual(3, response[1])  # count_of_tables
-        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(1, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
         self.assertEqual(14, response[4])  # equals
         self.assertEqual(0, response[5])  # string diffs
@@ -146,7 +166,7 @@ class TestTableDiff(unittest.TestCase):
         )
         self.assertEqual('', response[0])  # diff status
         self.assertEqual(3, response[1])  # count_of_tables
-        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(1, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
         self.assertEqual(14, response[4])  # equals
         self.assertEqual(0, response[5])  # string diffs
